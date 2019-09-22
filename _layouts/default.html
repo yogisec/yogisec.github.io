@@ -50,7 +50,7 @@
         </div>
       </div>
       <span style="font-size:30px;cursor:pointer" onclick="openNav()" id="openbtn">&#9776;</span>
-
+      <span class="closebtn" id="closebtn" onclick="closeNav()">&times;</span>
         {{ content }}
 
     </div>
@@ -59,10 +59,12 @@
       function openNav() {
         document.getElementById("sidebar").style.width = "250px";
 	document.getElementById("openbtn").style.visibility = "hidden";
+        document.getElementById("closebtn").style.visibility = "visible";
       }
       function closeNav() {
         document.getElementById("sidebar").style.width = "0";
 	document.getElementById("openbtn").style.visibility = "visible";
+        document.getElementById("closebtn").style.visibility = "hidden";
       }
     </script>
   </body>

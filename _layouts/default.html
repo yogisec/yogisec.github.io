@@ -50,21 +50,21 @@
         </div>
       </div>
       <span style="font-size:30px;cursor:pointer" onclick="openNav()" id="openbtn">&#9776;</span>
-      <span class="closebtn" id="closebtn" onclick="closeNav()">&times;</span>
-        {{ content }}
+      <span style="display: none;" class="closebtn" id="closebtn" onclick="closeNav()">&times;</span>
+        <!-- {{ content }} -->
 
     </div>
     <script src="/scripts/responsive.js" type="text/javascript"></script>
     <script>
       function openNav() {
         document.getElementById("sidebar").style.width = "250px";
-	document.getElementById("openbtn").style.visibility = "hidden";
-        document.getElementById("closebtn").style.visibility = "visible";
+	document.getElementById("openbtn").style.display = "none";
+        document.getElementById("closebtn").style.display = "initial";
       }
       function closeNav() {
         document.getElementById("sidebar").style.width = "0";
-	document.getElementById("openbtn").style.visibility = "visible";
-        document.getElementById("closebtn").style.visibility = "hidden";
+	document.getElementById("openbtn").style.display = "initial";
+        document.getElementById("closebtn").style.display = "none";
       }
     </script>
   </body>

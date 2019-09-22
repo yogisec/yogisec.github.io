@@ -225,7 +225,7 @@ a:hover {
   float: left;
   width: 0;
   transition: 0.5s;
-  /* padding-left: 11em;
+  padding-left: 1em;
   padding-right: 2.125em;
   border-right: 1px solid #e7e7e7;
 }
@@ -274,7 +274,7 @@ a:hover {
 }
 
 .sidebar .closebtn {
-  position: absolute;
+  /*position: absolute;
   top: 0;
   right: 25px;
   font-size: 36px;

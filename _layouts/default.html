@@ -58,13 +58,17 @@
     <script>
       function openNav() {
         document.getElementById("sidebar").style.width = "250px";
-	document.getElementById("openbtn").style.display = "none";
+	      document.getElementById("openbtn").style.display = "none";
         document.getElementById("closebtn").style.display = "initial";
+        document.getElementById("home").style.opacity = ".8";
+        document.getElementById("home").style.background-color = "#333";
       }
       function closeNav() {
         document.getElementById("sidebar").style.width = "0";
-	document.getElementById("openbtn").style.display = "initial";
+	      document.getElementById("openbtn").style.display = "initial";
         document.getElementById("closebtn").style.display = "none";
+        document.getElementById("home").style.opacity = "0.0";
+        document.getElementById("home").style.background-color = "#fafbfc";
       }
     </script>
   </body>

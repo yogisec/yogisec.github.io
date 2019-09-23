@@ -79,6 +79,8 @@ a:hover {
   height: 100%;
   width: 100%;
   line-height: 1.25em;
+  margin-top: 25px;
+  margin-left: 10px;
 }
 
 .title {

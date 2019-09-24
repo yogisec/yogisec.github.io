@@ -37,6 +37,16 @@
               </li>
             {% endfor %}
           </ul>
+          <ul class="posts-list">
+                {% for post in site.posts %}
+                  <li class="post-link">
+                    <a class="post-title" href="{{ post.url }}">
+                      <span class="post-date">{{ post.categories }}</span>
+                      {{ post.title }}
+                    </a>
+                  </li>
+                {% endfor %}
+              </ul>
         </div>
         <div class="footer">
           <span id="footer-links">

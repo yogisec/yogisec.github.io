@@ -21,31 +21,36 @@
   </head>
   <body>
     <div class="site">
-      <div class="sidebar" id="sidebar">
-        <span style="display:none;cursor:pointer;float:right;padding-right:20px;" class="closebtn" id="closebtn" onclick="closeNav()">&times;</span>
-        <div class="header">
-          <span class="tagline"><a href="/">/</a></span>
-        </div>
-        <div class="posts">
-          <ul class="posts-list">
-            {% for post in site.posts %}
-              <li class="post-link">
-                <a class="post-title" href="{{ post.url }}">
-                  <span class="post-date">{{ post.categories }}</span>
-                  {{ post.title }}
-                </a>
-              </li>
-            {% endfor %}
-          </ul>
-        </div>
-        <div class="footer">
-          <span id="footer-links">
-            <a href="/about.html" class="footer-link">About</a> <span class="separator">&bull;</span>
-            <a href="https://twitter.com/yogisec" class="footer-link">Twitter</a> <span class="separator">&bull;</span>
-            <a href="https://github.com/yogisec" class="footer-link">GitHub</a>
-          </span>
-        </div>
-      </div>
+        <div class="sidebar" id="sidebar">
+            <span style="display:none;cursor:pointer;float:right;padding-right:20px;" class="closebtn" id="closebtn" onclick="closeNav()">&times;</span>
+            <div class="header">
+              <span class="tagline"><a href="/">/</a></span>
+            </div>
+            <div class="posts">
+              <ul class="posts-list">
+                    <span class="post-date">Office365</span>
+                    {% for post in site.categories.office365 %}
+                        <li class="post-link">
+                          <a class="post-title" href="{{ post.url }}">{{ post.title }}</a>
+                        </li>
+                    {% endfor %}
+                    <span class="post-date">Web Things</span>
+                    {% for post in site.categories.web %}
+                    <li class="post-link">
+                      <a class="post-title" href="{{ post.url }}">{{ post.title }}</a>
+                    </li>
+                {% endfor %}
+              </ul>
+            </div>
+            <div class="footer">
+              <span id="footer-links">
+                <a href="/me" class="footer-link">me</a> <span class="separator">&bull;</span>
+                <a href="https://twitter.com/yogisec" class="footer-link">@yogisec</a> <span class="separator">&bull;</span>
+                <a href="https://github.com/yogisec" class="footer-link">github</a> <span class="separator">&bull;</span>
+                <a href="https://www.linkedin.com/in/travis-l-716a1635/" class="footer-link">linkedin</a>
+              </span>
+            </div>
+          </div>
       <span style="font-size:30px;cursor:pointer;padding:16px;" onclick="openNav()" id="openbtn">&#9776;</span>
       <span style="display:none;cursor:pointer" class="closebtn" id="closebtn" onclick="closeNav()">&times;</span>
          {{ content }} 

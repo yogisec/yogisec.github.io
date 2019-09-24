@@ -38,12 +38,10 @@
             {% endfor %}
           </ul>
           <ul class="posts-list">
-                {% for post in site.posts %}
-                  {% if post.categories == "office365" %}
+                {% for post in site.categories.office365 %}
                     <li class="post-link">
                       <a class="post-title" href="{{ post.url }}">{{ post.title }}</a>
                     </li>
-                  {% endif %}
                 {% endfor %}
               </ul>
         </div>

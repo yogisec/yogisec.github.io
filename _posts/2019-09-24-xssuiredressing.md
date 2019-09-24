@@ -33,3 +33,7 @@ http://dvwa/login
 ```
 
 So what? Whats the big deal, the url is re-written but the page is still the page it should be. Right? Maybe, unless the page gets changed with the document.body.innerHTML property...
+
+![UI Redressing 1](/images/uiredressing1.png "UI Redressing 1")
+
+

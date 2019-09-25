@@ -39,7 +39,13 @@
                     <li class="post-link">
                       <a class="post-title" href="{{ post.url }}">{{ post.title }}</a>
                     </li>
-                {% endfor %}
+                    {% endfor %}
+                    <span class="post-date">How-To</span>
+                    {% for post in site.categories.howto %}
+                    <li class="post-link">
+                      <a class="post-title" href="{{ post.url }}">{{ post.title }}</a>
+                    </li>
+                    {% endfor %}
               </ul>
             </div>
             <div class="footer">

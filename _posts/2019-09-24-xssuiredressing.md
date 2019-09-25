@@ -59,7 +59,7 @@ alue='submit' type='submit'></form>"</script>
 Even though the page that is expected to load looks similar to this:
 
 
-<img id="myImg" src="/images/xssuiredressing1.png" alt="UI Redressing 1" style="width:100%;max-width:300px">
+<img id="myImg" src="/images/xssuiredressing1.png" alt="UI Redressing 1" style="width:100%;max-width:100%">
 <!-- The Modal -->
 <div id="myModal" class="modal">
 
@@ -77,6 +77,20 @@ Even though the page that is expected to load looks similar to this:
 
 
 When the victim clicks the link the login page below will load:
+
+<img id="myImg" src="/images/xssuiredressing2.png" alt="UI Redressing 2" style="width:100%;max-width:100%">
+<!-- The Modal -->
+<div id="myModal" class="modal">
+
+  <!-- The Close Button -->
+  <span class="close">&times;</span>
+
+  <!-- Modal Content (The Image) -->
+  <img class="modal-content" id="img01">
+
+  <!-- Modal Caption (Image Text) -->
+  <div id="caption"></div>
+</div>
 
 ![UI Redressing 2](/images/xssuiredressing2.png "UI Redressing 2")
 

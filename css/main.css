@@ -332,7 +332,7 @@ a:hover {
   margin: auto;
   display: block;
   width: 80%;
-  max-width: 700px;
+  max-width: 100%;
 }
 
 /* Caption of Modal Image (Image Text) - Same Width as the Image */

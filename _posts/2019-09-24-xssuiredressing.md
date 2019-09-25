@@ -86,7 +86,7 @@ When the victim clicks the link the login page below will load:
   <span class="close">&times;</span>
 
   <!-- Modal Content (The Image) -->
-  <img class="modal-content" id="img01">
+  <img class="modal-content" id="img02">
 
   <!-- Modal Caption (Image Text) -->
   <div id="caption"></div>

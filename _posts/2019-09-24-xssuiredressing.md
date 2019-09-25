@@ -59,6 +59,19 @@ alue='submit' type='submit'></form>"</script>
 Even though the page that is expected to load looks similar to this:
 
 
+<img id="myImg" src="/images/xssuiredressing1.png" alt="UI Redressing 1" style="width:100%;max-width:300px">
+<!-- The Modal -->
+<div id="myModal" class="modal">
+
+  <!-- The Close Button -->
+  <span class="close">&times;</span>
+
+  <!-- Modal Content (The Image) -->
+  <img class="modal-content" id="img01">
+
+  <!-- Modal Caption (Image Text) -->
+  <div id="caption"></div>
+</div>
 
 ![UI Redressing 1](/images/xssuiredressing1.png "UI Redressing 1")
 

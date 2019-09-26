@@ -12,14 +12,13 @@ For this post we're going to work through the fourth CloudGoat chllenge: ec2_ssr
 This challenge can be found [here](https://github.com/RhinoSecurityLabs/cloudgoat/tree/master/scenarios/ec2_ssrf).
 
 According to the documentation the goal for this challenge is:
-```
-Starting as the IAM user Solus, the attacker discovers they have ReadOnly permissions to a Lambda function, where 
+``` Starting as the IAM user Solus, the attacker discovers they have ReadOnly permissions to a Lambda function, where 
 hardcoded secrets lead them to an EC2 instance running a web application that is vulnerable to server-side request 
 forgery (SSRF). After exploiting the vulnerable app and acquiring keys from the EC2 metadata service, the attacker 
 gains access to a private S3 bucket with a set of keys that allow them to invoke the Lambda function and complete 
-the scenario.
-```
------- 
+the scenario. ```
+
+ 
 
 ## Lets Begin
 First we’ll validate the credentials

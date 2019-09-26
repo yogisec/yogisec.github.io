@@ -115,9 +115,13 @@ Neat its a new user ‘wrex’
 
 Lets use wrex to enumerate:
 ```
-run lambda__enum —region us-east-1   #Fails no permissions
-run iam__bruteforce_permissions    #Works 86 allow permissions found looks like everything is tied to an ec2
-```
+run lambda__enum —region us-east-1
+``` 
+>This should fail - no permissions
+
+    run iam__bruteforce_permissions    #Works 86 allow permissions found looks like everything is tied to an ec2
+    
+>This should work with 86 allow permissions, and they all seem to be ec2 permissions
 
 Lets see what instances are running:
 

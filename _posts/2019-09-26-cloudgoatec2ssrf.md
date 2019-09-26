@@ -13,7 +13,8 @@ This challenge can be found [here](https://github.com/RhinoSecurityLabs/cloudgoa
 
 According to the documentation the goal for this challenge is:
 
-``` Starting as the IAM user Solus, the attacker discovers they have ReadOnly permissions to a Lambda function, where 
+```
+Starting as the IAM user Solus, the attacker discovers they have ReadOnly permissions to a Lambda function, where 
 hardcoded secrets lead them to an EC2 instance running a web application that is vulnerable to server-side request 
 forgery (SSRF). After exploiting the vulnerable app and acquiring keys from the EC2 metadata service, the attacker 
 gains access to a private S3 bucket with a set of keys that allow them to invoke the Lambda function and complete 

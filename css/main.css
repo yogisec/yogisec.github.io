@@ -173,6 +173,7 @@ a:hover {
   border: 1px solid #ddd;
   background-color: #eee;
   padding: 0 .4em;
+  overflow-y: scroll;
 }
 
 .post p {

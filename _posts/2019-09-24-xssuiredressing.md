@@ -59,18 +59,18 @@ alue='submit' type='submit'></form>"</script>
 Even though the page that is expected to load looks similar to this:
 
 
-<img id="myImg" src="/images/xssuiredressing1.png" alt="UI Redressing 1" style="width:100%;max-width:100%">
+<!-- <img id="myImg" src="/images/xssuiredressing1.png" alt="UI Redressing 1" style="width:100%;max-width:100%"> -->
 <!-- The Modal -->
-<div id="myModal" class="modal">
+<div id="myModal2" class="modal">
+  <span class="close cursor" onclick="closeModal()">&times;</span>
+  
+  <div class="modal-content">
+    <div class="mySlides">
+      <div class="numbertext">1 / 4</div>
+      <img src="/images/xssuiredressing1.png" alt="UI Redressing 1" style="width:100%">
+    </div>
+  </div>    
 
-  <!-- The Close Button -->
-  <span class="close">&times;</span>
-
-  <!-- Modal Content (The Image) -->
-  <img class="modal-content" id="img01">
-
-  <!-- Modal Caption (Image Text) -->
-  <div id="caption"></div>
 </div>
 
 ![UI Redressing 1](/images/xssuiredressing1.png "UI Redressing 1")

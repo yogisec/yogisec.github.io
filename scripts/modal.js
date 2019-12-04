@@ -18,3 +18,16 @@ var span = document.getElementsByClassName("close")[0];
 span.onclick = function() {
   modal.style.display = "none";
 }
+
+
+//modal attempt 2
+
+// Open the Modal
+function openModal2() {
+  document.getElementById("myModal2").style.display = "block";
+}
+
+// Close the Modal
+function closeModal2() {
+  document.getElementById("myModal2").style.display = "none";
+}

@@ -13,6 +13,7 @@ body {
     overflow-x: hidden;
     transition: 0.5s;
     padding-top: 60px;
+    text-align: left;
 
 }
 
@@ -49,3 +50,4 @@ body {
     .sidenav {padding-top: 15px;}
     .sidenav a {font-size: 18px;}
 }
+

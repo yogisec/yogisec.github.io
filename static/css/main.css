@@ -44,6 +44,10 @@ body {
 
 }
 
+.sidenav hr {
+    border-color: #818181;
+}
+
 .sidenav h3 {
     padding: 8px 8px 2px 20px;
     font-size:20px;

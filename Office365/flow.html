@@ -178,9 +178,21 @@ func main() {
                         <img src="../static/images/Office365/flow/dlp.png" alt="Data Loss Protection" style="width:100%"><br />
                         <h5>Logging?</h5>
                         <p>Good news, logging does exist. Bad news, its not the greatest. In the Office365 Admin 'Security & Compliance' portal there is an option to perform an audit log search. This search provides the ability to search logs across the entire Office 365 platform.</p>
-                        
+
                         <hr>
                         <h3 id="fun_nuances">Fun Nuances</h3>
+                        <h5>Import Pre-Built Flows</h5>
+                        <p>Flows can be built in one tenant, saved, exported and then later imported with ease to another account. The account can be in another tenant.</p>
+                        <h5>Disabled Accounts</h5>
+                        <p>Once a flow is created, it will continues to run even in the event that the account becomes locked or otherwise disabled.</p>
+                        <h5>Special Connectors</h5>
+                        <p>In the security controls section we discussed DLP controls that prevent certain connectors from mingling with others. As of writing this, there are some special connectors that cannot be added to a policy through the web interface.</p>
+                        <p>The HTTP, Request, and custom connectors are all apart of this group. Interestingly enough, these three connectors are probably the most dangerous. </p>
+                        <p>As of January 25, 2019 it became possible to put controls around these connectors. There are two ways to do so. The first is to use the Flow powershell cmdlet. This is not something that many tenant admins will do. The second option is to import a template into flow that will define a policy for you. Again, this is not something that many admins will do.</p>
+                        <p>For more information and how to implement controls around these connectors check out this announcement from Microsoft: https://flow.microsoft.com/en-us/blog/introducing-http-and-custom-connector-support-for-data-loss-prevention-policies/</p>
+                        <h5>Flow Failures</h5>
+                        <p>If a flow fails encounters and error while it is processing it exits much like any other program that encounters an error while trying to execute. Unlike other programs when a Flow fails it sends a failure notification to the owner of the flow. This is a really helpful feature if flows are being leveraged for business tasks. If however, the flow is being used for malicious purposes this is less than ideal behavior.</p>
+                        <p>The easiest way to circumvent this behavior is to ensure the flow never fails. The easiest way to accomplish this is to introduce error handling through try/catch blocks.</p>
                         <hr>
                     </div><!-- /.blog-post -->
                 </div><!-- /.blog-main -->

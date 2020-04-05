@@ -99,3 +99,32 @@ pre code {
     display: block;
 }
 
+/*
+* Post Nav Formatting
+*/
+.post-sidebar .nav {
+    display: block;
+    padding: 4px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #767676;
+}
+.post-sidebar .nav a{
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #767676;
+}
+.post-sidebar .nav li{
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #767676;
+}
+
+.post-sidebar a {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #767676;
+}

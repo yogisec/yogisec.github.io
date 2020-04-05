@@ -26,7 +26,7 @@
               <div class="row">
         
                 <div class="col-sm-8 blog-main">
-                    <div class="blog-post" data-spy="scroll" data-target="#sidebar" data-offset="0">
+                    <div class="blog-post" data-spy="scroll" data-target="#sidebar" data-offset="15">
                         <h3 id="what_is_it">What is it?</h3>
                         <p>Flow allows you to automate all kinds of things. The most powerful feature is how Flow is hooked into almost every single application within Office 365.</p>
                         <p>Flow leverages 'Connectors' that allow applications to be easily connected together. Connectors consist of two parts; triggers and actions. Triggers are what start a flow and actions are the things that Flow is programed to do.</p>
@@ -256,20 +256,55 @@ func main() {
                 </div><!-- /.blog-main -->
 
                 <!-- Blog Side Bar-->
-                <div class="col-sm-3 col-sm-offset-1 blog-sidebar" data-spy="affix" data-offset-top="10">
-                    <div class="sidebar-module">
-                        <nav id=sidebar>
-                            <nav class="nav nav-pills flex-column" >
-                                <a class="nav-link" href="#what_is_it">What is it</a>
-                                <a class="nav-link" href="#event_triggers">Event Triggers</a>
-                                <a class="nav-link" href="#data_exfiltration">Data Exfiltration</a>
-                                <a class="nav-link" href="#persistence">Persistence</a>
-                                <a class="nav-link" href="#internal_network">Internal Network</a>
-                                <a class="nav-link" href="#security_controls">Security Controls</a>
-                                <a class="nav-link" href="#fun_nuances">Fun Nuances</a>
-                            </nav>
-                        </nav>
-                    </div><!-- /.sidbar-module-->
+                <div class="col-md-3" id=sidebar data-spy="affix" data-offset-top="10">
+                    <h5 id="top">contents</h5>
+                    <nav class="post-sidebar hidden-print hidden-sm hidden-xs affix" id="post-nav">
+                        <ul class="nav post-sidenav"> 
+                            <li class=""> <a href="#what_is_it">What is it</a> </li>
+                            <li class=""> <a href="#event_triggers">Event Triggers</a>
+                                <ul class="nav"> 
+                                    <li class=""><a href="#triggers-request">Request</a> </li>
+                                    <li class=""><a href="#triggers-email">Email</a> </li> 
+                                    <li class=""><a href="#triggers-schedule">Schedule</a> </li>
+                                    <li class=""><a href="#triggers-created">When a Document is Created</a> </li>  
+                                    <li class=""><a href="#triggers-other">Others</a> </li>    
+                                </ul> 
+                            </li>
+                            <li class=""> <a href="#data_exfiltration">Data Exfiltration</a> 
+                                <ul class="nav"> 
+                                    <li class=""><a href="#exfil-forward">Forward a Copy of All Emails</a> </li>
+                                    <li class=""><a href="#exfil-sharepoint">New SharPoint File -> HTTP POST</a> </li> 
+                                    <li class=""><a href="#exfil-onedrive">New OneDrive File -> SFTP</a> </li>   
+                                </ul> 
+                            </li>
+                            <li class=""> <a href="#persistence">Persistence</a> </li>
+                            <li class=""> <a href="#internal_network">Internal Network</a> 
+                                <ul class="nav"> 
+                                    <li class=""><a href="#internal-onedrive">OneDrive</a> </li>
+                                    <li class=""><a href="#internal-data-gateway">Data Gateway</a> </li> 
+                                    <li class=""><a href="#exfil-onedrive">New OneDrive File -> SFTP</a> </li>   
+                                </ul> 
+                            </li>
+                            <li class=""> <a href="#security_controls">Security Controls</a>
+                                <ul class="nav"> 
+                                    <li class=""><a href="#control-dlp">Data Loss Prevention</a> </li>
+                                    <li class=""><a href="#control-log">Logging</a> </li> 
+                                    <li class=""><a href="#contorl-event-types">Event Types</a> </li>  
+                                    <li class=""><a href="#contorl-event-details">Event Details</a> </li> 
+                                    <li class=""><a href="#contorl-flow-details">Flow Details</a> </li>
+                                    <li class=""><a href="#contorl-quotas">Quotas</a> </li>
+                                </ul>  
+                            </li>
+                            <li class=""> <a href="#fun_nuances">Fun Nuances</a> 
+                                <ul class="nav"> 
+                                    <li class=""><a href="#fun-import">Import Pre-Built Flows</a> </li>
+                                    <li class=""><a href="#fun-disabled">Disabled Accounts</a> </li>
+                                    <li class=""><a href="#fun-special">Special Connectors</a> </li>
+                                    <li class=""><a href="#fun-failure">Flow Failures</a> </li>
+                                </ul>  
+                            </li>
+                            <li class=""> <a href="#top">Top</a> </li>
+                    </nav>
                 </div><!-- /.blog-sidebar -->
 
             </div><!-- /.row -->
@@ -296,8 +331,6 @@ func main() {
 </div>
 
 
-
-</body>
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>

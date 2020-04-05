@@ -12,13 +12,13 @@
 <body>
 
     <div class="site-wrapper">
-      <div id="mySidenav" class="sidenav" include-nav="/static/nav.html">
+      <div id="mySidenav" class="sidenav sticky" include-nav="/static/nav.html">
         </div>
-        <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
+        <span class="sticky" style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
     
         <div class="container">
             <div class="blog-header">
-                <h1 class="blog-title">flow</h1>
+                <h1 class="blog-title" id="top">flow</h1>
                 <p class="lead blog-description">Office365's built in version of If This Then That (IFTT)</p>
                 <hr>
               </div>
@@ -257,8 +257,9 @@ func main() {
 
                 <!-- Blog Side Bar-->
                 <div class="col-md-3" id=sidebar data-spy="affix" data-offset-top="10">
-                    <h5 id="top">contents</h5>
-                    <nav class="post-sidebar hidden-print hidden-sm hidden-xs affix" id="post-nav">
+                    
+                    <nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id="post-nav">
+                        <h5>contents</h5>
                         <ul class="nav post-sidenav"> 
                             <li class=""> <a href="#what_is_it">What is it</a> </li>
                             <li class=""> <a href="#event_triggers">Event Triggers</a>

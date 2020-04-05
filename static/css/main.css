@@ -8,6 +8,13 @@ body {
     background-color: #f2f2f2;
   }
 
+.sticky {
+    position: -webkit-sticky;
+    position: sticky;
+    top:0;
+}
+
+
 /* Extra markup and styles for table-esque vertical and horizontal centering */
 .site-wrapper {
   display: table;

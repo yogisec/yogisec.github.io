@@ -44,22 +44,22 @@
                                 <li>When document is created</li>
                             </ul>
                         </p>
-                        <h5>Request</h5>
+                        <h5 id="triggers-request">Request</h5>
                         <p>The triggers within the Request connector is my favorite. The tirgger sets up a listening URL and accepts requests just like any other API. During the setup process a json schema is defined and all of the actions leverage data passed in through the API call. More details on this connector later.</p>
                         <img src="../static/images/Office365/flow/blank_request.png" alt="Blank Request" class="img-fluid">
-                        <h5>Email</h5>
+                        <h5 id="triggers-email">Email</h5>
                         <p>The Office 365 Outlook triggers can start for a variety of reasons. Some are going to be more useful than others. One of the more useful things to do is to start the flow as soon as a new email arrives.</p>
                         <img src="../static/images/Office365/flow/email_triggers.png" alt="Email Triggers" class="img-fluid">
-                        <h5>Schedule</h5>
+                        <h5 id="triggers-schedule">Schedule</h5>
                         <p>Much like it sounds the Schedule trigger will run based off a pre-defined time. Think of it as a cron job or a scheduled task within Office365. In the example below the trigger fires every 5 minutes. The trigger is fairly simple to setup. The only required fields are to define the interval and frequency. Within the advanced options, start time and time zone can be filled in.</p>
                         <img src="../static/images/Office365/flow/schedule.png" alt="Schedule" class="img-fluid">
-                        <h5>When a Document is Created</h5>
+                        <h5 id="triggers-created">When a Document is Created</h5>
                         <p>This trigger exsists for both OneDrive and for SharePoint. The trigger for OneDrive needs only a folder name.</p>
                         <img src="../static/images/Office365/flow/onedrive_file_created.png" alt="OneDrive File Created" class="img-fluid">
                         <p>The trigger for SharePoint needsa  little more detail, but not much. This trigger needs a SharePoint site and the folder to monitor.</p>
                         <img src="../static/images/Office365/flow/sharepoint_file_created.png" alt="SharePoint File Created" class="img-fluid">
                         <p>I feel its pertinent to add you can only access SharePoint sites and folders which you (or the account being leveraged) has access to.</p>
-                        <h5>Others</h5>
+                        <h5 id="triggers-other">Others</h5>
                         <p>Other connectors you may find to have useful triggers:
                             <ul>
                                 <li>Twitter - When a tweet is posted</li>
@@ -77,19 +77,19 @@
                         <h3 id="data_exfiltration">Data Exfiltration</h3>
                         <p>Flow has hundreds of connectors. Many of them can be used for data exfiltration. With the help of a purpose built flow, data can be exfiltrated automatically. Below are a few examples that are designed to exfiltrate data.</p>
                         <p>Keep in mind that these are just examples and they can be mixed and matched to meet whatever needs you may have.</p>
-                        <h5>Forward a Copy of All Emails</h5>
+                        <h5 id="exfil-forward">Forward a Copy of All Emails</h5>
                         <p>One popular way of persistent data exfiltration is to send a copy of all incoming emails to an outside email address by way of an outlook rule.</p>
                         <p>This technique is popular enough that defenders are now keen to this methodology and make an active effort to check for and discover the malicious rules. Another way to accomplish this is to leverage Flow.</p>
                         <p>The flow below takes an email that arrives in the 'Inbox' and sends it to an external address of our choice.</p>
                         <img src="../static/images/Office365/flow/email_flow.png" alt="Email Flow" class="img-fluid">
                         <p>The next step of this flow shouldbe to delete the email from the sent folder. I'll let you figure out the best way to accomplish this.</p>
-                        <h5>New SharePoint File -> HTTP POST</h5>
+                        <h5 id="exfil-sharepoint">New SharePoint File -> HTTP POST</h5>
                         <p>Another way to move data out of an organization is by use the HTTP connector. The flow below leverages the SharePoint connector to act as the trigger when a file is created. The trigger is monitoring the jellypark SharePoint server, specifically the hr site.</p>
                         <p>Within the site, the trigger is monitoring the employee-records folder. Any time a new file is created the flow begins and moves into the action section.</p>
                         <p>This flows action is to use the HTTP connector to make a POST request to an external website (hxxps://listener.somelisteningwebsite.com). The body of the post request is very important. it is JSON data which contains two dynamic variables depending on the file created in the trigger.</p>
                         <p>The value of the 'File name' variable is the name of the file created and the 'File Content' variable is filled with the contents of the file. All of this data is wrapped up into JSON so that when it arrives at the listener website it can be easily recontrusted.</p>
                         <img src="../static/images/Office365/flow/sharepoint_http.png" alt="SharePoint HTTP" class="img-fluid">
-                        <h5>New OneDrive File -> SFTP</h5>
+                        <h5 id="exfil-onedrive">New OneDrive File -> SFTP</h5>
                         <p>Much like the SharePoint trigger waiting for a new file to be created within a folder, the OneDrive trigger for new file creation works the same way. When configuring the 'When a file is created' trigger the only option required is to set the folder to monitor.</p>
                         <p>For the action portion of this flow we are going to leverage the SFTP connector to send the file to a remote server. Before we can use the connector the SFTP connection needs to be defined. This connection can be used for multiple flows. At minimum to establish the connection it needs:
                             <ul>
@@ -121,10 +121,10 @@
                         <hr>
                         <h3 id="internal_network">Internal Network</h3>
                         <p>Crossing the boundary from Office 365 to the internal network can be accomplished a couple of different ways with Flow. The next couple of sections cover how this can be accomplished.</p>
-                        <h5>OneDrive</h5>
+                        <h5 id="internal-onedrive">OneDrive</h5>
                         <p>The One Drive connector allows us to read and write files. In most enterprises the users profile is sync'd between One Drive and there local machine. By having access to One Drive we as attackers can write files directly to a users desktop.</p>
                         <p>Once the files are in place a bit of social engineering and we have access to the internal network.</p>
-                        <h5>Data Gateway</h5>
+                        <h5 id="internal-data-gateway">Data Gateway</h5>
                         <p>Data Gateway's are fascinating...currently holding on releasing any additional information for personal reasons.</p>
                         <img src="../static/images/Office365/flow/data_gateway.png" alt="Data Gateway" class="img-fluid"><br />
                         <br /><pre><code>package main
@@ -171,14 +171,14 @@ func main() {
 }</code></pre>
                         <hr>
                         <h3 id="security_controls">Security Controls</h3>
-                        <h5>Data Loss Prevention</h5>
+                        <h5 id="control-dlp">Data Loss Prevention</h5>
                         <p>Starting at the E3 license level Flow administrators have the ability to introduce DLP policies. These policies can be used to prevent various connectors from being paired together. The way it works is by classifying data at a high level. Connectors are split between 'Business Data Only' and 'No Business Data Allowed'.</p>
                         <p>When people create new flows they will be unable to mix connectors from one group with connectors from the other.</p>
                         <p>For example in the image below the OneDrive and SharePoint connectors can be used together but neither could be used the Salesforce or Dynamics 365 since they are in seperate groups.</p>
                         <img src="../static/images/Office365/flow/dlp.png" alt="Data Loss Protection" class="img-fluid"><br />
-                        <h5>Logging?</h5>
+                        <h5 id="control-log">Logging?</h5>
                         <p>Good news, logging does exist. Bad news, its not the greatest. In the Office365 Admin 'Security & Compliance' portal there is an option to perform an audit log search. This search provides the ability to search logs across the entire Office 365 platform.</p>
-                        <h5>Flow Event Types</h5>
+                        <h5 id="control-event-types">Flow Event Types</h5>
                         <p>Searching for Flow within the 'Activities' drop down shows seven different event types that can be searched:</p>
                         
                         <table class="table">
@@ -220,17 +220,17 @@ func main() {
                             </tbody>
                         </table>
                         <img src="../static/images/Office365/flow/flow_audit_search.png" alt="Flow Audit Search" class="img-fluid"><br /><br />
-                        <h5>Event Details</h5>
+                        <h5 id="control-event-details">Event Details</h5>
                         <p>Unfortunately the event details are a bit sparse. In most cases the event shows time, activity type, user, ip and if it was successful.</p>
                         <img src="../static/images/Office365/flow/flow_log_1.png" alt="flow_log_1" class="img-fluid"><br /><br />
                         <p>Clicking on 'More information' does show a bit more information but the real details of the Flow are still a mystery.</p>
                         <img src="../static/images/Office365/flow/flow_log_2.png" alt="flow_log_2" class="img-fluid"><br /><br />
                         <p>The image above shows which connectors which were used, which is valuable information to have. The downside is that the intent of the Flow is still obscured from us, even in after looking at the details of the audit log.</p>
-                        <h5>Flow Details URL</h5>
+                        <h5 id="control-flow-details">Flow Details URL</h5>
                         <p>At first when I saw the page for details I thought it was going to display all of the nitty gritty details of the flow. I expected to see each parameter for the connectors. Unfortunately the details page shows details about who owns the flow, who its been shared to, and if its currently in the 'on' or 'off' state.</p>
                         <img src="../static/images/Office365/flow/flow_details_url.png" alt="flow_details_url" class="img-fluid"><br /><br />
                         <p>Currently there is no way to get the details surrounding exactly what a flow is doing outside of impersonating the user and viewing there flows one at a time.</p>
-                        <h5>Quotas</h5>
+                        <h5 id="control-quotas">Quotas</h5>
                         <p>In the Flow admin center under the 'Tenant' menu there is an option to see current usage statistics for Flows across the entire Office tenant.</p>
                         <img src="../static/images/Office365/flow/flow_admin_quota.png" alt="flow_admin_quota" class="img-fluid"><br /><br />
                         <p>A report can be downloaded that shows some useful information about the environment. To download the report you have to request it, then once the data is pulled together a download link is provided.</p>
@@ -239,16 +239,16 @@ func main() {
                         <p>Examining the number of runs consumed could be a indicator of a Flow being used for malicious purposes. It could also just be a flow that runs on a regular basis. Pivoting off this field provides some direction where previously there was no direction or way to begin to find potentially malicious flows.</p>
                         <hr>
                         <h3 id="fun_nuances">Fun Nuances</h3>
-                        <h5>Import Pre-Built Flows</h5>
+                        <h5 id="fun-import">Import Pre-Built Flows</h5>
                         <p>Flows can be built in one tenant, saved, exported and then later imported with ease to another account. The account can be in another tenant.</p>
-                        <h5>Disabled Accounts</h5>
+                        <h5 id="fun-disabled">Disabled Accounts</h5>
                         <p>Once a flow is created, it will continues to run even in the event that the account becomes locked or otherwise disabled.</p>
-                        <h5>Special Connectors</h5>
+                        <h5 id="fun-special">Special Connectors</h5>
                         <p>In the security controls section we discussed DLP controls that prevent certain connectors from mingling with others. As of writing this, there are some special connectors that cannot be added to a policy through the web interface.</p>
                         <p>The HTTP, Request, and custom connectors are all apart of this group. Interestingly enough, these three connectors are probably the most dangerous. </p>
                         <p>As of January 25, 2019 it became possible to put controls around these connectors. There are two ways to do so. The first is to use the Flow powershell cmdlet. This is not something that many tenant admins will do. The second option is to import a template into flow that will define a policy for you. Again, this is not something that many admins will do.</p>
                         <p>For more information and how to implement controls around these connectors check out this announcement from Microsoft: https://flow.microsoft.com/en-us/blog/introducing-http-and-custom-connector-support-for-data-loss-prevention-policies/</p>
-                        <h5>Flow Failures</h5>
+                        <h5 id="fun-failure">Flow Failures</h5>
                         <p>If a flow fails encounters and error while it is processing it exits much like any other program that encounters an error while trying to execute. Unlike other programs when a Flow fails it sends a failure notification to the owner of the flow. This is a really helpful feature if flows are being leveraged for business tasks. If however, the flow is being used for malicious purposes this is less than ideal behavior.</p>
                         <p>The easiest way to circumvent this behavior is to ensure the flow never fails. The easiest way to accomplish this is to introduce error handling through try/catch blocks.</p>
                         <hr>
@@ -281,8 +281,7 @@ func main() {
                             <li class=""> <a href="#internal_network">Internal Network</a> 
                                 <ul class="nav"> 
                                     <li class=""><a href="#internal-onedrive">OneDrive</a> </li>
-                                    <li class=""><a href="#internal-data-gateway">Data Gateway</a> </li> 
-                                    <li class=""><a href="#exfil-onedrive">New OneDrive File -> SFTP</a> </li>   
+                                    <li class=""><a href="#internal-data-gateway">Data Gateway</a> </li>   
                                 </ul> 
                             </li>
                             <li class=""> <a href="#security_controls">Security Controls</a>

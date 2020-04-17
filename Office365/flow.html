@@ -12,9 +12,12 @@
 <body>
 
     <div class="site-wrapper">
-      <div id="mySidenav" class="sidenav sticky" include-nav="/static/nav.html">
+      <div class="sticky top-bar"> 
+        <div id="mySidenav" class="sidenav sticky" include-nav="/static/nav.html">
         </div>
         <span class="sticky hamburger" style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
+      </div>
+
     
         <div class="container">
             <div class="blog-header">
@@ -256,7 +259,7 @@ func main() {
                 </div><!-- /.blog-main -->
 
                 <!-- Blog Side Bar-->
-                <div class="col-md-3" id=sidebar data-spy="affix" data-offset-top="10">
+                <div class="col-md-3" id=sidebar data-spy="affix" data-offset-top="0">
                     
                     <nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id="post-nav">
                         <h5>contents</h5>

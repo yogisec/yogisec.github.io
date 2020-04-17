@@ -27,7 +27,7 @@ function includeHTML() {
 }
 
 function openNav() {
-    document.getElementById("mySidenav").style.width = "300px";
+    document.getElementById("mySidenav").style.width = "400px";
     
 }
 

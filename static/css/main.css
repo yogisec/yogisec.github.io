@@ -36,6 +36,10 @@ body {
 .blog-header {
 }
 
+.top-bar {
+    background: #C5CBE3;
+    z-index:100;
+}
 /*
  * Navigation slide out
 */
@@ -117,6 +121,11 @@ body {
 }
 
 /*
+ * END Navigation slide out
+*/
+
+
+/*
 * Code Block Formatting
 */
 pre code {
@@ -131,6 +140,7 @@ pre code {
     word-wrap: break-word;
     padding: 9.5px;
     display: block;
+    white-space: normal;
 }
 
 /*

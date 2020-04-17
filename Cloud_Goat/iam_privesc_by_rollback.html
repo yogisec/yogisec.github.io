@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <script src="../static/js/nav.js"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="../static/css/main.css">
+</head>
+<body>
+
+    <div class="site-wrapper">
+      <div id="mySidenav" class="sidenav sticky" include-nav="/static/nav.html">
+        </div>
+        <span class="sticky hamburger" style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
+    
+        <div class="container">
+            <div class="blog-header">
+                <h1 class="blog-title" id="top">iam_privesc_by_rollback</h1>
+                <hr>
+              </div>
+        
+              <div class="row">
+        
+                <div class="col-sm-8 blog-main">
+                    <div class="blog-post" data-spy="scroll" data-target="#sidebar" data-offset="15">
+                        <p>For this challenge we'll start by leveraging the Pacu tool to do some basic account enumeration:</p>
+                        <pre><code>run iam__enum_account</code></pre>
+                        <p>Looking at the output, we do not have enough permission.</p>
+                        <pre><code>iam__bruteforce_permissions<br />iam__enumer_users_roles_policies_groups</code></pre>
+                        <p>Then within Pacu we can run the 'Data' command to see information associated with the finds. Looks like tehre is a specific policy listed for our user account.</p>
+                        <pre><code>aws iam list-policy-versions --policy-arn arn:aws:iam::94488810:policy/cg-raynor-policy</code></pre>
+                        <p>Notice default version is 1</p>
+                        <p>#Screenshot here</p>
+                        <pre><code>aws iam get-policy-version --policy arn:aws:iam::94488810:policy/cg-raynor-policy --version-id v3</code></pre>
+                        <p>Notice version</p>
+                        <pre><code>aws iam set-default-policy-version --policy arn:aws:iam::94488810:policy/cg-raynor-policy --version-id v3</code></pre>
+                        <p>Now run the list policy versions command, notice default is now 3</p>
+                        <pre><code>aws iam list-policy-versions --policy-arn arn:aws:iam::94488810:policy/cg-raynor-policy</code></pre>
+                        <p>And we can now run aws__enum_account. Which in this case we have full administrative rights.</p>
+                        <p>Place holder for initial port of all of this from another format. Much more detail coming.</p>
+                    </div><!-- /.blog-post -->
+                </div><!-- /.blog-main -->
+
+                <!-- Blog Side Bar-->
+                <div class="col-md-3" id=sidebar data-spy="affix" data-offset-top="10">
+                    
+                    <nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id="post-nav">
+                        <h5>contents</h5>
+                        <ul class="nav post-sidenav"> 
+                            <li class=""> <a href="#what_is_it">What is it</a> </li>
+                            <li class=""> <a href="#event_triggers">Event Triggers</a>
+                                <ul class="nav"> 
+                                    <li class=""><a href="#triggers-request">Request</a> </li>
+                                    <li class=""><a href="#triggers-email">Email</a> </li> 
+                                    <li class=""><a href="#triggers-schedule">Schedule</a> </li>
+                                    <li class=""><a href="#triggers-created">When a Document is Created</a> </li>  
+                                    <li class=""><a href="#triggers-other">Others</a> </li>    
+                                </ul> 
+                            </li>
+                            <li class=""> <a href="#data_exfiltration">Data Exfiltration</a> 
+                                <ul class="nav"> 
+                                    <li class=""><a href="#exfil-forward">Forward a Copy of All Emails</a> </li>
+                                    <li class=""><a href="#exfil-sharepoint">New SharPoint File -> HTTP POST</a> </li> 
+                                    <li class=""><a href="#exfil-onedrive">New OneDrive File -> SFTP</a> </li>   
+                                </ul> 
+                            </li>
+                            <li class=""> <a href="#persistence">Persistence</a> </li>
+                            <li class=""> <a href="#internal_network">Internal Network</a> 
+                                <ul class="nav"> 
+                                    <li class=""><a href="#internal-onedrive">OneDrive</a> </li>
+                                    <li class=""><a href="#internal-data-gateway">Data Gateway</a> </li>   
+                                </ul> 
+                            </li>
+                            <li class=""> <a href="#security_controls">Security Controls</a>
+                                <ul class="nav"> 
+                                    <li class=""><a href="#control-dlp">Data Loss Prevention</a> </li>
+                                    <li class=""><a href="#control-log">Logging</a> </li> 
+                                    <li class=""><a href="#contorl-event-types">Event Types</a> </li>  
+                                    <li class=""><a href="#contorl-event-details">Event Details</a> </li> 
+                                    <li class=""><a href="#contorl-flow-details">Flow Details</a> </li>
+                                    <li class=""><a href="#contorl-quotas">Quotas</a> </li>
+                                </ul>  
+                            </li>
+                            <li class=""> <a href="#fun_nuances">Fun Nuances</a> 
+                                <ul class="nav"> 
+                                    <li class=""><a href="#fun-import">Import Pre-Built Flows</a> </li>
+                                    <li class=""><a href="#fun-disabled">Disabled Accounts</a> </li>
+                                    <li class=""><a href="#fun-special">Special Connectors</a> </li>
+                                    <li class=""><a href="#fun-failure">Flow Failures</a> </li>
+                                </ul>  
+                            </li>
+                            <li class=""> <a href="#top">Top</a> </li>
+                    </nav>
+                </div><!-- /.blog-sidebar -->
+
+            </div><!-- /.row -->
+        </div> <!--/.container-->
+    </div> <!--/.wrapper -->
+
+<!-- Modals -->
+<div class="modal fade" id="redressing1Modal" tabindex="-1" role="dialog" aria-labelledby="redressing1ModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/xssuiredressing1.png" style="width:300%;align-self:center;">
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="redressing2Modal" tabindex="-1" role="dialog" aria-labelledby="redressing2ModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/xssuiredressing2.png" style="width:300%;align-self:center;">
+    </div>
+  </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script>includeHTML();</script>
+</html> 
+

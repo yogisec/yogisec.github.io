@@ -16,8 +16,10 @@ body {
 
 .affix {
     top: 100px;
-    z-index: 9999 !important;
+    z-index: 101 !important;
 }
+/* z-index was 9999 */
+
 /* Extra markup and styles for table-esque vertical and horizontal centering */
 .site-wrapper {
   display: table;
@@ -34,9 +36,6 @@ body {
 .cover-container {
   margin-right: auto;
   margin-left: auto;
-}
-
-.blog-header {
 }
 
 .top-bar {
@@ -127,6 +126,17 @@ body {
  * END Navigation slide out
 */
 
+/*
+#########################################################################################
+* Blog Post Formatting
+#########################################################################################
+*/
+.blog-header {
+}
+
+.blog-post p,h5 {
+    margin-top:1rem;
+}
 
 /*
 * Code Block Formatting
@@ -147,7 +157,7 @@ pre code {
 }
 
 /*
-* Post Nav Formatting
+* Blog Post Nav Formatting
 */
 .post-sidebar .nav {
     display: block;
@@ -175,3 +185,9 @@ pre code {
     font-weight: 500;
     color: #767676;
 }
+
+/*
+#########################################################################################
+* End Blog Post Formatting
+#########################################################################################
+*/

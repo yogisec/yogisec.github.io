@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <script src="../static/js/nav.js"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="../static/css/main.css">
+</head>
+<body>
+
+    <div class="site-wrapper">
+      <div class="sticky top-bar"> 
+        <div id="mySidenav" class="sidenav sticky" include-nav="/static/nav.html">
+        </div>
+        <span class="sticky hamburger" style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
+      </div>
+
+    
+        <div class="container">
+            <div class="blog-header">
+                <h1 class="blog-title" id="top">cloudtrail_anomaly_detection</h1>
+                <hr>
+              </div>
+        
+              <div class="row">
+        
+                <div class="col-sm-8 blog-main">
+                    <div class="blog-post" data-spy="scroll" data-target="#sidebar" data-offset="15">
+                        <p>This is going to be an ongoing post for awhile. It was inspired by Netflix's skunworks group who gave a talk at re:invent 2019 in regards to building a cloudtrail anomaly detection platform leveraging amazon services. I like the idea, but not the deployment method netflix showcased. It didn't scale to the size I needed it to. There was also some aspects that I reworked to lessen the load (and cost) of Athena queries.</p>
+                        
+                        <h3 id="dataflow">Data Flow</h3>
+                        <p>Below is how the data and api calls are made within aws. The code in the middle is several Lambda scripts but for the data flow it made sense to consolodate them into a single entity.</p>
+                        <img src="../static/images/AWS/cloudtrail_anomaly_detection/data_flow.png" alt="data-flow" class="img-fluid">
+                        <p>An high level explaination for each of the steps in the diagram is below:
+                            <ol>
+                                <li>Query main orgaization account for a list of all accounts within the organization</li>
+                                <li>Configure Athena tables, start query execution</li>
+                                <li>Athena queries the CloudTrail S3 bucket(s) for all activity per account for the past hour</li>
+                                <li>Athena sends results to S3 results bucket</li>
+                                <li>Athena returns 'Success' message with along with the results object</li>
+                                <li>Scripts grab the results and parse them by unique role, event source, and event name</li>
+                                <li>Each unique record is checked against DynamoDB table. If its new alert (if it meets criteria).</li>
+                                <li>Send alerts to Splunk</li>
+                            </ol>
+                        </p>
+                        <hr>
+                        
+                    </div><!-- /.blog-post -->
+                </div><!-- /.blog-main -->
+
+                <!-- Blog Side Bar-->
+                <div class="col-md-3" id=sidebar data-spy="affix-bottom" data-offset-top="0">
+                    
+                    <nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id="post-nav">
+                        <h5>contents</h5>
+                        <ul class="nav post-sidenav"> 
+                            <li class=""> <a href="#dataflow">Data Flow</a> </li>
+                            <li class=""> <a href="#top">Top</a> </li>
+                    </nav>
+                </div><!-- /.blog-sidebar -->
+            </div><!-- /.row -->
+        </div> <!--/.container-->
+    </div> <!--/.wrapper -->
+
+
+
+
+<!-- Modals -->
+<div class="modal fade" id="list_profiles" tabindex="-1" role="dialog" aria-labelledby="list_profilesModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/iam_list_profiles.png" style="width:200%;align-self:center;">
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="redressing2Modal" tabindex="-1" role="dialog" aria-labelledby="redressing2ModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/xssuiredressing2.png" style="width:300%;align-self:center;">
+    </div>
+  </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script>includeHTML();</script>
+</html> 
+

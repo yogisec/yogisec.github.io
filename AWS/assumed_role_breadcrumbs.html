@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <script src="../static/js/nav.js"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="../static/css/main.css">
+</head>
+<body>
+
+    <div class="site-wrapper">
+      <div class="sticky top-bar"> 
+        <div id="mySidenav" class="sidenav sticky" include-nav="/static/nav.html">
+        </div>
+        <span class="sticky hamburger" style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
+      </div>
+
+    
+        <div class="container">
+            <div class="blog-header">
+                <h1 class="blog-title" id="top">assumed_role_breadcrumbs</h1>
+                <hr>
+              </div>
+        
+              <div class="row">
+        
+                <div class="col-sm-8 blog-main">
+                    <div class="blog-post" data-spy="scroll" data-target="#sidebar" data-offset="15">
+                        <p>Cloudtrail events in AWS offer a lot of visibility into the calls that roles leverage within the platform. Sometimes tracking the original source of the activity can be challenging. When users and other aws services from one account assume role into another hunting the origin can take a bit of backtracking.</p>
+                        <h3 id="scenario">The Scenario</h3>
+                        <p>Let's set up a scenario, and work backwards through the logs. For this scenario we'll pretend that we are alerted to an anomalous api call. This anomaly is a call to the STS get-caller-identity endpoint. The principal ID <code>AROA5B64I5MBKOV6DYPCR</code> has never made a call to this endpoint. The full raw event is below. Next we'll begin to disscet it.</p>
+                        <img src="../static/images/AWS/assumed_role_breadcrumbs/raw_event.png" alt="raw_sts" class="img-fluid">
+                        <p>Digging into this, there are several fields that as an analyst are important to us while we try to unravel the intent behind this call. Lets break them down a bit:</p>
+                        <table class="table">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th scope="col">Field</th>
+                                    <th scope="col">Value</th>
+                                    <th scope="col">Event Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>type</td>
+                                    <td>AssumedRole</td>
+                                    <td>The type of the identity. AssumedRole = temporary credentials made with a role assumption. <a href="https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference-user-identity.html">Learn More</a></td>
+                                </tr>
+                                <tr>
+                                    <td>principalId</td>
+                                    <td>AROA5B64I5MBKOV6DYPCR:power-lambda-session</td>
+                                    <td>This is a unique identifer for the session.</td>
+                                </tr>
+                                <tr>
+                                    <td>eventSource</td>
+                                    <td>sts.amazonaws.com</td>
+                                    <td>This is the service in AWS that was leveraged.</td>
+                                </tr>
+                                <tr>
+                                    <td>eventName</td>
+                                    <td>GetCallerIdentity</td>
+                                    <td>This is the action that was called.</td>
+                                </tr>
+                                <tr>
+                                    <td>sourceIPAddress</td>
+                                    <td>3.208.93.89</td>
+                                    <td>Where the action call came from</td>
+                                </tr>
+                                <tr>
+                                    <td>userName</td>
+                                    <td>power-users-lambda</td>
+                                    <td>The role being leveraged. This field changes purpose, and location depending on the value of the type field. <a href="https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference-user-identity.html">Learn More</a></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <p>Now that we have some basic information about what occured we can continue our analysis. At this point we have a basic understanding of the API call that was made. We know where the calls came from (sploier its an amazon ip) and we also know the role that made the call. At this point I would pivot off of the principalId to see what other calls were made. Our initial alert fired because the GetCallerIdentity call had never been made before. What if other calls were made that had previously been made from this same principal, but this time they were made with a malicious intent?</p>
+                        <p>Luckily for us, after further analysis we find that no additional calls were made. We're still missing pieces to this puzzle however, who made this call and where in AWS did it actually come from?</p>
+                        <hr>
+                        <h3 id="who">Who Made the Call?</h3>
+                        <p>To understand where and who made this call we need to find the inital authentication event tied to this session. We can do that by searching for the <code>eventSource: sts.amazonaws.com</code> and <code>eventName: AssumeRole</code> event in the CloudTrail logs. Its likely that there are going to be several of these events. These occur anytime something leverages a role within the account.</p>
+                        <p>We need to somehow correlate an event (GetCallerIdentity) to an assume role action. To do that there are several fields that can help. In the picture below I've called them out with arrows.</p>
+                        <img src="../static/images/AWS/assumed_role_breadcrumbs/assumerole.png" alt="raw_assumerole" class="img-fluid">
+                        <p>One of the best ways to narrow and better correlate events is with time. Its not foolproof, but it can be a good starting point. The best correlation points are going to be the accessKeyId and the assumeRoleID. Also make note, if you're searching these logs in splunk, kibana, etc. the first event for this principal ID depending on how you've filtered will likely be this event.</p>
+                        <p>Once we have the AssumeRole event the information we are looking for which answers the 'where?' and 'who?' exists within the <code>userIdentity</code> value. In the picture above we can see that the userIdentity has three values:</p>
+                        <table class="table">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th scope="col">Field</th>
+                                    <th scope="col">Value</th>
+                                    <th scope="col">Event Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>type</td>
+                                    <td>AWSAccount</td>
+                                    <td>The request came from another AWS account. <a href="https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference-user-identity.html">Learn More</a></td>
+                                </tr>
+                                <tr>
+                                    <td>principalId</td>
+                                    <td>AROA6OTNF75AHUEQU2DWT:sts-tester</td>
+                                    <td>This is the principalId of the role in the foreign aws account that made the request.</td>
+                                </tr>
+                                <tr>
+                                    <td>accountId</td>
+                                    <td>12121212121212</td>
+                                    <td>This is the account where the assume role request origninated from</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p>Now we know: what was done, who did it, and where the request originated. The next step is start analyzing the Cloudtrail events the <code>12121212121212</code> account. We will determine if the activity we were first alerted on was a result of malicious activity occuring or someone trying something new.</p>
+                        <hr>
+                        <h3 id="initial">Initial AssumeRole Request</h3>
+                        To confirm what we think we know from our previous event, lets look for the initiating assume role event. This will allow us to confirm that the event originated in account <code>12121212121212</code> and confirm the resource that made the request. We can find this initial event by searching for a few key vaules.
+                        <ol>
+                            <li>The principalId that we discovered within the userIdentity key in the previous event: <code>AROA6OTNF75AHUEQU2DWT:sts-tester</code></li>
+                            <li>The assumeRole eventname: <code>AssumeRole</code></li>
+                            <li>The accesKeyId in the responseElement: <code>ASIA5X73I5MBJI37NG6J</code></li>
+                        </ol>
+                        <img src="../static/images/AWS/assumed_role_breadcrumbs/initial_assume_request.png" alt="raw_initialassumerole" class="img-fluid">
+                        <p>The event that we discover (pictured above) provides us with several pieces of context and confirmation. We now know without a doubt that the request came from this account and that we have the correct principal. We can use this information to find the resource within the account and do futher investigation.</p>
+                        <p>How can we tell what the resource is? For these cloudtrail logs its fairly evident through the names that this is tied to a Lambda. But what if the name did not give it away so easily? Do we rummage through every possible endpoint that could make this call?</p>
+                        <p>Looking at the userAgent field is one way we can determine what the resource is. Bare in mind that this is not 100% and the user agent could be changed or perhaps it does not give the resource away quite like the event we're looking at.</p>
+                        <p>Another way is to look at the role that is being leveraged by the principal. In our event the role being leveraged by the lambda can be seen by looking sessionIssuer values. The friendly name of the role being leveraged can be found within the userName field:  </p>
+                        <img src="../static/images/AWS/assumed_role_breadcrumbs/session_issuer.png" alt="raw_initialassumerole" class="img-fluid">
+                        <p>All of the information within sessionIssur can be helpful, in our case the friendly name of <code>power-users-lambda</code> is enough for us. We can now pivot to the IAM roles section of aws within the <code>12121212121212</code> account and search for our <code>power-users-lambda</code> role. The results of that search are below:</p>
+                        <img src="../static/images/AWS/assumed_role_breadcrumbs/trusted_entities.png" alt="raw_trustedentities" class="img-fluid">
+                        <p>The important field here, is the trusted entities column. In this case it shows <code>AWS service: lambda</code>. This tells us that this role can only be used by Lambda scripts. We can quickly bounce over to the lambda section and find our resource. The name of the lambda is <code>sts-tester</code> which we discovered earlier in our principalId within the userIdentity key.</p>
+                        <p>With the Lambda discovered we can analyze the code, find the resource owner and ask them if the behavior is expected. If it is not we have additional digging to do to gain insight into how the lambda became compromised. Fortunatly for us, the developer who owned this lambda was merely attempting to understand how to leverage a lambda cross account.</p>
+                        
+                        <p>Reference Docs:
+                            <ul>
+                                <li><b>https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference-user-identity.html</b></li>
+                                <li>https://docs.aws.amazon.com/IAM/latest/UserGuide/cloudtrail-integration.html</li>
+                                <li>https://aws.amazon.com/blogs/security/how-to-audit-cross-account-roles-using-aws-cloudtrail-and-amazon-cloudwatch-events/</li>
+                            </ul>
+                        </p>
+
+
+
+
+                    </div><!-- /.blog-post -->
+                </div><!-- /.blog-main -->
+
+                <!-- Blog Side Bar-->
+                <div class="col-md-3" id=sidebar data-spy="affix-bottom" data-offset-top="0">
+                    
+                    <nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id="post-nav">
+                        <h5>contents</h5>
+                        <ul class="nav post-sidenav"> 
+                            <li class=""> <a href="#scenario">The Scenario</a> </li>
+                            <li class=""> <a href="#who">Who made the call?</a></li>
+                            <li class=""> <a href="#initial">Initial AssumeRole Request</a> </li>
+                            <li class=""> <a href="#top">Top</a> </li>
+                    </nav>
+                </div><!-- /.blog-sidebar -->
+            </div><!-- /.row -->
+        </div> <!--/.container-->
+    </div> <!--/.wrapper -->
+
+
+
+
+<!-- Modals -->
+<div class="modal fade" id="list_profiles" tabindex="-1" role="dialog" aria-labelledby="list_profilesModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/Cloud_Goat/iam_privesc_by_attachment/iam_list_profiles.png" style="width:200%;align-self:center;">
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="redressing2Modal" tabindex="-1" role="dialog" aria-labelledby="redressing2ModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/xssuiredressing2.png" style="width:300%;align-self:center;">
+    </div>
+  </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script>includeHTML();</script>
+</html> 
+

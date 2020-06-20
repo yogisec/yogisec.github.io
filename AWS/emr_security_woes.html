@@ -116,7 +116,7 @@
                         
                         <h3 id="logging">Logging</h3>
 
-                        <p>As an attacker we can confirm if this worked by checking to see if we have a shell from one of the nodes within the cluster, but how can we as defenders tell if the execution was successful? Good news, all of the activity aobve is logged. By digging into the logs a bit we should be able to tell what commands were executed and where they were executed at.</p>
+                        <p>As an attacker we can confirm if this worked by checking to see if we have a shell from one of the nodes within the cluster, but how can we as defenders tell if the execution was successful? Good news, all of the activity above is logged. By digging into the logs a bit we should be able to tell what commands were executed and where they were executed at.</p>
                         <p>When we setup the cluster we enabled logging to a S3 folder. All of our applications will log to this folder. If everything was left to the defaults the logging folder will be something similar to this: <code>s3://aws-logs-ACCOUNT-us-east-1/elasticmapreduce/CLUSTER ID</code>. Within this folder we can pull container logs out for each application. They'll be in a subfolder similar to this <code>/containers/application_1590702911576_0016/container_1590702911576_0016_02_000001/launch_container.sh.gz</code></p>
 
                         <p>The launch_container.sh log will have exection details for the application when it was called. In the log output below we can see that the last line contains the reverse shell code that we included in the POST request above when we ran our malicious applicaiton.</p>

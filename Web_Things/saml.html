@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-133811886-2"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'UA-133811886-2');
+  </script>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <script src="../static/js/nav.js"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="../static/css/main.css">
+</head>
+<body>
+
+    <div class="site-wrapper">
+      <div class="sticky top-bar">
+      <div id="mySidenav" class="sidenav" include-nav="/static/nav.html">
+        </div>
+        <span class="sticky hamburger" style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
+      </div>
+        <div class="container">
+            <div class="blog-header">
+                <h1 class="blog-title">saml</h1>
+                <hr>
+              </div>
+        
+              <div class="row">
+        
+                <div class="col-sm-8 blog-main">
+                    <div class="blog-post">
+                        <!-- <h2 class="blog-post-title">XSS UI Redirection</h2> -->
+                        <h3 id="what">What is it</h3>
+                        <p>According to <a href="https://tools.ietf.org/html/rfc7522">RFC7522</a> "the Security Assertion Markup Language (SAML) 2.0 is an XML-based framework that alllows identity and security information to be shared across security domains." In a nutshell SAML provides a way to tell a web application you are who you say you are without having to maintain a user/password database within each web application users access. Instead the authentication occurs at a trusted identity provider (IDP) and authorization is left to the web application which people are trying to access once they authenticate with the IDP. </p>
+
+                        <p>Terms:
+                            <ul>
+                                <li>
+                                    <b>Identity Provider (IDP):</b> This is the server that handles the authentication. In the test environment below the IDP is the 'Jellystone IDP.' This is the platform you prove you are who you say you are. An IDP may have back end connections to AD, or it could check against another database of users. IDPs can also help to easily implment mutli-factor authentication. Removing the burden from the application developer.
+                                </li>
+                                <li>
+                                    <b>Service Provider (SP):</b> This is the application a user is attempting to access. In the case of the example below the SP is 'Yogi's SAML App'.
+                                </li>
+                                <li>
+                                    <b>Client:</b> This is you. A client is anyone or anything that is sending a request to the SP.
+                                </li>
+                            </ul>
+                        </p>
+
+                        <hr>
+                        <h3 id="how">How does it work</h3>
+                        <hr>
+                        <h3 id="setup">Setting up test environment</h3>
+                        <hr>
+                        <h3 id="features">Features of the environment</h3>
+                        <hr>
+                        <h3 id="scenarios">The Scenarios</h3>
+                        <table class="table">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th scope="col">Setting</th>
+                                    <th scope="col">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Valid Assertion</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>Want Messages Signed</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>Valid Messages</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>Sign MetaData</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>CVE-2017-11427</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>Want Assertions Signed</td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <hr>
+                        <h3 id="valid_assertion">Valid Assertion</h3>
+                        <hr>
+                        <h3 id="2017-11427">CVE-2017-11427</h3>
+                        <hr>
+                        <h3 id="valid_message">Valid Message</h3>
+                        <hr>
+                        <h3 id="message_signed">Want Messages Signed</h3>
+                        <hr>
+                        <h3 id="assertion_signed">Want Assertions Signed</h3>
+                        <hr>
+                        <h3 id="references">References</h3>
+                        <p>Great References:
+                            <ul>
+                                <li><a href="https://tools.ietf.org/html/rfc7522">RFC7522</a></li>
+                                <li><a href="https://auth0.com/docs/authorization/concepts/authz-and-authn">Authentication vs Authorization</a></li>
+                                <li><a href="https://research.aurainfosec.io/bypassing-saml20-SSO/">Bypassing SAML 2.0 SSO with XML Signature Attracks</a></li>
+                                <li><a href="https://duo.com/blog/duo-finds-saml-vulnerabilities-affecting-multiple-implementations">Duo Finds SAML Vulnerabilities Affecting Multiple Implementations</a></li>
+                            </ul>
+                        </p>
+                    </div><!-- /.blog-post -->
+                </div><!-- /.blog-main -->
+                <!-- Blog Side Bar-->
+                <div class="col-md-3" id=sidebar data-spy="affix-bottom" data-offset-top="0">
+    
+                    <nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id="post-nav">
+                        <h5>contents</h5>
+                        <ul class="nav post-sidenav"> 
+                            <li class=""> <a href="#what">What is it</a> </li>
+                            <li class=""> <a href="#how">How does it work</a></li>
+                            <li class=""> <a href="#setup">Setting up Environment</a></li>
+                            <li class=""> <a href="#features">Features of Environemnt</a></li>
+                            <li class=""> <a href="#scenarios">Scenarios</a></li>
+                            <li class=""> <a href="#valid_assertion">Valid Assertion</a></li>
+                            <li class=""> <a href="#2017-11427">CVE-2017-11427</a></li>
+                            <li class=""> <a href="#valid_message">Valid Message</a></li>
+                            <li class=""> <a href="#message_signed">Want Messages Signed</a></li>
+                            <li class=""> <a href="#assertion_signed">Want Assertions Signed</a></li>
+                            <li class=""> <a href="#references">References</a></li>
+                            <li class=""> <a href="#top">Top</a> </li>
+                    </nav>
+                </div><!-- /.blog-sidebar -->
+            </div><!-- /.row -->
+        </div> <!--/.container-->
+    </div> <!--/.wrapper -->
+
+<!-- Modals -->
+<div class="modal fade" id="redressing1Modal" tabindex="-1" role="dialog" aria-labelledby="redressing1ModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/xssuiredressing1.png" style="width:300%;align-self:center;">
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="redressing2Modal" tabindex="-1" role="dialog" aria-labelledby="redressing2ModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/xssuiredressing2.png" style="width:300%;align-self:center;">
+    </div>
+  </div>
+</div>
+
+
+
+</body>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script>includeHTML();</script>
+</html> 
+

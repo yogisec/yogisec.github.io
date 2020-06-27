@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-133811886-2"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'UA-133811886-2');
+  </script>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <script src="../static/js/nav.js"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="../static/css/main.css">
+</head>
+<body>
+
+    <div class="site-wrapper">
+      <div class="sticky top-bar">
+      <div id="mySidenav" class="sidenav" include-nav="/static/nav.html">
+        </div>
+        <span class="sticky hamburger" style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
+      </div>
+        <div class="container">
+            <div class="blog-header">
+                <h1 class="blog-title">Yogi's Vulnerable SAML app</h1>
+                <hr>
+              </div>
+        
+              <div class="row">
+        
+                <div class="col-sm-8 blog-main">
+                    <div class="blog-post">
+                        <!-- <h2 class="blog-post-title">XSS UI Redirection</h2> -->
+                        <h3 id="what">What is this thing?</h3>
+                        <p>A quick and easily deployable SAML application and IDP exist here: <a href="https://github.com/yogisec/VulnerableSAMLApp">https://github.com/yogisec/VulnerableSAMLApp</a></p>
+                        <p>This application be be used to explore various SAML implementation vulnerabilities. Not sure what SAML is or looking for a refesher? Check out the <a href="/Web_Things/saml_overview.html">saml_overview</a> page.</p>
+                        <hr>
+                        <h3 id="story">Back Story</h3>
+                        <p>For this scenario we are Yogi Bear. The Jellystone park staff have had enough of our stealing of picnic baskets. In an effort to track this behavior they have setup "Yogi's Saml App". This application allows park visitors to file complaints about our behavior.</p>
+                        <p>Our goal as Yogi is to gain administrative access to the application via SAML implementation errors and delete the complaints. If we fail there is a possibility that we will be relocated to another park with no picnic baskets.</p>
+                        <hr>
+                        <h3 id="setup">Setting up test environment</h3>
+                        <p>
+                            <h4>Quick and Easy Deployment</h4>
+                            The easiest way to get everything up and running is by cloning the repository and then simply running a quick docker-compose command. The compose command will build the images, and deploy them to the local host.
+
+                            <pre><code>
+                                git clone https://github.com/yogisec/VulnerableSAMLApp.git<br />
+                                cd VulnerableSAMLApp<br />
+                                sudo docker-compose up
+                            </code></pre>
+
+                            The Service Provider will be listening on <code>http://127.0.0.1:8000</code>. The IDP will be listening at <code>http://127.0.0.1</code>. Head down to the <a href=#features>Features</a> section for login details and more information about the applications.
+                        </p>
+                        <p>
+                            <h4>Split Host Deployment</h4>
+                            In order to split the deployment across two seperate hosts (one an IDP, and the other a SP). We need to change some configuration details.
+                        </p>
+                        <p>
+                            First clone the repository onto both hosts: 
+                            <pre><code>
+                                git clone https://github.com/yogisec/VulnerableSAMLApp.git<br />
+                                cd VulnerableSAMLApp<br />
+                                </code></pre>
+                            On the host that will become the IDP run the <code>configure_platform.py</code> script. Work through the prompts filling in the information as requested to make the necessary edits to the IDP configuration files.
+                        </p>
+                        <pre><code>
+                            python3 configure_platform.py
+                        </code></pre>
+                        <p>
+                            Once completed we need to build our IDP container. We can do that with the following command:
+                        </p>
+                        <pre><code>
+                            cd vulnerableidp<br />
+                            sudo docker build -t idp:1.0 .
+                        </code></pre>
+                        <p>
+                            This will build a container with the name <code>idp</code> and the tag <code>1.0</code>. Next run the container with:
+                        </p>
+                        <pre><code>
+                            sudo docker run -it --rm --name idp -d -p 80:80 idp:1.0
+                        </code></pre>
+                        <p>
+                            Confirm the container is running by running:
+                        </p>
+                        <pre><code>
+                            sudo docker ps
+                        </code></pre>
+                        <p>
+                            If its running we should see an output similar to:
+                        </p>
+                        <pre><code>
+                            189adee1b091  localhost/idp:1.0  apache2ctl -D FOR...  2 seconds ago  Up 2 seconds ago  0.0.0.0:80->80/tcp  idp
+                        </code></pre>
+                        <p>
+                            We can confirm the IDP is listening by running curl:
+                        </p>
+                        <pre><code>
+                            curl http://127.0.0.1
+                        </code></pre>
+                        <p>
+                            Next on the Service Provider host run the <code>configure_platform.py</code> script. Work through the prompts filling in the information as requested to make the necessary edits to the application configuration files.
+                        </p>
+                        <pre><code>
+                            python3 configure_platform.py
+                        </code></pre>
+                        <p>
+                            Once completed we need to build our container. We can do that with the following command:
+                        </p>
+                        <pre><code>
+                            cd vulnerablesp<br />
+                            sudo docker build -t sp:1.0 .
+                        </code></pre>
+                        <p>
+                            This will build a container with the name <code>sp</code> and the tag <code>1.0</code>. The next step is to run the container. This can be done with:
+                        </p>
+                        <pre><code>
+                            sudo docker run -it --rm --name sp -d -p 8000:8000 sp:1.0
+                        </code></pre>
+                        <p>
+                            We can confirm the container is running by issuing:
+                        </p>
+                        <pre><code>
+                            sudo docker ps
+                        </code></pre>
+                        <p>
+                            This should produce an ouput similar to this:
+                        </p>
+                        <pre><code>
+                            94476aee1abf    sp:1.1    "uwsgi --ini vulnsp.…"   4 minutes ago    Up 4 minutes    0.0.0.0:8000->8000/tcp    sp
+                        </code></pre>
+                        <p>
+                            We can confirm the application is up and listening by curling the interface with:
+                        </p>
+                        <pre><code>
+                            curl http://127.0.0.1:8000
+                        </code></pre>
+
+                        <hr>
+                        <h3 id="features">Features of the environment</h3>
+                        <p>Login credentials can be found here: <a href="https://github.com/yogisec/VulnerableSAMLApp#login-credentials">https://github.com/yogisec/VulnerableSAMLApp#login-credentials</a></p>
+                        <p>After successfully logging in we are presented with our profile as seen by the application. This is a quick and easy way to confirm which user we are, as well as our current group membership.</p>
+                        <img src="../static/images/Web_Things/saml/profile.png" alt="profile" class="img-fluid">
+                        <p>The complaints tab is where all of the complaints are stored and is the overall goal of the application.</p>
+                        <img src="../static/images/Web_Things/saml/complaints.png" alt="complaints" class="img-fluid">
+                        <p>In the screenshot below we have authenticated with the <code>admin</code> user account and have a new capability to delete complaints.</p>
+                        <img src="../static/images/Web_Things/saml/delete_complaints.png" alt="delete" class="img-fluid">
+                        <p>The <code>instructor</code> account has several special features to help maintain order within the application. There is a 'restore Complaints' button on the complaints page that reverts all of the complaits back to the starting state of the application.</p>
+                        <img src="../static/images/Web_Things/saml/restore_complaints.png" alt="restore" class="img-fluid">
+                        <p>The instructor account also has a new tab called <code>Saml Settings</code>. Within this tab we can make the application more or less security by checking the features we want to have turned on or off.</p>
+                        <img src="../static/images/Web_Things/saml/settings.png" alt="settings" class="img-fluid">
+
+                        <hr>
+                        <h3 id="scenarios">The Scenarios</h3>
+                        <table class="table">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th scope="col">Setting</th>
+                                    <th scope="col">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Valid Assertion</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>Want Messages Signed</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>Valid Messages</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>Sign MetaData</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>CVE-2017-11427</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>Want Assertions Signed</td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <hr>
+                        <h3 id="valid_assertion">Valid Assertion</h3>
+                        <hr>
+                        <h3 id="2017-11427">CVE-2017-11427</h3>
+                        <hr>
+                        <h3 id="valid_message">Valid Message</h3>
+                        <hr>
+                        <h3 id="message_signed">Want Messages Signed</h3>
+                        <hr>
+                        <h3 id="assertion_signed">Want Assertions Signed</h3>
+                        <hr>
+                        <h3 id="references">References</h3>
+                        <p>Great References:
+                            <ul>
+                                <li><a href="https://tools.ietf.org/html/rfc7522">RFC7522</a></li>
+                                <li><a href="https://developer.okta.com/docs/concepts/saml/">SAML</a></li>
+                                <li><a href="https://developers.onelogin.com/saml">Overview of SAML</a></li>
+                                <li><a href="https://auth0.com/docs/authorization/concepts/authz-and-authn">Authentication vs Authorization</a></li>
+                                <li><a href="https://research.aurainfosec.io/bypassing-saml20-SSO/">Bypassing SAML 2.0 SSO with XML Signature Attracks</a></li>
+                                <li><a href="https://duo.com/blog/duo-finds-saml-vulnerabilities-affecting-multiple-implementations">Duo Finds SAML Vulnerabilities Affecting Multiple Implementations</a></li>
+                            </ul>
+                        </p>
+                    </div><!-- /.blog-post -->
+                </div><!-- /.blog-main -->
+                <!-- Blog Side Bar-->
+                <div class="col-md-3" id=sidebar data-spy="affix-bottom" data-offset-top="0">
+    
+                    <nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id="post-nav">
+                        <h5>contents</h5>
+                        <ul class="nav post-sidenav"> 
+                            <li class=""> <a href="#what">What is this</a> </li>
+                            <li class=""> <a href="#story">Back Story</a></li>
+                            <li class=""> <a href="#setup">Setting up Environment</a></li>
+                            <li class=""> <a href="#features">Features of Environemnt</a></li>
+                            <li class=""> <a href="#scenarios">Scenarios</a></li>
+                            <li class=""> <a href="#valid_assertion">- Valid Assertion</a></li>
+                            <li class=""> <a href="#2017-11427">- CVE-2017-11427</a></li>
+                            <li class=""> <a href="#valid_message">- Valid Message</a></li>
+                            <li class=""> <a href="#message_signed">- Want Messages Signed</a></li>
+                            <li class=""> <a href="#assertion_signed">- Want Assertions Signed</a></li>
+                            <li class=""> <a href="#references">References</a></li>
+                            <li class=""> <a href="#top">Top</a> </li>
+                    </nav>
+                </div><!-- /.blog-sidebar -->
+            </div><!-- /.row -->
+        </div> <!--/.container-->
+    </div> <!--/.wrapper -->
+
+<!-- Modals -->
+<div class="modal fade" id="redressing1Modal" tabindex="-1" role="dialog" aria-labelledby="redressing1ModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/xssuiredressing1.png" style="width:300%;align-self:center;">
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="redressing2Modal" tabindex="-1" role="dialog" aria-labelledby="redressing2ModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/xssuiredressing2.png" style="width:300%;align-self:center;">
+    </div>
+  </div>
+</div>
+
+
+
+</body>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script>includeHTML();</script>
+</html> 
+

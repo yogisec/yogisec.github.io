@@ -38,14 +38,23 @@
                     <div class="blog-post">
                         <!-- <h2 class="blog-post-title">XSS UI Redirection</h2> -->
                         <h3 id="what">What is this thing?</h3>
-                        <p>A quick and easily deployable SAML application and IDP exist here: <a href="https://github.com/yogisec/VulnerableSAMLApp">https://github.com/yogisec/VulnerableSAMLApp</a></p>
-                        <p>This application be be used to explore various SAML implementation vulnerabilities. Not sure what SAML is or looking for a refesher? Check out the <a href="/Web_Things/saml_overview.html">saml_overview</a> page.</p>
+                        <p>
+                            I built this app because I wanted to better understand SAML and I wanted to know how to discover, exploit, and remediate vulnearbilities associated with implementations. I created an easily deployable docker environment <a href="https://github.com/yogisec/VulnerableSAMLApp">here</a> that can be spun up on a local machine in about 5 minutes. This includes a fully functional IDP and a Service Provider. The Service Provider has several configuration options that allow for post deployment on the fly adjustments to the security stance of the application. When its fully deployed the environment will be similar to the architecture below:
+                        </p>
+                        <img src="../static/images/Web_Things/saml/environment.png" alt="environment" class="img-fluid">
+                        <p>
+                            Not sure what SAML is or looking for a refesher? Check out the <a href="/Web_Things/saml_overview.html">saml_overview</a> page.
+                        </p>
                         <hr>
                         <h3 id="story">Back Story</h3>
-                        <p>For this scenario we are Yogi Bear. The Jellystone park staff have had enough of our stealing of picnic baskets. In an effort to track this behavior they have setup "Yogi's Saml App". This application allows park visitors to file complaints about our behavior.</p>
-                        <p>Our goal as Yogi is to gain administrative access to the application via SAML implementation errors and delete the complaints. If we fail there is a possibility that we will be relocated to another park with no picnic baskets.</p>
+                        <p>
+                            For this scenario we are Yogi Bear. The Jellystone park staff have had enough of our stealing of picnic baskets. In an effort to track this behavior they have setup "Yogi's Saml App". This application allows park visitors to file complaints about our behavior.
+                        </p>
+                        <p>
+                            Our goal as Yogi is to gain administrative access to the application via SAML implementation errors and delete the complaints. If we fail there is a possibility that we will be relocated to another park with no picnic baskets.
+                        </p>
                         <hr>
-                        <h3 id="setup">Setting up test environment</h3>
+                        <h3 id="setup">Setting up the test environment</h3>
                         <p>
                             <h4>Quick and Easy Deployment</h4>
                             The easiest way to get everything up and running is by cloning the repository and then simply running a quick docker-compose command. The compose command will build the images, and deploy them to the local host.
@@ -141,10 +150,41 @@
                         <pre><code>
                             curl http://127.0.0.1:8000
                         </code></pre>
-
+                        <p>At this point the IDP and the SP should be up and running and accessible. The next section will provide an overview of some of the features of the application.</p>
                         <hr>
                         <h3 id="features">Features of the environment</h3>
                         <p>Login credentials can be found here: <a href="https://github.com/yogisec/VulnerableSAMLApp#login-credentials">https://github.com/yogisec/VulnerableSAMLApp#login-credentials</a></p>
+                        <table class="table">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th scope="col">Username</th>
+                                    <th scope="col">Password</th>
+                                    <th scope="col">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>yogi</td>
+                                    <td>bear</td>
+                                    <td>Basic user account, memeber of the 'users' group. No special permissions</td>
+                                </tr>
+                                <tr>
+                                    <td>admin</td>
+                                    <td>password</td>
+                                    <td>Regular administrator account, member of the admin group. This account has the ability to delete the complaints.</td>
+                                </tr>
+                                <tr>
+                                    <td>adminbutnot</td>
+                                    <td>password</td>
+                                    <td>This is account was registered specifically for CVE-2017-11427</td>
+                                </tr>
+                                <tr>
+                                    <td>instructor</td>
+                                    <td>G0od-LuckGu3ssingThisButHeyItCouldHappenRight?</td>
+                                    <td>This account is allowed to reset the complain board back to its original state. Additionally this account was the ability to increase or decrease the security posture of the application.</td>
+                                </tr>
+                            </tbody>
+                        </table>
                         <p>After successfully logging in we are presented with our profile as seen by the application. This is a quick and easy way to confirm which user we are, as well as our current group membership.</p>
                         <img src="../static/images/Web_Things/saml/profile.png" alt="profile" class="img-fluid">
                         <p>The complaints tab is where all of the complaints are stored and is the overall goal of the application.</p>
@@ -155,7 +195,6 @@
                         <img src="../static/images/Web_Things/saml/restore_complaints.png" alt="restore" class="img-fluid">
                         <p>The instructor account also has a new tab called <code>Saml Settings</code>. Within this tab we can make the application more or less security by checking the features we want to have turned on or off.</p>
                         <img src="../static/images/Web_Things/saml/settings.png" alt="settings" class="img-fluid">
-
                         <hr>
                         <h3 id="scenarios">The Scenarios</h3>
                         <table class="table">
@@ -168,7 +207,7 @@
                             <tbody>
                                 <tr>
                                     <td>Valid Assertion</td>
-                                    <td></td>
+                                    <td>This is the ideal security configuration. The Service Provider is checking for valid assertions, any tampering results in the message being rejected.</td>
                                 </tr>
                                 <tr>
                                     <td>Want Messages Signed</td>
@@ -193,7 +232,45 @@
                             </tbody>
                         </table>
                         <hr>
+                        <p>
+                            Note: for all of the SAML message tampering below for each of the scenarios I am leveraging the SAML Raider plugin for burp. It handles the decoding of the messages on the fly and allows for edits. It also supports XSW attacks which are currently beyond the scope of this application.
+                        </p>
+                        <h3 id="nothing_configured">Nothing configured</h3>
+                        <p>For this scenario we'll use the security configuration pictured below.</p>
+                        <img src="../static/images/Web_Things/saml/nothing_config.png" alt="nothing_config" class="img-fluid">
+                        <p>Before we get to far into this scenario, I wanted to take a moment and say that this scenario, this configuration issue, is the <b>MOST</b> common implementation flaw that I come across.</p>
+                        <p>
+                            Once we authenticate to our IDP we can make any changes to the SAML assertion that we want. The message will not be checked, the SP will simply process it as valid. The screenshot below shows the original assertion before tamper:
+                        </p>
+                        <img src="../static/images/Web_Things/saml/nothing_orig_assertion.png" alt="nothing_orig_assertion" class="img-fluid">
+                        <img src="../static/images/Web_Things/saml/nothing_tamper_assertion.png" alt="nothing_tamper_assertion" class="img-fluid">
+                        <p>Once we pass the response payload along to the SP we are now an administrator within the application and as we can see below when we click on the <code>complaints</code> tab we now have the ability to delete all of the complaints.</p>
+                        <img src="../static/images/Web_Things/saml/nothing_delete_options.png" alt="nothing_delete" class="img-fluid">
+                        <p>We can even take it a step further if we'd like and replace all of the fields within the assertion with fake information similar to the picture below.</p>
+                        <img src="../static/images/Web_Things/saml/nothing_fake.png" alt="nothing_fake" class="img-fluid">
+                        <p>
+                            Above I mentioned that this configuration is the most common issue that I find when testing SAML implementations. The reason for this is because when most applications are initially configured to leverage saml the check box to make sure messages are secure is left unchecked. This allows the owners to validate that all of the backend configuration that occurs between the SP and the IDP is correctly configured without dealing with certificates. The unfortunate part is most of the time this is where things get left. The messages are left fully vulnerable to anyone who can authenticate to the IDP.
+                        </p>
                         <h3 id="valid_assertion">Valid Assertion</h3>
+                        <p>For this scenario we'll use the security configuration pictured below.</p>
+                        <img src="../static/images/Web_Things/saml/valid_assertion_config.png" alt="valid_assertion_config" class="img-fluid">
+                        
+                        <p>
+                            On the surface this seems like the ideal configuration. The Service Provider is checking for valid assertions, any tampering with the assertion attributes results in the message being rejected. In the picture below we have authenticated as the Yogi user account, and our assertion payload includes attributes about our account including our group membership 'users'.
+                        </p>
+                        <img src="../static/images/Web_Things/saml/valid_assertion_group.png" alt="valid_assertion_group" class="img-fluid">
+                        <p>
+                            We can attempt change the group membership to another group such as the 'administrators' group in the photo below.
+                        </p>
+                        <img src="../static/images/Web_Things/saml/valid_assertion_group_edited.png" alt="valid_assertion_group_edited" class="img-fluid">
+                        <p>
+                            Unfortunatly as we can see below the message is rejected because its not valid.
+                        </p>
+                        <img src="../static/images/Web_Things/saml/valid_assertion.png" alt="valid_assertion" class="img-fluid">
+                        <p>
+                            There is a big security flaw with this configuration. The SP is only checking that the assertion is valid IF its signed. The application does not have signed messages as a requirement. If we remove the entire <code>signature</code> block from our SAML payload the message can be changed
+                        </p>
+                        <p></p>
                         <hr>
                         <h3 id="2017-11427">CVE-2017-11427</h3>
                         <hr>
@@ -202,6 +279,10 @@
                         <h3 id="message_signed">Want Messages Signed</h3>
                         <hr>
                         <h3 id="assertion_signed">Want Assertions Signed</h3>
+                        <hr>
+                        <h3 id="other_attacks">Other attacks</h3>
+                        <p>There are several more types of vulnerabilities that could exist. Message replays, where an attacker sends a message after its TTL has expired. XSW attacks which take chunks of the SAML response and duplicate it and place it in various places within the response. In these scenarios the SP checks to see if a valid signed assertion/message/etc. exists and then processes the message. What if there are two assertions, the first valid, and signed but the second is not. Which will the application process? The first, second, last, cause it to crash?  </p>
+                        <p>The Yogi Vulnerable SP is not yet vulnerable to these attacks, but they're on the list.</p>
                         <hr>
                         <h3 id="references">References</h3>
                         <p>Great References:
@@ -214,6 +295,7 @@
                                 <li><a href="https://duo.com/blog/duo-finds-saml-vulnerabilities-affecting-multiple-implementations">Duo Finds SAML Vulnerabilities Affecting Multiple Implementations</a></li>
                             </ul>
                         </p>
+
                     </div><!-- /.blog-post -->
                 </div><!-- /.blog-main -->
                 <!-- Blog Side Bar-->

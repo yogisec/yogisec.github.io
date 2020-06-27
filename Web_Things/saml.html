@@ -55,11 +55,383 @@
                         </p>
 
                         <hr>
-                        <h3 id="how">How does it work</h3>
+                        <h3 id="how">How Does it Work</h3>
+                        <p>SAML has a couple different authentication flows, the IDP initiated flow and the service provider initiated flow. Once the user reaches the IDP the flows are basically the same. For this writeup we will focus on the service provider initiated flow. Looking at the picture below we can see three high level steps for this flow.</p>
+                        <img src="../static/images/Web_Things/saml/environment.png" alt="environment" class="img-fluid">
+                        <p>Lets break these down:
+                            <ol>
+                                <li>In this step the user browses to the web application (Service Provider) and selects the login button.</li>
+                                <li>The web application sends SAML request back to the browser and redirects it to the IDP. The browser relays the request to the IDP. The IDP prompts to user to to authenticate. With the defined requirements. This could be a username/password, MFA, both, etc.</li>
+                                <li>Once the user proves they are who they say they are the IDP generates a SAML assertion and sends it back to the browser and redirects the browser back to the Service Provider. The service provider confirms that the user should have access to the application and grants them access to resources they are allowed to access.</li>
+                            </ol>
+                            The assertion messages which is provided to the Service Provider is the most important thing to secure. This can be done by configuring the Service Provider so confirm that the messages from the IDP that are relayed through the user are signed, and valid. More often than not this is where security issues arise. 
+                        </p>
+                        <p>If the messages are not signed, or are signed but not valid the application should reject them. For example the three attacks below should all result in an assertion message being rejected:
+                            <ul>
+                                <li>Attacker removes the signature and edits the message - Unsigned message</li>
+                                <li>Attacker leaves the signature and edits the message - Signed but not valid message</li>
+                                <li>Attacker edits the message and resigns it - Signed but not valid message/signature</li>
+                            </ul>
+                        </p>
+                        <hr>
+                        <h3 id="messages">Message Breakdown</h3>
+
+                        <p>
+                            <h4>Request: I'd Like to Login</h4>
+                            <pre>
+                                <code>
+                                GET /?sso2 HTTP/1.1<br />
+                                Host: http://yogivulnerablesaml.jellystone.com:8000<br />
+                                User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:65.0) Gecko/20100101 Firefox/65.0<br />
+                                Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8<br />
+                                Accept-Language: en-US,en;q=0.5<br />
+                                Accept-Encoding: gzip, deflate<br />
+                                Referer: http://yogivulnerablesaml.jellystone.com:8000/<br />
+                                Connection: close<br />
+                                Upgrade-Insecure-Requests: 1<br />
+                            </code></pre>
+                        </p>
+                        <p>
+                            <h4>Response: Sure heres some information, go auth to this IDP</h4>
+                            <pre>
+                                <code>
+                                HTTP/1.1 302 FOUND<br />
+                                Content-Type: text/html; charset=utf-8<br />
+                                Content-Length: 1795<br />
+                                Location: http://idp.jellystone.com/simplesamlphp/saml2/idp/SSOService.php?<span style="color:red">SAMLRequest=fVNNj9owEL3vr0C59ETsOMBmLUhFoR9IFCKSVmovlbGHxVJip7azS%2F99nYSltOriQyzNzHvz%2FGYytawqazpv3FHt4GcD1t0N%2FDlVpbK0S86CxiiqmZWWKlaBpY7TfP55TUmIaW2001yXwT%2Bw2yhmLRgntephq%2BUs2G7er7cfV5sfJOZjwkWCWUSAPMR7IGx0EII8sEk8IYLsR3Fyn0AP%2FQrGep5Z4Gn7SGb0kxRgNr7rLPimH%2BUbO8izcydrG1gp65hyHoMJHuLJkEyKaEJxREn0va9beiOkYq6jPjpXU4SiJCQxCcdRGOF7ZGVVl9A5dKxRexMkRY3yfJuDeZIcQp%2B4SOpMeieVkOrxtjf7vsjST0WRDbNtXvQk8xfPFlrZpgJzbvNlt75IjL3CcRglJBzRBGOM3jJue3jafaetUNq5YNLXQBU4JphjaIquy%2F8Q1LQ1d7XMdCn5ry7eng%2FaVMy9%2FjpvXBeRYnjoSmmjbA1cHiSI4EIzL0v9vDDAnJ%2BfMw0EA%2FRX8%2FOigujW1tvh4OQGC13VzEjbTgxOjLsgvVD2z74uX5R%2BB3dwSG%2BuKae8rfPhzF%2FP2oh2lMB978IwL14bdzbpv%2BS9anRDdnr3kr7%2BB9Pf&RelayState=http%3A%2F%2Fyogivulnerablesaml.jellystone.com%3A8000%2Fprofile%2F</span>
+                            </code></pre>
+                            The SAMLRequest highlighted above is a base64 encoded xml payload. If we decode it we get the information below:
+
+                            <pre>
+                                <code>
+                                &#x3c;?xml version="1.0" encoding="UTF-8"?><br />
+                                &#x3c;samlp:AuthnRequest<br />
+                                &emsp;<span style="color:red">AssertionConsumerServiceURL="http://yogivulnerablesaml.jellystone.com:8000/?acs"</span><br />
+                                &emsp;Destination="http://idp.jellystone.com/simplesamlphp/saml2/idp/SSOService.php"<br />
+                                &emsp;<span style="color:red">ID="ONELOGIN_23c52cd80a12e293be2a4fdd29a6362d2b43878e"</span><br />
+                                &emsp;IssueInstant="2020-06-26T16:01:21Z"<br />
+                                &emsp;ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"<br />
+                                &emsp;<span style="color:red">ProviderName="Yogi's SP"</span><br />
+                                &emsp;Version="2.0"<br />
+                                &emsp;xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"<br />
+                                &emsp;xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"><br />
+                                &#x3c;saml:Issuer><br />
+                                &emsp;http://yogivulnerablesaml.jellystone.com:8000/metadata/<br />
+                                &#x3c;/saml:Issuer><br />
+                                &#x3c;samlp:NameIDPolicy<br />
+                                &emsp;&emsp;AllowCreate="true"<br />
+                                &emsp;&emsp;Format="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"/><br />
+                                &#x3c;samlp:RequestedAuthnContext Comparison="exact"><br />
+                                &emsp;&emsp;&#x3c;saml:AuthnContextClassRef><br />
+                                &emsp;&emsp;&emsp;&emsp;urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport<br />
+                                &emsp;&emsp;&#x3c;/saml:AuthnContextClassRef><br />
+                                &emsp;&#x3c;/samlp:RequestedAuthnContext><br />
+                                &#x3c;/samlp:AuthnRequest>
+                            </code></pre>
+                            Once we've decoded the payload there isn't much to it. Rember at this point in the process the user has not authenticated yet, they have just started the process. The payload above is what the Service Provider gives to the user to then provide to the Identity Platform. Let's break down the three fields highlighted above:
+                            <ul>
+                                <li>AssertionConsumerServiceURL: This field is the return address. Basically this is where we tell the IDP to point us to once we've successfully authenticated.</li>
+                                <li>ID: This field is a transaction ID for this entire login request. Its how the service provider knows which session to attribute our authenticate request to. It becomes important later.</li>
+                                <li>ProviderName: If this is filled in, its just the name of the SP. From a logging standpoint it is very helpful.</li>
+                            </ul>
+                        </p>
+                        <p>
+                            <h4>Response: Welcome to the IDP, go here and fill this form out</h4>IDP responds with a 302 to a login page the redirect also includes auth information
+                            <pre><code>
+                                HTTP/1.1 302 Found<br />
+                                Date: Fri, 26 Jun 2020 16:01:21 GMT<br />
+                                Server: Apache/2.4.18 (Ubuntu)<br />
+                                Set-Cookie: PHPSESSID=1b1500050c1336f7bf7932336ccc957f; path=/; HttpOnly<br />
+                                Expires: Thu, 19 Nov 1981 08:52:00 GMT<br />
+                                Cache-Control: no-cache, must-revalidate<br />
+                                Pragma: no-cache<br />
+                                Location: http://idp.jellystone.com/simplesamlphp/module.php/core/loginuserpass.php?AuthState=_a87e532c1d8e81a590e643b9a38caba90d77c86a31%3Ahttp%3A%2F%2Fidp.jellystone.com%2Fsimplesamlphp%2Fsaml2%2Fidp%2FSSOService.php%3Fspentityid%3Dhttp%253A%252F%252Fyogivulnerablesaml.jellystone.com%253A8000%252Fmetadata%252F%26cookieTime%3D1593187281%26RelayState%3Dhttp%253A%252F%252Fyogivulnerablesaml.jellystone.com%253A8000%252Fprofile%252F<br />
+                                Content-Length: 1267<br />
+                                Connection: close<br />
+                                Content-Type: text/html; charset=UTF-8<br />
+                                </code></pre>
+                        </p>
+                        <p><h4>Request: Here is my username and password</h4>Post request to the IDP 
+                            <pre><code>
+                                <span style="color:red">POST</span> /simplesamlphp/module.php/core/loginuserpass.php? HTTP/1.1<br />
+                                <span style="color:red">Host: idp.jellystone.com</span><br />
+                                User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:65.0) Gecko/20100101 Firefox/65.0<br />
+                                Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8<br />
+                                Accept-Language: en-US,en;q=0.5<br />
+                                Accept-Encoding: gzip, deflate<br />
+                                Referer: http://idp.jellystone.com/simplesamlphp/module.php/core/loginuserpass.php?AuthState=_a87e532c1d8e81a590e643b9a38caba90d77c86a31%3Ahttp%3A%2F%2Fidp.jellystone.com%2Fsimplesamlphp%2Fsaml2%2Fidp%2FSSOService.php%3Fspentityid%3Dhttp%253A%252F%252Fyogivulnerablesaml.jellystone.com%253A8000%252Fmetadata%252F%26cookieTime%3D1593187281%26RelayState%3Dhttp%253A%252F%252Fyogivulnerablesaml.jellystone.com%253A8000%252Fprofile%252F<br />
+                                Content-Type: application/x-www-form-urlencoded<br />
+                                Content-Length: 328<br />
+                                Connection: close<br />
+                                Cookie: PHPSESSID=1b1500050c1336f7bf7932336ccc957f<br />
+                                Upgrade-Insecure-Requests: 1<br /><br />
+
+                                <span style="color:red">username=yogi&password=bear</span>&AuthState=_a87e532c1d8e81a590e643b9a38caba90d77c86a31%3Ahttp%3A%2F%2Fidp.jellystone.com%2Fsimplesamlphp%2Fsaml2%2Fidp%2FSSOService.php%3Fspentityid%3Dhttp%253A%252F%252Fyogivulnerablesaml.jellystone.com%253A8000%252Fmetadata%252F%26cookieTime%3D1593187281%26RelayState%3Dhttp%253A%252F%252Fyogivulnerablesaml.jellystone.com%253A8000%252Fprofile%252F<br />
+                                </code></pre>
+                        </p>
+                        <p>
+                            The IDP responds with a 200 OK and executes javascript to make post request to the Service Provider with the assertion payload. The post request to the Service provider is below:
+                        </p>
+                        <h4>Request: I'm back and I am who I say I am, here is my proof</h4>
+                        <pre><code>
+                                POST /?acs HTTP/1.1<br />
+                                Host: yogivulnerablesaml.jellystone.com:8000<br />
+                                User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:65.0) Gecko/20100101 Firefox/65.0<br />
+                                Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8<br />
+                                Accept-Language: en-US,en;q=0.5<br />
+                                Accept-Encoding: gzip, deflate<br />
+                                Referer: http://idp.jellystone.com/simplesamlphp/module.php/core/loginuserpass.php?<br />
+                                Content-Type: application/x-www-form-urlencoded<br />
+                                Content-Length: 10153<br />
+                                Connection: close<br />
+                                Upgrade-Insecure-Requests: 1<br /><br />
+
+                                <span style="color:red">SAMLResponse=</span>PHNhbWxwOlJlc...truncated based 64 blob...&RelayState=http%3A%2F%2Fyogivulnerablesaml.jellystone.com%3A8000%2Fprofile%2F
+                            </code></pre>
+                        <p>
+                            Whats in the truncated based64 blob? Its our assertion payload that contains the signing information, the identity information, and metadata about the message. There are sever parts to it but for this write up we care about the Signature portion, and the Assertion portion. WHen we decode the blob we are presented with xml data. Lets take a look at the message. For the next few sections I've broken up the entire message into smaller chunks for readability
+                            <pre><code>
+                                &#x3c;?xml version="1.0" encoding="UTF-8"?&#x3e;<br />
+                                &#x3c;samlp:Response Destination="http://yogivulnerablesaml.jellystone.com:8000/?acs"<br />
+                                &emsp;&emsp;ID="_680413d1f1dbb580a36385e5f6bcb985d5bb2404bd"<br />
+                                &emsp;&emsp;InResponseTo="ONELOGIN_23c52cd80a12e293be2a4fdd29a6362d2b43878e"<br />
+                                &emsp;&emsp;IssueInstant="2020-06-26T16:01:31Z" Version="2.0"<br />
+                                &emsp;&emsp;xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"<br />
+                                &emsp;&emsp;xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"&#x3e;<br />
+                                &emsp;&emsp;&#x3c;saml:Issuer&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;http://idp.jellystone.com/simplesamlphp/saml2/idp/metadata.php<br />
+                                &emsp;&emsp;&#x3c;/saml:Issuer&#x3e;<br />
+                            </code></pre>
+                            <pre><code>
+                                &emsp;&emsp;&#x3c;ds:Signature xmlns:ds="http://w3.org/..."&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;ds:SignedInfo&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;ds:CanonicalizationMethod Algorithm="http://w3.org/..."/&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;ds:SignatureMethod Algorithm="http://w3.org/..."/&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;ds:Reference URI="#_680413d1f1dbb580a36385e5f6bcb985d5bb2404bd"&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;ds:Transforms&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;ds:Transform Algorithm="http://w3.org/..."/&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;ds:Transform Algorithm="http://w3.org/..."/&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;/ds:Transforms&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;ds:DigestMethod Algorithm="http://w3.org/..."/&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;ds:DigestValue&#x3e;LDuhdC47bWPLtaWR+DifMF5Ad/s=&#x3c;/ds:DigestValue&#x3e;<br />
+                                &emsp;&emsp;&#x3c;/ds:Reference&#x3e;<br />
+                                &emsp;&#x3c;/ds:SignedInfo&#x3e;<br />
+                                &emsp;&#x3c;ds:SignatureValue&#x3e;truncated=&#x3c;/ds:SignatureValue&#x3e;<br />
+                                &emsp;&#x3c;ds:KeyInfo&#x3e;<br />
+                                &emsp;&emsp;&#x3c;ds:X509Data&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;ds:X509Certificate&#x3e;certificate bits&#x3c;/ds:X509Certificate&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;/ds:X509Data&#x3e;<br />
+                                &emsp;&emsp;&#x3c;/ds:KeyInfo&#x3e;<br />
+                                &emsp;&#x3c;/ds:Signature&#x3e;<br />
+                                &emsp;&#x3c;samlp:Status&#x3e;<br />
+                                &emsp;&emsp;&#x3c;samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/&#x3e;<br />
+                                &emsp;&#x3c;/samlp:Status&#x3e;<br />
+                                &emsp;&#x3c;saml:Assertion ID="_59c561cc8e12b4cfab5c0f2d1d55ce541028d3342a"<br />
+                                &emsp;&emsp;IssueInstant="2020-06-26T16:01:31Z" Version="2.0"<br />
+                                &emsp;&emsp;xmlns:xs="http://w3.org/..." xmlns:xsi="http://w3.org/..."&#x3e;<br />
+                                &emsp;&emsp;&#x3c;saml:Issuer&#x3e;<br />
+                                &emsp;&emsp;&emsp;http://idp.jellystone.com/simplesamlphp/saml2/idp/metadata.php<br />
+                                &emsp;&emsp;&#x3c;/saml:Issuer&#x3e;<br />
+                                &emsp;&emsp;&#x3c;ds:Signature xmlns:ds="http://w3.org/..."&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;ds:SignedInfo&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp; &#x3c;ds:CanonicalizationMethod Algorithm="http://w3.org/..."/&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;ds:SignatureMethod Algorithm="http://w3.org/..."/&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;ds:Reference URI="#_59c561cc8e12b4cfab5c0f2d1d55ce541028d3342a"&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&emsp;&#x3c;ds:Transforms&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&emsp;&#x3c;ds:Transform Algorithm="http://w3.org/..."/&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&emsp;&#x3c;ds:Transform Algorithm="http://w3.org/..."/&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;/ds:Transforms&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;ds:DigestMethod Algorithm="http://w3.org/..."/&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&emsp;&#x3c;ds:DigestValue&#x3e;cSXkNHBuvGm64eH1ldvgm8n1ArY=&#x3c;/ds:DigestValue&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;/ds:Reference&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;/ds:SignedInfo&#x3e;<br />
+                                &emsp;&emsp;&#x3c;ds:SignatureValue&#x3e;signature bits&#x3c;/ds:SignatureValue&#x3e;<br />
+                                &emsp;&emsp;&#x3c;ds:KeyInfo&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;ds:X509Data&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;ds:X509Certificate&#x3e;certificate bits&#x3c;/ds:X509Certificate&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;/ds:X509Data&#x3e;<br />
+                                &emsp;&emsp;&#x3c;/ds:KeyInfo&#x3e;<br />
+                                &emsp; &#x3c;/ds:Signature&#x3e;<br />
+                            </code></pre>
+                            <pre><code>
+                                &emsp;&emsp;&#x3c;saml:Subject&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;saml:NameID<br />
+                                &emsp;&emsp;&emsp;&emsp;Format="urn:oasis:names:tc:SAML:2.0:nameid-format:transient"<br />
+                                &emsp;&emsp;&emsp;&emsp;SPNameQualifier="http://yogivulnerablesaml.jellystone.com:8000/metadata/"&#x3e;_77a94f4b52ba9f7fd80ac091a8c561136b697837d2<br />
+                                &emsp;&emsp;&emsp;&#x3c;/saml:NameID&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;saml:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer"&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;saml:SubjectConfirmationData<br />
+                                &emsp;&emsp;&emsp;&emsp;<span style="color:red">InResponseTo="ONELOGIN_23c52cd80a12e293be2a4fdd29a6362d2b43878e"</span><br />
+                                &emsp;&emsp;&emsp;&emsp;NotOnOrAfter="2020-06-26T16:06:31Z"<br />
+                                &emsp;&emsp;&emsp;&emsp;Recipient="http://yogivulnerablesaml.jellystone.com:8000/?acs"/&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;/saml:SubjectConfirmation&#x3e;<br />
+                                &emsp;&emsp;&#x3c;/saml:Subject&#x3e;<br />
+                                &emsp;&emsp;&#x3c;saml:Conditions <br />
+                                &emsp;&emsp;&emsp;NotBefore="2020-06-26T16:01:01Z" <br />
+                                &emsp;&emsp;&emsp;NotOnOrAfter="2020-06-26T16:06:31Z"&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;saml:AudienceRestriction&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;saml:Audience&#x3e;http://yogivulnerablesaml.jellystone.com:8000/metadata/&#x3c;/saml:Audience&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;/saml:AudienceRestriction&#x3e;<br />
+                                &emsp;&emsp;&#x3c;/saml:Conditions&#x3e;<br />
+                                &emsp;&emsp;&#x3c;saml:AuthnStatement<br />
+                                &emsp;&emsp;&emsp;AuthnInstant="2020-06-26T16:01:31Z"<br />
+                                &emsp;&emsp;&emsp;SessionIndex="_f2d9382c86855d907f7462337c2a0716cdeae5fde5"<br />
+                                &emsp;&emsp;&emsp;SessionNotOnOrAfter="2020-06-27T00:01:31Z"&#x3e;<br />
+                                &emsp;&emsp;&#x3c;saml:AuthnContext&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;saml:AuthnContextClassRef&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;urn:oasis:names:tc:SAML:2.0:ac:classes:Password&#x3c;/saml:AuthnContextClassRef&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;/saml:AuthnContext&#x3e;<br />
+                                &emsp;&emsp;&#x3c;/saml:AuthnStatement&#x3e;<br />
+                                &emsp;&emsp;&#x3c;saml:AttributeStatement&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;saml:Attribute<br />
+                                &emsp;&emsp;&emsp;&emsp;<span style="color:red">Name="memberOf"</span><br />
+                                &emsp;&emsp;&emsp;&emsp;NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri"&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;saml:AttributeValue xsi:type="xs:string"&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&emsp;<span style="color:red">users</span><br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;/saml:AttributeValue&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;/saml:Attribute&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;saml:Attribute<br />
+                                &emsp;&emsp;&emsp;&emsp;<span style="color:red">Name="firstName"</span><br />
+                                &emsp;&emsp;&emsp;&emsp;NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri"&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;saml:AttributeValue xsi:type="xs:string"&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&emsp;<span style="color:red">Yogi</span><br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;/saml:AttributeValue&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;/saml:Attribute&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;saml:Attribute<br/>
+                                &emsp;&emsp;&emsp;&emsp;<span style="color:red">Name="lastName"</span><br />
+                                &emsp;&emsp;&emsp;&emsp;NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri"&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;saml:AttributeValue xsi:type="xs:string"&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&emsp;<span style="color:red">Bear</span><br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;/saml:AttributeValue&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;/saml:Attribute&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;saml:Attribute<br />
+                                &emsp;&emsp;&emsp;&emsp;<span style="color:red">Name="username"</span><br />
+                                &emsp;&emsp;&emsp;&emsp;NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri"&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;saml:AttributeValue xsi:type="xs:string"&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&emsp;<span style="color:red">yogi</span><br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;/saml:AttributeValue&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;/saml:Attribute&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;saml:Attribute<br />
+                                &emsp;&emsp;&emsp;&emsp;<span style="color:red">Name="urn:oid:1.2.840.113549.1.9.1"</span><br />
+                                &emsp;&emsp;&emsp;&emsp;NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri"&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;saml:AttributeValue xsi:type="xs:string"&#x3e;<br />
+                                &emsp;&emsp;&emsp;&emsp;&emsp;<span style="color:red">yogi@jellystonep.com</span><br />
+                                &emsp;&emsp;&emsp;&emsp;&#x3c;/saml:AttributeValue&#x3e;<br />
+                                &emsp;&emsp;&emsp;&#x3c;/saml:Attribute&#x3e;<br />
+                                &emsp;&emsp;&#x3c;/saml:AttributeStatement&#x3e;<br />
+                                &emsp;&#x3c;/saml:Assertion&#x3e;<br />
+                            &#x3c;/samlp:Response&#x3e;<br />
+                            </code></pre>
+                        </p>
+                        <p>At this point the Service provider should validate the message, and confirm that the user (Subject) that is requesting access is authorized to access resources within the application. If they are provie them with a 302 redirect to some page within the application now that they are authorized.</p>
                         <hr>
                         <h3 id="setup">Setting up test environment</h3>
+                        <p>
+                            Now that we have a decent understanding of the authentication flow for SAML, and the types of messages we can expect to see, lets set up our vulnerable SAML app and start to exploit some vulnerable configurations.
+
+                            <h4>Quick and Easy Deployment</h4>
+                            The easiest way to get everything up and running is by cloning the repository and then simply running a quick docker-compose command. The compose command will build the images, and deploy them to the local host.
+
+                            <pre><code>
+                                git clone https://github.com/yogisec/VulnerableSAMLApp.git<br />
+                                cd VulnerableSAMLApp<br />
+                                sudo docker-compose up
+                            </code></pre>
+
+                            The Service Provider will be listening on <code>http://127.0.0.1:8000</code>. The IDP will be listening at <code>http://127.0.0.1</code>. Head down to the <a href=#features>Features</a> section for login details and more information about the applications.
+                        </p>
+                        <p>
+                            <h4>Split Host Deployment</h4>
+                            In order to split the deployment across two seperate hosts (one an IDP, and the other a SP). We need to change some configuration details.
+                        </p>
+                        <p>
+                            First clone the repository onto both hosts: 
+                            <pre><code>
+                                git clone https://github.com/yogisec/VulnerableSAMLApp.git<br />
+                                cd VulnerableSAMLApp<br />
+                                </code></pre>
+                            On the host that will become the IDP run the <code>configure_platform.py</code> script. Work through the prompts filling in the information as requested to make the necessary edits to the IDP configuration files.
+                        </p>
+                        <p>
+                            Once completed we need to build our IDP container. We can do that with the following command:
+                        </p>
+                        <pre><code>
+                            cd vulnerableidp<br />
+                            sudo docker build -t idp:1.0 .
+                        </code></pre>
+                        <p>
+                            This will build a container with the name <code>idp</code> and the tag <code>1.0</code>. Next run the container with:
+                        </p>
+                        <pre><code>
+                            sudo docker run -it --rm --name idp -d -p 80:80 idp:1.0
+                        </code></pre>
+                        <p>
+                            Confirm the container is running by running:
+                        </p>
+                        <pre><code>
+                            sudo docker ps
+                        </code></pre>
+                        <p>
+                            If its running we should see an output similar to:
+                        </p>
+                        <pre><code>
+                            189adee1b091  localhost/idp:1.0  apache2ctl -D FOR...  2 seconds ago  Up 2 seconds ago  0.0.0.0:80->80/tcp  idp
+                        </code></pre>
+                        <p>
+                            We can confirm the IDP is listening by running curl:
+                        </p>
+                        <pre><code>
+                            curl http://127.0.0.1
+                        </code></pre>
+                        <p>
+                            Next on the Service Provider host run the <code>configure_platform.py</code> script. Work through the prompts filling in the information as requested to make the necessary edits to the application configuration files.
+                        </p>
+                        <p>
+                            Once completed we need to build our container. We can do that with the following command:
+                        </p>
+                        <pre><code>
+                            cd vulnerablesp<br />
+                            sudo docker build -t sp:1.0 .
+                        </code></pre>
+                        <p>
+                            This will build a container with the name <code>sp</code> and the tag <code>1.0</code>. The next step is to run the container. This can be done with:
+                        </p>
+                        <pre><code>
+                            sudo docker run -it --rm --name sp -d -p 8000:8000 sp:1.0
+                        </code></pre>
+                        <p>
+                            We can confirm the container is running by issuing:
+                        </p>
+                        <pre><code>
+                            sudo docker ps
+                        </code></pre>
+                        <p>
+                            This should produce an ouput similar to this:
+                        </p>
+                        <pre><code>
+                            94476aee1abf    sp:1.1    "uwsgi --ini vulnsp.…"   4 minutes ago    Up 4 minutes    0.0.0.0:8000->8000/tcp    sp
+                        </code></pre>
+                        <p>
+                            We can confirm the application is up and listening by curling the interface with:
+                        </p>
+                        <pre><code>
+                            curl http://127.0.0.1:8000
+                        </code></pre>
+
                         <hr>
                         <h3 id="features">Features of the environment</h3>
+                        <p>Login credentials can be found here: <a href="https://github.com/yogisec/VulnerableSAMLApp#login-credentials">https://github.com/yogisec/VulnerableSAMLApp#login-credentials</a></p>
+                        <p>After successfully logging in we are presented with our profile as seen by the application. This is a quick and easy way to confirm which user we are, as well as our current group membership.</p>
+                        <img src="../static/images/Web_Things/saml/profile.png" alt="profile" class="img-fluid">
+                        <p>The complaints tab is where all of the complaints are stored and is the overall goal of the application.</p>
+                        <img src="../static/images/Web_Things/saml/complaints.png" alt="complaints" class="img-fluid">
+                        <p>In the screenshot below we have authenticated with the <code>admin</code> user account and have a new capability to delete complaints.</p>
+                        <img src="../static/images/Web_Things/saml/delete_complaints.png" alt="delete" class="img-fluid">
+                        <p>The <code>instructor</code> account has several special features to help maintain order within the application. There is a 'restore Complaints' button on the complaints page that reverts all of the complaits back to the starting state of the application.</p>
+                        <img src="../static/images/Web_Things/saml/restore_complaints.png" alt="restore" class="img-fluid">
+                        <p>The instructor account also has a new tab called <code>Saml Settings</code>. Within this tab we can make the application more or less security by checking the features we want to have turned on or off.</p>
+                        <img src="../static/images/Web_Things/saml/settings.png" alt="settings" class="img-fluid">
+
                         <hr>
                         <h3 id="scenarios">The Scenarios</h3>
                         <table class="table">
@@ -111,6 +483,8 @@
                         <p>Great References:
                             <ul>
                                 <li><a href="https://tools.ietf.org/html/rfc7522">RFC7522</a></li>
+                                <li><a href="https://developer.okta.com/docs/concepts/saml/">SAML</a></li>
+                                <li><a href="https://developers.onelogin.com/saml">Overview of SAML</a></li>
                                 <li><a href="https://auth0.com/docs/authorization/concepts/authz-and-authn">Authentication vs Authorization</a></li>
                                 <li><a href="https://research.aurainfosec.io/bypassing-saml20-SSO/">Bypassing SAML 2.0 SSO with XML Signature Attracks</a></li>
                                 <li><a href="https://duo.com/blog/duo-finds-saml-vulnerabilities-affecting-multiple-implementations">Duo Finds SAML Vulnerabilities Affecting Multiple Implementations</a></li>
@@ -126,14 +500,15 @@
                         <ul class="nav post-sidenav"> 
                             <li class=""> <a href="#what">What is it</a> </li>
                             <li class=""> <a href="#how">How does it work</a></li>
+                            <li class=""> <a href="#messages">Message Breakdown</a></li>
                             <li class=""> <a href="#setup">Setting up Environment</a></li>
                             <li class=""> <a href="#features">Features of Environemnt</a></li>
                             <li class=""> <a href="#scenarios">Scenarios</a></li>
-                            <li class=""> <a href="#valid_assertion">Valid Assertion</a></li>
-                            <li class=""> <a href="#2017-11427">CVE-2017-11427</a></li>
-                            <li class=""> <a href="#valid_message">Valid Message</a></li>
-                            <li class=""> <a href="#message_signed">Want Messages Signed</a></li>
-                            <li class=""> <a href="#assertion_signed">Want Assertions Signed</a></li>
+                            <li class=""> <a href="#valid_assertion">- Valid Assertion</a></li>
+                            <li class=""> <a href="#2017-11427">- CVE-2017-11427</a></li>
+                            <li class=""> <a href="#valid_message">- Valid Message</a></li>
+                            <li class=""> <a href="#message_signed">- Want Messages Signed</a></li>
+                            <li class=""> <a href="#assertion_signed">- Want Assertions Signed</a></li>
                             <li class=""> <a href="#references">References</a></li>
                             <li class=""> <a href="#top">Top</a> </li>
                     </nav>

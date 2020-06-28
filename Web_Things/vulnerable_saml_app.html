@@ -304,17 +304,24 @@
                         </p>
                         <img src="../static/images/Web_Things/saml/valid_assertion_group_edited.png" alt="valid_assertion_group_edited" class="img-fluid">
                         <p>
-                            Unfortunatly as we can see below the message is rejected because its not valid.
+                            Unfortunatly as we can see below the message is rejected because its not valid when compared to the signature for the message.
                         </p>
                         <img src="../static/images/Web_Things/saml/valid_assertion.png" alt="valid_assertion" class="img-fluid">
                         <p>
-                            There is a big security flaw with this configuration. The SP is only checking that the assertion is valid IF its signed. The application does not have signed messages as a requirement. If we remove the entire <code>signature</code> block from our SAML payload the message can be changed
+                            There is a big security flaw with this configuration. The SP is only checking that the assertion is valid IF its signed. The application does not have signed messages as a requirement. If we remove the entire <code>signature</code> block from our SAML payload the message can be changed.
                         </p>
-                        <p></p>
+                        <p>
+                            In the Burp intercept for the web traffic within the SAML raider tab we can click the 'Remove Signatures' button to remove the entire signature area of the XML SAML Response.
+                        </p>
+                        <img src="../static/images/Web_Things/saml/signed_signature_removed.png" alt="signed_signature_removed" class="img-fluid">
+                        <p>
+                            When we attempt to tamper with the SAML response without a signature the SP accepts our resposne and we are now authenticated to the application as a member of the administrators group!
+                        </p>
+                        <img src="../static/images/Web_Things/saml/signed_success.png" alt="signed_success" class="img-fluid">
                         <hr>
                         <h3 id="message_signed">Want Assertions / Messages Signed</h3>
                         <p>
-                            Things are slightly improving with this deploymen. With this configuration the Assertion and/or Message must be signed. Since the application requires a signature we cannot just remove the signature block like we did in the previous scenario. To prove all of this out we will use the configuration below:
+                            Things are slightly improving with this deployment. With this configuration the Assertion and/or Message must be signed. Since the application requires a signature we cannot just remove the signature block like we did in the previous scenario. To prove all of this out we will use the configuration below:
                         </p>
                         <img src="../static/images/Web_Things/saml/signed_config.png" alt="signed_config" class="img-fluid">
                         <p>
@@ -372,7 +379,7 @@
                         <hr>
                         <h3 id="2017-11427">CVE-2017-11427</h3>
                         <p>
-                            In February of 2018 DUO labs release details about vulnerabilities in 6 libraries that application leverage to use for SAML. This includes the library used as the source for this application. The original article is <a href="https://duo.com/blog/duo-finds-saml-vulnerabilities-affecting-multiple-implementations">here</a>
+                            In February of 2018 DUO labs release details about vulnerabilities in 6 libraries that application leverage to use for SAML. This includes the library used as the source for this application. The original article is <a href="https://duo.com/blog/duo-finds-saml-vulnerabilities-affecting-multiple-implementations">here</a>.
                         </p>
                         <p>
                             At a high level, you can add a comment in the middle of the XML assertion to change the attributes/values of the SAML response. The really damaging part of this is that depending on the library being used the comment may be ignored during the signature calculation of the message. So to the SP the message is still valid. For this application we'll need to lower our security settings in order to become vulnerable to this attack. The configuration is below:
@@ -411,9 +418,6 @@
                         </p>
                         <p>
                             XSW attacks which take chunks of the SAML response and duplicate it and place it in various places within the response. In these scenarios the SP checks to see if a valid signed assertion/message/etc. exists and then processes the message. What if there are two assertions, the first valid, and signed but the second is not. Which will the application process? The first, second, last, cause it to crash?
-                        </p>
-                        <p>
-                            What if the message is signed but not signed by the IDP? Perhaps the application is validating that the signature area is present, but not that it matches the data in the SAML response?
                         </p>
                         <p>
                             The Yogi Vulnerable SP is not yet vulnerable to these attacks, but they're on the list.

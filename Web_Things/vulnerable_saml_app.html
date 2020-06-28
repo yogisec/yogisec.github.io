@@ -39,7 +39,10 @@
                         <!-- <h2 class="blog-post-title">XSS UI Redirection</h2> -->
                         <h3 id="what">What is this thing?</h3>
                         <p>
-                            I built this app because I wanted to better understand SAML and I wanted to know how to discover, exploit, and remediate vulnearbilities associated with implementations. I created an easily deployable docker environment <a href="https://github.com/yogisec/VulnerableSAMLApp">here</a> that can be spun up on a local machine in about 5 minutes. This includes a fully functional IDP and a Service Provider. The Service Provider has several configuration options that allow for post deployment on the fly adjustments to the security stance of the application. When its fully deployed the environment will be similar to the architecture below:
+                            I built this app because I wanted to better understand SAML and I wanted to know how to discover, exploit, and remediate vulnearbilities associated with implementations. I created an easily deployable docker environment <a href="https://github.com/yogisec/VulnerableSAMLApp">here</a> that can be spun up on a local machine in about 5 minutes. I also have instructions to split the deployment across multiple hosts.
+                        </p>
+                        <p>
+                            This includes a fully functional IDP and a Service Provider. The Service Provider has several configuration options that allow for post deployment on the fly adjustments to the security stance of the application. When its fully deployed the environment will be similar to the architecture and data flows below:
                         </p>
                         <img src="../static/images/Web_Things/saml/environment.png" alt="environment" class="img-fluid">
                         <p>
@@ -56,7 +59,7 @@
                         <hr>
                         <h3 id="setup">Setting up the test environment</h3>
                         <p>
-                            <h4>Quick and Easy Deployment</h4>
+                            <h4 id="quick">Quick and Easy Deployment</h4>
                             The easiest way to get everything up and running is by cloning the repository and then simply running a quick docker-compose command. The compose command will build the images, and deploy them to the local host.
 
                             <pre><code>
@@ -68,7 +71,7 @@
                             The Service Provider will be listening on <code>http://127.0.0.1:8000</code>. The IDP will be listening at <code>http://127.0.0.1</code>. Head down to the <a href=#features>Features</a> section for login details and more information about the applications.
                         </p>
                         <p>
-                            <h4>Split Host Deployment</h4>
+                            <h4 id="split">Split Host Deployment</h4>
                             In order to split the deployment across two seperate hosts (one an IDP, and the other a SP). We need to change some configuration details.
                         </p>
                         <p>
@@ -83,7 +86,13 @@
                             python3 configure_platform.py
                         </code></pre>
                         <p>
-                            Once completed we need to build our IDP container. We can do that with the following command:
+                            If you had the script build the docker container for you run the container with the following command and then skip down to configure the SP:
+                        </p>
+                        <pre><code>
+                            sudo docker run -it --rm --name idp -d -p 80:80 idp:1.0
+                        </code></pre>
+                        <p>
+                            If you did not let the script build the container we need to build it. We can do that with the following command:
                         </p>
                         <pre><code>
                             cd vulnerableidp<br />
@@ -120,7 +129,13 @@
                             python3 configure_platform.py
                         </code></pre>
                         <p>
-                            Once completed we need to build our container. We can do that with the following command:
+                            If you had the script build the docker container for you run the container with the following command and then skip down to the Features section to learn about the application:
+                        </p>
+                        <pre><code>
+                            sudo docker run -it --rm --name sp -d -p 80:80 sp:1.0
+                        </code></pre>
+                        <p>
+                            If you did not let the script build the container we need to build it. We can do that with the following command:
                         </p>
                         <pre><code>
                             cd vulnerablesp<br />
@@ -150,10 +165,12 @@
                         <pre><code>
                             curl http://127.0.0.1:8000
                         </code></pre>
-                        <p>At this point the IDP and the SP should be up and running and accessible. The next section will provide an overview of some of the features of the application.</p>
+                        <p>
+                            At this point the IDP and the SP should be up and running and accessible. The next section will provide an overview of some of the features of the application.
+                        </p>
                         <hr>
                         <h3 id="features">Features of the environment</h3>
-                        <p>Login credentials can be found here: <a href="https://github.com/yogisec/VulnerableSAMLApp#login-credentials">https://github.com/yogisec/VulnerableSAMLApp#login-credentials</a></p>
+                        <p>Login credentials:</p>
                         <table class="table">
                             <thead class="thead-dark">
                                 <tr>
@@ -170,11 +187,11 @@
                                 </tr>
                                 <tr>
                                     <td>admin</td>
-                                    <td>password</td>
+                                    <td>this-is-the-administrator-pasword-oh-no-is-that-a-typo-in-password</td>
                                     <td>Regular administrator account, member of the admin group. This account has the ability to delete the complaints.</td>
                                 </tr>
                                 <tr>
-                                    <td>adminbutnot</td>
+                                    <td>brubble</td>
                                     <td>password</td>
                                     <td>This is account was registered specifically for CVE-2017-11427</td>
                                 </tr>
@@ -185,15 +202,25 @@
                                 </tr>
                             </tbody>
                         </table>
-                        <p>After successfully logging in we are presented with our profile as seen by the application. This is a quick and easy way to confirm which user we are, as well as our current group membership.</p>
+                        <p>
+                            After successfully logging in we are presented with our profile as seen by the application. This is a quick and easy way to confirm which user we are, as well as our current group membership.
+                        </p>
                         <img src="../static/images/Web_Things/saml/profile.png" alt="profile" class="img-fluid">
-                        <p>The complaints tab is where all of the complaints are stored and is the overall goal of the application.</p>
+                        <p>
+                            The complaints tab is where all of the complaints are stored and is the overall goal of the application.
+                        </p>
                         <img src="../static/images/Web_Things/saml/complaints.png" alt="complaints" class="img-fluid">
-                        <p>In the screenshot below we have authenticated with the <code>admin</code> user account and have a new capability to delete complaints.</p>
+                        <p>
+                            In the screenshot below we have authenticated with the <code>admin</code> user account and have a new capability to delete complaints.
+                        </p>
                         <img src="../static/images/Web_Things/saml/delete_complaints.png" alt="delete" class="img-fluid">
-                        <p>The <code>instructor</code> account has several special features to help maintain order within the application. There is a 'restore Complaints' button on the complaints page that reverts all of the complaits back to the starting state of the application.</p>
+                        <p>
+                            The <code>instructor</code> account has several special features to help maintain order within the application. There is a 'Restore Complaints' button on the complaints page that reverts all of the complaints back to the starting state of the application.
+                        </p>
                         <img src="../static/images/Web_Things/saml/restore_complaints.png" alt="restore" class="img-fluid">
-                        <p>The instructor account also has a new tab called <code>Saml Settings</code>. Within this tab we can make the application more or less security by checking the features we want to have turned on or off.</p>
+                        <p>
+                            The instructor account also has a new tab called <code>Saml Settings</code>. Within this tab we can make the application more or less security by checking the features we want to have turned on or off.
+                        </p>
                         <img src="../static/images/Web_Things/saml/settings.png" alt="settings" class="img-fluid">
                         <hr>
                         <h3 id="scenarios">The Scenarios</h3>
@@ -206,53 +233,66 @@
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>Valid Assertion</td>
-                                    <td>This is the ideal security configuration. The Service Provider is checking for valid assertions, any tampering results in the message being rejected.</td>
+                                    <td><a href="#nothing_configured">Nothing Configured</a></td>
+                                    <td>The application accepts any SAML message, edit away, the application trusts everything.</td>
                                 </tr>
                                 <tr>
-                                    <td>Want Messages Signed</td>
-                                    <td></td>
+                                    <td><a href="#valid_assertion">Valid Assertion / Valid Messages</a></td>
+                                    <td>The Service Provider is checking for valid assertions, any tampering results in the message being rejected. Unless we remove the signature block.</td>
                                 </tr>
                                 <tr>
-                                    <td>Valid Messages</td>
-                                    <td></td>
+                                    <td><a href="#message_signed">Want Assertions / Messages Signed</a></td>
+                                    <td>The Service Provider requires the messages to be signed, but it doesn't check to see if they are valid signatures.</td>
                                 </tr>
                                 <tr>
-                                    <td>Sign MetaData</td>
-                                    <td></td>
+                                    <td><a href="#signed_and_valid">Everything Signed, Everything Valid</a></td>
+                                    <td>This is the ideal deployment, messages must be signed and they must be valid, no tampering allowed.</td>
                                 </tr>
                                 <tr>
-                                    <td>CVE-2017-11427</td>
-                                    <td></td>
-                                </tr>
-                                <tr>
-                                    <td>Want Assertions Signed</td>
-                                    <td></td>
+                                    <td><a href="#2017-11427">CVE-2017-11427</a></td>
+                                    <td>This is an implementation of CVE-2017-11427 which leverages comments within the SAML response XML to bypass security controls.</td>
                                 </tr>
                             </tbody>
                         </table>
                         <hr>
                         <p>
-                            Note: for all of the SAML message tampering below for each of the scenarios I am leveraging the SAML Raider plugin for burp. It handles the decoding of the messages on the fly and allows for edits. It also supports XSW attacks which are currently beyond the scope of this application.
+                            Note: for all of the SAML message tampering below I am leveraging the SAML Raider plugin for burp. It handles the decoding of the messages on the fly and allows for edits. It also supports XSW attacks which are currently beyond the scope of this application.
                         </p>
-                        <h3 id="nothing_configured">Nothing configured</h3>
-                        <p>For this scenario we'll use the security configuration pictured below.</p>
-                        <img src="../static/images/Web_Things/saml/nothing_config.png" alt="nothing_config" class="img-fluid">
-                        <p>Before we get to far into this scenario, I wanted to take a moment and say that this scenario, this configuration issue, is the <b>MOST</b> common implementation flaw that I come across.</p>
                         <p>
-                            Once we authenticate to our IDP we can make any changes to the SAML assertion that we want. The message will not be checked, the SP will simply process it as valid. The screenshot below shows the original assertion before tamper:
+                            Additional Note: When changing from one scenario to the next it is best to make sure you signed out before adjusting the security levels of the Service Provider (SP). This helps to ensure there are no unforseen outcomes.
+                        </p>
+                        <hr>
+                        <h3 id="nothing_configured">Nothing Configured</h3>
+                        <p>
+                            For this scenario we'll use the security configuration pictured below.
+                        </p>
+                        <img src="../static/images/Web_Things/saml/nothing_config.png" alt="nothing_config" class="img-fluid">
+                        <p>
+                            Before we get to far into this scenario, I wanted to take a moment and say that this scenario, this configuration issue, is the <b>MOST</b> common implementation flaw that I come across.
+                        </p>
+                        <p>
+                            Once we authenticate to our IDP we can make any changes to the SAML response that we want. The message will not be checked, the SP will simply process it as valid. The screenshot below shows the original assertion before tamper:
                         </p>
                         <img src="../static/images/Web_Things/saml/nothing_orig_assertion.png" alt="nothing_orig_assertion" class="img-fluid">
+                        <p>
+                            Now, if we change our user group to the <code>administrators</code> group as pictured below we will successfully escalate our privileges from a regular user account to a full admin within the SP.
+                        </p>
                         <img src="../static/images/Web_Things/saml/nothing_tamper_assertion.png" alt="nothing_tamper_assertion" class="img-fluid">
-                        <p>Once we pass the response payload along to the SP we are now an administrator within the application and as we can see below when we click on the <code>complaints</code> tab we now have the ability to delete all of the complaints.</p>
+                        <p>
+                            Once we pass the SAML response payload along to the SP we are now an administrator within the SP and as we can see below when we click on the <code>complaints</code> tab we now have the ability to delete all of the complaints.
+                        </p>
                         <img src="../static/images/Web_Things/saml/nothing_delete_options.png" alt="nothing_delete" class="img-fluid">
-                        <p>We can even take it a step further if we'd like and replace all of the fields within the assertion with fake information similar to the picture below.</p>
+                        <p>
+                            We can even take it a step further if we'd like and replace all of the fields within the response with fake information similar to the picture below. As the SP logs our 'malicious' doings it will log all of our fake information. The only true way to determine who we were before changing our use settings would be to sync up the logs from the IDP and the SP to determine who authenticated to the IDP before the malicious activity began.
+                        </p>
                         <img src="../static/images/Web_Things/saml/nothing_fake.png" alt="nothing_fake" class="img-fluid">
                         <p>
                             Above I mentioned that this configuration is the most common issue that I find when testing SAML implementations. The reason for this is because when most applications are initially configured to leverage saml the check box to make sure messages are secure is left unchecked. This allows the owners to validate that all of the backend configuration that occurs between the SP and the IDP is correctly configured without dealing with certificates. The unfortunate part is most of the time this is where things get left. The messages are left fully vulnerable to anyone who can authenticate to the IDP.
                         </p>
-                        <h3 id="valid_assertion">Valid Assertion</h3>
-                        <p>For this scenario we'll use the security configuration pictured below.</p>
+                        <h3 id="valid_assertion">Valid Assertion / Valid Message / Both</h3>
+                        <p>
+                            For this scenario we'll use the security configuration pictured below. This scenario plays out the exact same way if validMessage is also checked, or if it is checked and validAssertion is not.
+                        </p>
                         <img src="../static/images/Web_Things/saml/valid_assertion_config.png" alt="valid_assertion_config" class="img-fluid">
                         
                         <p>
@@ -272,17 +312,112 @@
                         </p>
                         <p></p>
                         <hr>
+                        <h3 id="message_signed">Want Assertions / Messages Signed</h3>
+                        <p>
+                            Things are slightly improving with this deploymen. With this configuration the Assertion and/or Message must be signed. Since the application requires a signature we cannot just remove the signature block like we did in the previous scenario. To prove all of this out we will use the configuration below:
+                        </p>
+                        <img src="../static/images/Web_Things/saml/signed_config.png" alt="signed_config" class="img-fluid">
+                        <p>
+                            The first thing we can try is to simply remove the signature elements. We wont tamper with anything, just a quick test to see if we can remove the signatures and have the SAML response still be accepted by the SP.
+                        </p>
+                        <img src="../static/images/Web_Things/saml/signed_signature_removed.png" alt="signed_signature_removed" class="img-fluid">
+                        <p>
+                            As expected with our current configuration settings the SP rejects the response payload because it is invalid.
+                        </p>
+                        <img src="../static/images/Web_Things/saml/signed_error.png" alt="signed_error" class="img-fluid">
+                        <p>
+                            Perhaps we can leave the signature elements in the response message but change the assertion attributes? Below we can see the memberOf attribute value has been changed from the <code>users</code> group to the <code>administrators</code> group.   
+                        </p>
+                        <img src="../static/images/Web_Things/saml/signed_changed_group.png" alt="signed_group_change" class="img-fluid">
+                        <p>
+                            Sending the response payload along and we are greated with a successful login as well as our new permissions as a member of the administrators group!
+                        </p>
+                        <img src="../static/images/Web_Things/saml/signed_success.png" alt="signed_success" class="img-fluid">
+                        <p>
+                            Why did that work? The application is checking for signatures isn't it? Well it is and it isn't. The application in its current configuration is checking to make sure there are signature attributes within the SAML response and that it is signed with the trusted certificate. It's not actually checking if they are valid or not. If the signature elements are in the message the application assumes its legitimate and trust worthy. 
+                        </p>
+                        <hr>
+                        <h3 id="signed_and_valid">Signed and Valid</h3>
+                        <p>
+                            In this scenario we'll use the following configuration:
+                        </p>
+                        <img src="../static/images/Web_Things/saml/signed_valid_config.png" alt="signed_valid_config" class="img-fluid">
+                        <p>
+                            This configuration is what is expected when deploying an application leveraging SAMl authentication. In this setup the SP requires that the messages are signed and that the signatures match the data in the overall message and the assertion. This means as an attacker we cannot tamper with the areas of the message which are used to calculate the signatures. This includes the attribute values within the assertion. Let's try out a couple things and see the outcomes.
+                        </p>
+
+                        <p>
+                            <i>There is a known bug with this deployment where when the application requires signed messages it will error on an attempt to sign out after a valid log in. The current work around is to either delete the session cookies, or to lower the security settings of the application by removing the requirement for signed messages to complete the log out. In the case of this application leaving the application with a requirement for the Assertions to be signed produces the same effect as also requirin the messages to be signed.</i>
+                        </p>
+                        <p>
+                            Lets try to remove the signature of the SAML response:
+                        </p>
+                        <img src="../static/images/Web_Things/saml/signed_signature_removed.png" alt="signed_signature_removed" class="img-fluid">
+                        <p>
+                            This results in the error below, because the application is checking to see if the message is signed.
+                        </p>
+                        <img src="../static/images/Web_Things/saml/signed_valid_errors.png" alt="signed_valid_errors" class="img-fluid">
+                        <p>
+                            Lets leave the signature but change the attribute values within the assertion.
+                        </p>
+                        </p>
+                        <img src="../static/images/Web_Things/saml/signed_changed_group.png" alt="signed_group_change" class="img-fluid">
+                        <p>
+                            This results in another error. This is because the application is configured to make sure the messages are valid if they are signed.
+                        </p>
+                        <img src="../static/images/Web_Things/saml/signed_valid_errors.png" alt="signed_valid_errors" class="img-fluid">
+                        <p>
+                            The next scenario is able to bypass this situation and it does so in a very intersting way.
+                        </p>
+                        <hr>
                         <h3 id="2017-11427">CVE-2017-11427</h3>
-                        <hr>
-                        <h3 id="valid_message">Valid Message</h3>
-                        <hr>
-                        <h3 id="message_signed">Want Messages Signed</h3>
-                        <hr>
-                        <h3 id="assertion_signed">Want Assertions Signed</h3>
+                        <p>
+                            In February of 2018 DUO labs release details about vulnerabilities in 6 libraries that application leverage to use for SAML. This includes the library used as the source for this application. The original article is <a href="https://duo.com/blog/duo-finds-saml-vulnerabilities-affecting-multiple-implementations">here</a>
+                        </p>
+                        <p>
+                            At a high level, you can add a comment in the middle of the XML assertion to change the attributes/values of the SAML response. The really damaging part of this is that depending on the library being used the comment may be ignored during the signature calculation of the message. So to the SP the message is still valid. For this application we'll need to lower our security settings in order to become vulnerable to this attack. The configuration is below:
+                        </p>
+                        <img src="../static/images/Web_Things/saml/cve_config.png" alt="cve_config" class="img-fluid">
+                        <p>
+                            For this scenario we'll pivot away from the 'Yogi' user account and use the Barney Rubble (brubble) user account. Imagine that Barney is an employee who has 'power user' permissions within the Service Provider. He doesn't have full admin rights so deleting comments isn't avaialble to him. One of the things that he is allowed to do is create groups! He created a group called 'administratorsbutnot' and added his user account to the group. Lets see how the scenario plays out.
+                        </p>
+                        <p>
+                            First we'll log in and confirm the group membership is correct, and that as Barney we do not have the ability to delete comments.
+                        </p>
+                        <p>
+                            Login success and correct group membership:
+                        </p>
+                        <img src="../static/images/Web_Things/saml/cve_group.png" alt="cve_group" class="img-fluid">
+                        <p>
+                            On complaints page we do not have access to delete:
+                        </p>
+                        <img src="../static/images/Web_Things/saml/cve_complaints.png" alt="cve_complaints" class="img-fluid">
+                        <p>
+                            Now we will sign out and back in again, this time changing the SAML response to comment out the 'butnot' portion of the group membership like this: <code>administrators&#x3c;&#x21;&#x2d;&#x2d;butnot&#x2d;&#x2d;&#x3e;</code>
+                        </p>
+                        <img src="../static/images/Web_Things/saml/cve_comment.png" alt="cve_comment" class="img-fluid">
+                        <p>
+                            Success! We've logged into the application and it looks like we are now a memeber of the administrators group.
+                        </p>
+                        <img src="../static/images/Web_Things/saml/cve_group_admins.png" alt="cve_group_admins" class="img-fluid">
+                        <p>
+                            Checking the complaints page we now have the ability to delete comments!
+                        </p>
+                        <img src="../static/images/Web_Things/saml/cve_delete.png" alt="cve_delete" class="img-fluid">
                         <hr>
                         <h3 id="other_attacks">Other attacks</h3>
-                        <p>There are several more types of vulnerabilities that could exist. Message replays, where an attacker sends a message after its TTL has expired. XSW attacks which take chunks of the SAML response and duplicate it and place it in various places within the response. In these scenarios the SP checks to see if a valid signed assertion/message/etc. exists and then processes the message. What if there are two assertions, the first valid, and signed but the second is not. Which will the application process? The first, second, last, cause it to crash?  </p>
-                        <p>The Yogi Vulnerable SP is not yet vulnerable to these attacks, but they're on the list.</p>
+                        <p>
+                            There are several more types of vulnerabilities that could exist. Message replays, where an attacker sends a message after its TTL has expired.
+                        </p>
+                        <p>
+                            XSW attacks which take chunks of the SAML response and duplicate it and place it in various places within the response. In these scenarios the SP checks to see if a valid signed assertion/message/etc. exists and then processes the message. What if there are two assertions, the first valid, and signed but the second is not. Which will the application process? The first, second, last, cause it to crash?
+                        </p>
+                        <p>
+                            What if the message is signed but not signed by the IDP? Perhaps the application is validating that the signature area is present, but not that it matches the data in the SAML response?
+                        </p>
+                        <p>
+                            The Yogi Vulnerable SP is not yet vulnerable to these attacks, but they're on the list.
+                        </p>
                         <hr>
                         <h3 id="references">References</h3>
                         <p>Great References:
@@ -307,13 +442,15 @@
                             <li class=""> <a href="#what">What is this</a> </li>
                             <li class=""> <a href="#story">Back Story</a></li>
                             <li class=""> <a href="#setup">Setting up Environment</a></li>
+                            <li class=""> <a href="#quick">- Quick and Easy</a></li>
+                            <li class=""> <a href="#split">- Split Host</a></li>
                             <li class=""> <a href="#features">Features of Environemnt</a></li>
                             <li class=""> <a href="#scenarios">Scenarios</a></li>
-                            <li class=""> <a href="#valid_assertion">- Valid Assertion</a></li>
+                            <li class=""> <a href="#nothing_configured">- Nothing Configured</a></li>
+                            <li class=""> <a href="#valid_assertion">- Valid Assertion / Message</a></li>
+                            <li class=""> <a href="#message_signed">- Want Assertion / Messages Signed</a></li>
+                            <li class=""> <a href="#signed_and_valid">- Assertion / Messages signed and valid</a></li>
                             <li class=""> <a href="#2017-11427">- CVE-2017-11427</a></li>
-                            <li class=""> <a href="#valid_message">- Valid Message</a></li>
-                            <li class=""> <a href="#message_signed">- Want Messages Signed</a></li>
-                            <li class=""> <a href="#assertion_signed">- Want Assertions Signed</a></li>
                             <li class=""> <a href="#references">References</a></li>
                             <li class=""> <a href="#top">Top</a> </li>
                     </nav>

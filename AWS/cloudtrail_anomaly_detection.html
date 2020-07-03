@@ -38,7 +38,7 @@
         
                 <div class="col-sm-8 blog-main">
                     <div class="blog-post" data-spy="scroll" data-target="#sidebar" data-offset="15">
-                        <p>This is going to be an ongoing post for awhile. It was inspired by Netflix's skunkworks group who gave a <a href="https://www.youtube.com/watch?v=kWJoiZ9yMpg">talk</a> at re:invent 2019 in regards to building a cloudtrail anomaly detection platform leveraging amazon services. I like the idea, but not the deployment method netflix showcased. It didn't scale to the size I needed it to. There was also some aspects that I reworked to lessen the load (and cost) of Athena queries.</p>
+                        <p>This is going to be an ongoing post for awhile. It was inspired by Netflix's skunkworks group who gave a <a href="https://www.youtube.com/watch?v=kWJoiZ9yMpg">talk</a> at re:invent 2019 in regards to building a cloudtrail anomaly detection platform leveraging amazon services. I like the idea, but not the deployment method netflix showcased. It didn't scale to the size I needed it to (Looking at the final product in production now it probably would have, but I didn't want to run and maintain an EC2 instnace). Additionally there were also some aspects that I reworked to lessen the load (and cost) of Athena queries. We'll talk more about these differences and more further in the post.</p>
                         
                         <h3 id="dataflow">Data Flow</h3>
                         <p>Below is how the data and api calls are made within aws. The code in the middle is several Lambda scripts but for the data flow it made sense to consolodate them into a single entity.</p>
@@ -56,8 +56,28 @@
                             </ol>
                         </p>
                         <hr>
+                        <h3 id="inspiration">Inspiration</h3>
+                        <p>The original design is a script that runs of an ec2 instance with the required roles. The original repo is <a href="https://github.com/Netflix-Skunkworks/cloudtrail-anomaly">here</a> and I forked it <a href="https://github.com/yogisec/cloudtrail-anomaly">here</a>. The Athena query</p>
+                        <pre><code>
+                          SELECT DISTINCT eventsource, eventname FROM cloudtrail_{} <br />
+                          WHERE useridentity.type = 'AssumedRole' <br />
+                          AND useridentity.sessioncontext.sessionissuer.principalid= '{}' <br />
+                          AND eventTime > to_iso8601(current_timestamp - interval '1' hour);".format(account, principal_id)
+                        </code></pre>
                         
-                        
+                        <p>
+                          <ul>
+                            <li>structural differences</li>
+                            <li>athena partitions</li>
+                            <li>lambdas</li>
+                            <li>issues to watch out for and overcome</li>
+                            <li>dyanmodb things</li>
+                            <li>code modifications</li>
+                            <li>tuning aka whast high, med, low, info, ignore</li>
+                            <li>current state, does it work?</li>
+                            <li>account local deployments?</li>
+                          </ul>
+                        </p>
 
                     </div><!-- /.blog-post -->
                 </div><!-- /.blog-main -->

@@ -126,9 +126,29 @@
                           Depening on the Dynamo deployment you may run into some limits when reading and writing. This is another key place to keep an eye out and adjust the deployment as needed.
                         </p>
                         <p>
-                          The final place where issues may arise is with the Lambdas themself. Make sure the run time is long enough to comlete the work. Both Lambdas will run fairly quickly, but you'll want to make sure you tune them so that they are sized appropriatly. 
+                          The final place where issues may arise (I'm sure there are others)  is with the Lambdas themself. Make sure the run time is long enough to comlete the work. Both Lambdas will run fairly quickly, but you'll want to make sure you tune them so that they are sized appropriatly. 
                         </p>
-
+                        <hr />
+                        <h3 id="tuning">Tuning</h3>
+                        <p>
+                          Most of the tuning for incident severity is going to occur within the identity_types.py file. This file is structured with a class for each identity type to analyze. As of writing this the only identity type that is "complete" is the AssumedRole type. The script has the structure built for Root and IAMUser, but they have not been the main focus to get this moved from concept to production.
+                        </p>
+                        <p>
+                          The basic flow of the Assume_Role class is to loop through each role within an AWS account. For each of the roles, loop through all of the cloudtrail events. If the action and the role match, query dynamodb to see if the pairing for the principal, event source, and event action exists within the database. If it does, update the TTL in dynamo. If it does not the script adds it to a list, and then enters into an "alert condition". The script has several differet stages to determine if it shoudl alert or not as well as what severity to apply to the alert based on various conditions.
+                        </p>
+                        <p>
+                          What are the conditions to skip the alert? That is widly going to depend on your own environment. Here are some things that you may end up wanting to add, or adjust to fit your deployment.
+                          <ul>
+                            <li>Entire roles to ignore</li>
+                            <li>Specific actions to ignore</li>
+                            <li>If the role is younger than X days (script is currently set to 15)</li>
+                            <li>If its an aws service</li>
+                            <li>If the number of new actions is less than X (script sets less than 5 to an information severity)</li>
+                          </ul>
+                        </p>
+                        <p>
+                          The above list covers what gets ignored, but what about severities? What should the SOC/IR teams spend time on? Once again this is going to entirely depend upon your own environments, the businesses risk tollerances, and other mitigating controls, etc. Within the identity_types.py file there are some sample ratings based on a few different scenarios....
+                        </p>
 
                     </div><!-- /.blog-post -->
                 </div><!-- /.blog-main -->

@@ -65,9 +65,11 @@
                         <img src="../static/images/AWS/cloudtrail_anomaly_detection/data_flow.png" alt="data-flow" class="img-fluid">
                         <hr>
                         <h3 id="inspiration">Inspiration</h3>
-                        <p>The original design is a script that runs off an Ec2 instance with the required role to access the CloudTrail events, Athena, S3, and DynamoDB. The original repo is <a href="https://github.com/Netflix-Skunkworks/cloudtrail-anomaly">here</a> and I forked it <a href="https://github.com/yogisec/cloudtrail-anomaly">here</a>. The Athena query</p>
+                        <p>
+                          The original design is a script that runs off an Ec2 instance with the required role to access the CloudTrail events, Athena, S3, and DynamoDB. The original repo is <a href="https://github.com/Netflix-Skunkworks/cloudtrail-anomaly">here</a> and I forked it <a href="https://github.com/yogisec/cloudtrail-anomaly">here</a>.
+                        </p>
 
-                        
+                        <!--
                         <p>
                           <ul>
                             <li>structural differences</li>
@@ -81,6 +83,7 @@
                             <li>account local deployments?</li>
                           </ul>
                         </p>
+                        -->
                         <h3 id="structural">Structural Differences</h3>
                         <p>While porting the original concept over from what Netflix released. I decided that I didn't want to have to deal with the run and maintain of an EC2 instance. While its not a huge deal, it was just something that I didn't want to do. This is where we have our first major structural difference between the original source, and what was rolled into production. The deployment in my github repo is serverless. Kicked off by cron jobs running every hour.</p>
                         <p>Below is a expanded data flow showing the Lambda scripts, and what occurs at each stage.</p>

@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-133811886-2"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'UA-133811886-2');
+  </script>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <script src="../static/js/nav.js"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="../static/css/main.css">
+</head>
+<body>
+
+    <div class="site-wrapper">
+        <div class="sticky top-bar">
+      <div id="mySidenav" class="sidenav sticky" include-nav="/static/nav.html">
+        </div>
+        <span class="sticky hamburger" style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
+    </div>
+        <div class="container">
+            <div class="blog-header">
+                <h1 class="blog-title" id="top">EMR Security Woes</h1>
+                <hr>
+              </div>
+        
+              <div class="row">
+        
+                <div class="col-sm-8 blog-main">
+                    <div class="blog-post" data-spy="scroll" data-target="#sidebar" data-offset="15">
+                        <p>I recently had the opportunity to dig deeper into the Elastic Map Reduce (EMR) service in AWS. According to the official Amazon docs (<a href="https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-what-is-emr.html">here</a>) "...EMR is a manged cluster platform that simlifies running big data frameworks..." Full disclosure I have virtually zero experience with big data and big data platforms. The closest I've gotten to that space is storing data in S3 and searching it with Athena. Oh, I also sometimes search enterprise Splunk without specifying an index or sourcetype. That counts right?</p>
+                        <p>The reason I was digging into EMR was not to learn more about big data, hadoop, spark, etc. But instead it was to answer a few simple questions. How would someone compromise a cluster, and on the flip side, how could you detect it was compromised and what the attackers did after compromise.</p>
+                        <hr />
+                        <h3 id="setup">Console - Initial Login</h3>
+                        <p>Amazon has done an amazing job at making it really easy to deploy an EMR cluster. In fact its just a few clicks and its up. Within the EMR section select <code>create</code> to create a cluster. Once the <code>Create Cluster - Quick Options</code> page loads configure your cluster to meet your needs. For this example select release emr-6.0.0 with Spark, Yarn, and Zeppelin.</p>
+                        <p>Select the key pair to use for the instances which will be part of the cluster, and then click the <code>Create Cluster</code> button. A screenshot of the configuration setup is below.</p>
+                        <table class="table">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th scope="col">time</th>
+                                    <th scope="col">eventSource</th>
+                                    <th scope="col">eventName</th>
+                                    <th scope="col">userAgent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>12:52:18</td>
+                                    <td>signin.amazonaws.com</td>
+                                    <td>ConsoleLogin</td>
+                                    <td>Browser UserAgent</td>
+                                </tr>
+                                <tr>
+                                    <td>12:52:20</td>
+                                    <td>health.amazonaws.com</td>
+                                    <td>DescribeEventAggregates</td>
+                                    <td>console.amazonaws.com</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <hr />
+                        <h3 id="additional">Console - EC2</h3>
+                        <table class="table">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th scope="col">time</th>
+                                    <th scope="col">eventSource</th>
+                                    <th scope="col">eventName</th>
+                                    <th scope="col">userAgent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>ec2.amazonaws.com</td>
+                                    <td>DescribeSnapshots</td>
+                                    <td>console.ec2.amazonaws.com</td>
+                                </tr>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>ec2.amazonaws.com</td>
+                                    <td>DescribeSecurityGroups</td>
+                                    <td>console.ec2.amazonaws.com</td>
+                                </tr>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>ec2.amazonaws.com</td>
+                                    <td>DescribeLaunchTemplates</td>
+                                    <td>console.ec2.amazonaws.com</td>
+                                </tr>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>ec2.amazonaws.com</td>
+                                    <td>DescribeHosts</td>
+                                    <td>console.ec2.amazonaws.com</td>
+                                </tr>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>ec2.amazonaws.com</td>
+                                    <td>DescribeAddresses</td>
+                                    <td>console.ec2.amazonaws.com</td>
+                                </tr>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>ec2.amazonaws.com</td>
+                                    <td>DescribePlacementGroups</td>
+                                    <td>console.ec2.amazonaws.com</td>
+                                </tr>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>ec2.amazonaws.com</td>
+                                    <td>DescribeKeyPairs</td>
+                                    <td>console.ec2.amazonaws.com</td>
+                                </tr>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>elasticloadbalancing.amazonaws.com</td>
+                                    <td>DescribeLoadBalancers</td>
+                                    <td>console.ec2.amazonaws.com</td>
+                                </tr>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>ec2.amazonaws.com</td>
+                                    <td>DescribeInstanceStatus</td>
+                                    <td>console.ec2.amazonaws.com</td>
+                                </tr>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>health.amazonaws.com</td>
+                                    <td>DescribeEventAggregates</td>
+                                    <td>console.amazonaws.com</td>
+                                </tr>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>ec2.amazonaws.com</td>
+                                    <td>DescribeVolumes</td>
+                                    <td>console.ec2.amazonaws.com</td>
+                                </tr>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>ec2.amazonaws.com</td>
+                                    <td>DescribeInstances</td>
+                                    <td>console.ec2.amazonaws.com</td>
+                                </tr>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>ec2.amazonaws.com</td>
+                                    <td>DescribeAccountAttributes</td>
+                                    <td>console.ec2.amazonaws.com</td>
+                                </tr>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>ec2.amazonaws.com</td>
+                                    <td>DescribeVolumeStatus</td>
+                                    <td>console.ec2.amazonaws.com</td>
+                                </tr>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>elasticloadbalancing.amazonaws.com</td>
+                                    <td>DescribeLoadBalancers</td>
+                                    <td>console.ec2.amazonaws.com</td>
+                                </tr>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>ec2.amazonaws.com</td>
+                                    <td>DescribeAvailabilityZones</td>
+                                    <td>console.ec2.amazonaws.com</td>
+                                </tr>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>ec2.amazonaws.com</td>
+                                    <td>DescribeVolumeStatus</td>
+                                    <td>console.ec2.amazonaws.com</td>
+                                </tr>
+                                <tr>
+                                    <td>12:55:28</td>
+                                    <td>ec2.amazonaws.com</td>
+                                    <td>DescribeAccountAttributes</td>
+                                    <td>console.ec2.amazonaws.com</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <hr />
+                        <h3 id="additional">Additional Resources</h3>
+
+
+                        <p>
+                            Additional references, I leaned on these heavily while trying to better understand this space:
+                            <ul>
+                                <li><a href="https://blog.radware.com/security/2018/11/hadoop-yarn-an-assessment-of-the-attack-surface-and-its-exploits/">Hadoop YARN: An Assessment of the Attack Surface and Its Exploits</a></li>
+                                <li><a href="https://medium.com/@ivan.vasquez/dont-let-dr-who-hijack-your-emr-cluster-9bb67daa4641">Don't let Dr.Who hijack your EMR cluster</a></li>
+                                <li><a href="https://medium.com/@neerajsabharwal/hadoop-yarn-hack-9a72cc1328b6">Hadoop Yarn hack?</a></li>
+                            </ul>
+                        </p>
+
+                    </div><!-- /.blog-post -->
+                </div><!-- /.blog-main -->
+
+                    <!-- Blog Side Bar-->
+                <div class="col-md-3" id=sidebar data-spy="affix-bottom" data-offset-top="0">
+
+                    <nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id="post-nav">
+                        <h5>contents</h5>
+                        <ul class="nav post-sidenav"> 
+                            <li class=""> <a href="#setup">Setting up a Cluster</a> </li>
+                            <li class=""> <a href="#compromise">Compromising EMR</a> </li>
+                            <li class=""> <a href="#logging">Logging</a> </li>
+                            <li class=""> <a href="#next">Next Steps</a> </li>
+                            <li class=""> <a href="#prevention">Prevention</a> </li>
+                            <li class=""> <a href="#additional">Additional Resources</a></li>
+                            <li class=""> <a href="#top">Top</a> </li>
+                    </nav>
+                </div><!-- /.blog-sidebar -->
+
+            </div><!-- /.row -->
+        </div> <!--/.container-->
+    </div> <!--/.wrapper -->
+
+<!-- Modals -->
+<div class="modal fade" id="redressing1Modal" tabindex="-1" role="dialog" aria-labelledby="redressing1ModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/xssuiredressing1.png" style="width:300%;align-self:center;">
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="redressing2Modal" tabindex="-1" role="dialog" aria-labelledby="redressing2ModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <img src="../static/images/xssuiredressing2.png" style="width:300%;align-self:center;">
+    </div>
+  </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script>includeHTML();</script>
+</html> 
+

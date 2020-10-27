@@ -54,11 +54,11 @@
                         <p>All of the api calls fail with the exeption being <code>iam list-roles</code>. We can clean the output up by using jq:</p>
                         <pre><code>aws --profile raynor iam list-roles | jq '.Roles[].RoleName'</code></pre>
                         <p>This command will produce an output similar to the one below.</p>
-                        <img src="../static/images/Cloud_Goat/iam_privesc_by_rollback/jq_list_roles.png" alt="list_roles" class="img-fluid">
+                        <img src="../static/images/cloud-goat/iam-privesc-by-rollback/jq-list-roles.png" alt="list_roles" class="img-fluid">
                         <p>The key takeaway here is that we have access to a user account with some level of IAM permissions. How much access do we have? One way to find out is by leveraging Pacu to bruteforce those permissions for us. The other option is to make iam calls one at a time to determine where our limits may exist. For this example we'll leverage Pacu and run the iam__enum_users_roles_policies_groups module.</p>
                         <pre><code>run iam__enum_users_roles_policies_groups</code></pre>
                         <p>Once the module finishes its execution we see that it successfully enumeated various aspects of the account.</p>
-                        <img src="../static/images/Cloud_Goat/iam_privesc_by_rollback/iam_enum_results.png" alt="iam_enum_results" class="img-fluid">
+                        <img src="../static/images/cloud-goat/iam-privesc-by-rollback/iam-enum-results.png" alt="iam_enum_results" class="img-fluid">
                         <p>We can run the <code>data IAM</code> command to see information associated with the enumeration. At first glance of the policies it appears there is a specific policy listed for our user account: <code>cg-raynor-policy</code></p>
                         <pre><code>
                             "Policies": [<br />
@@ -215,22 +215,6 @@
             </div><!-- /.row -->
         </div> <!--/.container-->
     </div> <!--/.wrapper -->
-
-<!-- Modals -->
-<div class="modal fade" id="redressing1Modal" tabindex="-1" role="dialog" aria-labelledby="redressing1ModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-        <img src="../static/images/xssuiredressing1.png" style="width:300%;align-self:center;">
-    </div>
-  </div>
-</div>
-<div class="modal fade" id="redressing2Modal" tabindex="-1" role="dialog" aria-labelledby="redressing2ModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-        <img src="../static/images/xssuiredressing2.png" style="width:300%;align-self:center;">
-    </div>
-  </div>
-</div>
 
 
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>

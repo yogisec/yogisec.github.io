@@ -205,8 +205,8 @@
                             kubectl --as system:serviceaccount:garden:groundskeeper --namespace pub run --image=raesene/alpine-nettools
                           </code></pre>
                           <p>We are still missing what command was executed within the pod, if any. Let's keep digging in and see what else we can find.</p>
-                          
-
+                          <p>A bit further forward in the timeline we can see activity pointing at the child pod. Using the information we learned earlier while describing the child pod we know this pod has a hostPath mount <code>/</code> mapped to <code>/child-storage</code> within the container running in the pod. The execute command below uses <code>cat</code> to dump the contents of the <code>/etc/shadow</code> file mounted from the host.</p>
+                          <img src="../static/images/kubernetes/ir/splunk-child-shadow-cat.PNG" alt="splunk-child-shadow-cat" class="img-fluid">
 
                         <hr />
                         <h3 id="prevention">Prevention</h3>

@@ -1,8 +1,0 @@
-12:52 Signed into the role
-
-12:55 Clicked on EC2 Link
-
-
-13:09 clicked on Running instances
-
-13:17 cliced on s3

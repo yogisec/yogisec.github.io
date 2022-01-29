@@ -1,0 +1,314 @@
+<!doctype html><html lang=en>
+<head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-133811886-2"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date),gtag('config','UA-133811886-2')</script>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<meta http-equiv=x-ua-compatible content="IE=edge">
+<script src=/js/nav.js></script>
+<link rel=stylesheet href=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css integrity=sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T crossorigin=anonymous>
+<link rel=stylesheet href=/css/main.css>
+<title>
+role_credential_revoking | jellyparks
+</title>
+</head>
+<body>
+<header>
+</header>
+<div class=site-wrapper>
+<div class="sticky top-bar">
+<div id=mySidenav class=sidenav include-nav=/nav.html>
+</div>
+<span class="sticky hamburger" style=font-size:30px;cursor:pointer onclick=openNav()>&#9776;</span>
+</div>
+<div class=container>
+<h1>role_credential_revoking</h1>
+<hr>
+<p>The conversation came up about revoking credentials for a role associated which had ec2 instances associated with it. Does it impact the instance at all? When will the instance refresh its access keys? Is there just a blip in the EC2&rsquo;s access to AWS API calls or is it unable to make calls until its keys TTL ends? These were all questions that we did not know the answer to. The official Amazon docs here and here don&rsquo;t necessarily cover the fall out or recovery from this action.</p>
+<p>You may ask yourself, if an EC2 instance with a role associated with it was compromised why would you want to revoke credentials from it and then turn around and provide the instance with a new set of keys and the same level of access it previously had? This is a valid point, but sometimes the business needs a service running. Perhaps it is making lots of money, or perhaps it is high visibility to the businesses brand. Sometimes the only choice which makes sense is to try and mitigate the issue without impacting production.</p>
+<hr>
+<h3 id=the-setup>The Setup</h3>
+<p>For the experiement below I have an EC2 instance with a role that permits it to access S3. The process flow is:</p>
+<ol>
+<li>Query S3 validate everything is working</li>
+<li>Revoke active sessions for the role, we should see the S3 queries begin to fail</li>
+<li>Remove the instance profile from the instance, our access key should change, and S3 queries should continue to fail</li>
+<li>Reapply the instance profile granting s3 access, our acess key should change once again, and the S3 queries should be successful</li>
+</ol>
+<hr>
+<h3 id=test-1>Test 1</h3>
+<p>I built a python script to query the meta data service, determine the pertinent information about the access key currently associated with the instance, leverage boto3 to make a call to s3 and list the buckets. The script counts the number of buckets and prints all of the information to the screen if successful. If the script fails it shows the key and a failure message. The first script is below:</p>
+<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
+<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
+<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span></code></pre></td>
+<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
+<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=color:#2c5dcd;font-weight:700>import</span> requests
+<span style=color:#2c5dcd;font-weight:700>import</span> boto3
+<span style=color:#2c5dcd;font-weight:700>import</span> time
+<span style=color:#2c5dcd;font-weight:700>import</span> sys
+
+<span style=color:#2c5dcd;font-weight:700>def</span> <span style=color:#ff8000;font-weight:700>main</span>():
+  <span style=color:#2c5dcd;font-weight:700>try</span>:
+    <span style=color:#2c5dcd;font-weight:700>while</span> <span style=color:#2c5dcd;font-weight:700>True</span>:
+      s3_client <span style=color:#2c5dcd>=</span> boto3<span style=color:#2c5dcd>.</span>client(<span style=color:#0c6>&#39;s3&#39;</span>)
+      response <span style=color:#2c5dcd>=</span> requests<span style=color:#2c5dcd>.</span>get(<span style=color:#0c6>&#39;http://169.254.169.254/latest/meta-data/identity-credentials/ec2/security-credentials/ec2-instance/&#39;</span>)
+      response <span style=color:#2c5dcd>=</span> response<span style=color:#2c5dcd>.</span>json()
+      expiration <span style=color:#2c5dcd>=</span> response[<span style=color:#0c6>&#39;Expiration&#39;</span>]
+      last_update <span style=color:#2c5dcd>=</span> response[<span style=color:#0c6>&#39;LastUpdated&#39;</span>]
+      token <span style=color:#2c5dcd>=</span> response[<span style=color:#0c6>&#39;Token&#39;</span>]
+      accesskey <span style=color:#2c5dcd>=</span> response[<span style=color:#0c6>&#39;AccessKeyId&#39;</span>]
+      <span style=color:#2c5dcd;font-weight:700>try</span>:
+        s3_response <span style=color:#2c5dcd>=</span> s3_client<span style=color:#2c5dcd>.</span>list_buckets()
+        number_of_buckets <span style=color:#2c5dcd>=</span> <span style=color:#5918bb;font-weight:700>len</span>(s3_response[<span style=color:#0c6>&#39;Buckets&#39;</span>])
+        response_code <span style=color:#2c5dcd>=</span> s3_response[<span style=color:#0c6>&#39;ResponseMetadata&#39;</span>][<span style=color:#0c6>&#39;HTTPStatusCode&#39;</span>]
+        <span style=color:#5918bb;font-weight:700>print</span>(<span style=color:#0c6>f</span><span style=color:#0c6>&#39;AccessKeyId: </span><span style=color:#0c6>{</span>accesskey<span style=color:#0c6>}</span><span style=color:#0c6> -- Expiration: </span><span style=color:#0c6>{</span>expiration<span style=color:#0c6>}</span><span style=color:#0c6> -- LastUpdated: </span><span style=color:#0c6>{</span>last_update<span style=color:#0c6>}</span><span style=color:#0c6> -- ResponseCode: </span><span style=color:#0c6>{</span>response_code<span style=color:#0c6>}</span><span style=color:#0c6> -- NumberofBuckets: </span><span style=color:#0c6>{</span>number_of_buckets<span style=color:#0c6>}</span><span style=color:#0c6>&#39;</span>)
+      <span style=color:#2c5dcd;font-weight:700>except</span>:
+        <span style=color:#5918bb;font-weight:700>print</span>(<span style=color:#0c6>f</span><span style=color:#0c6>&#39;Keys no longer valid -- AccessKeyId: </span><span style=color:#0c6>{</span>accesskey<span style=color:#0c6>}</span><span style=color:#0c6> -- Expiration: </span><span style=color:#0c6>{</span>expiration<span style=color:#0c6>}</span><span style=color:#0c6> -- LastUpdated: </span><span style=color:#0c6>{</span>last_update<span style=color:#0c6>}</span><span style=color:#0c6>&#39;</span>)
+        <span style=color:#2c5dcd;font-weight:700>pass</span>
+      time<span style=color:#2c5dcd>.</span>sleep(<span style=color:#5918bb;font-weight:700>1</span>)
+    <span style=color:#2c5dcd;font-weight:700>except</span> <span style=color:#5918bb;font-weight:700>KeyboardInterrupt</span>:
+      <span style=color:#5918bb;font-weight:700>print</span>(<span style=color:#0c6>&#39;</span><span style=color:#c5060b;font-weight:700>\n</span><span style=color:#0c6> Bye&#39;</span>)
+      sys<span style=color:#2c5dcd>.</span>exit()
+
+<span style=color:#2c5dcd;font-weight:700>if</span> __name__ <span style=color:#2c5dcd>==</span> <span style=color:#0c6>&#34;__main__&#34;</span>:
+  main()
+</code></pre></td></tr></table>
+</div>
+</div><p>I started the script above, and everything seemed to be working as expected. What is interesting about this script is that didn&rsquo;t have the initial outcome I expected. Despite the meta-data service showing a refresh to the keys, it apepared that boto3 did not. It acted as if everything was a single session. In my initial coding of the script I assumed that since I was creating a new client with each call this would not have been a problem. To work around the problem I reworked the script.</p>
+<hr>
+<h3 id=test-2>Test 2</h3>
+<p>For test 2 I modifed the code to manually define the credentials for the s3 client (lines 16-21) by using the values from the meta data response.</p>
+<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
+<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
+<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style=display:block;width:100%;background-color:#e5e5e5><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span></span><span style=display:block;width:100%;background-color:#e5e5e5><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span></span><span style=display:block;width:100%;background-color:#e5e5e5><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span></span><span style=display:block;width:100%;background-color:#e5e5e5><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span></span><span style=display:block;width:100%;background-color:#e5e5e5><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span></span><span style=display:block;width:100%;background-color:#e5e5e5><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span></span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
+</span></code></pre></td>
+<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
+<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=color:#2c5dcd;font-weight:700>import</span> requests
+<span style=color:#2c5dcd;font-weight:700>import</span> boto3
+<span style=color:#2c5dcd;font-weight:700>import</span> time
+<span style=color:#2c5dcd;font-weight:700>import</span> sys
+
+<span style=color:#2c5dcd;font-weight:700>def</span> <span style=color:#ff8000;font-weight:700>main</span>():
+  <span style=color:#2c5dcd;font-weight:700>try</span>:
+    <span style=color:#2c5dcd;font-weight:700>while</span> <span style=color:#2c5dcd;font-weight:700>True</span>:
+      response <span style=color:#2c5dcd>=</span> requests<span style=color:#2c5dcd>.</span>get(<span style=color:#0c6>&#39;http://169.254.169.254/latest/meta-data/identity-credentials/ec2/security-credentials/ec2-instance/&#39;</span>)
+      response <span style=color:#2c5dcd>=</span> response<span style=color:#2c5dcd>.</span>json()
+      expiration <span style=color:#2c5dcd>=</span> response[<span style=color:#0c6>&#39;Expiration&#39;</span>]
+      last_update <span style=color:#2c5dcd>=</span> response[<span style=color:#0c6>&#39;LastUpdated&#39;</span>]
+      token <span style=color:#2c5dcd>=</span> response[<span style=color:#0c6>&#39;Token&#39;</span>]
+      secret <span style=color:#2c5dcd>=</span> response[<span style=color:#0c6>&#39;SecretAccessKey&#39;</span>]
+      accesskey <span style=color:#2c5dcd>=</span> response[<span style=color:#0c6>&#39;AccessKeyId&#39;</span>]
+<span style=display:block;width:100%;background-color:#e5e5e5>      s3_client <span style=color:#2c5dcd>=</span> boto3<span style=color:#2c5dcd>.</span>client(
+</span><span style=display:block;width:100%;background-color:#e5e5e5>       <span style=color:#0c6>&#39;s3&#39;</span>,
+</span><span style=display:block;width:100%;background-color:#e5e5e5>       aws_access_key_id<span style=color:#2c5dcd>=</span>accesskey,
+</span><span style=display:block;width:100%;background-color:#e5e5e5>       aws_secret_access_key<span style=color:#2c5dcd>=</span>secret,
+</span><span style=display:block;width:100%;background-color:#e5e5e5>       aws_session_token<span style=color:#2c5dcd>=</span>token)
+</span><span style=display:block;width:100%;background-color:#e5e5e5>       )
+</span>      <span style=color:#2c5dcd;font-weight:700>try</span>:
+        s3_response <span style=color:#2c5dcd>=</span> s3_client<span style=color:#2c5dcd>.</span>list_buckets()
+        number_of_buckets <span style=color:#2c5dcd>=</span> <span style=color:#5918bb;font-weight:700>len</span>(s3_response[<span style=color:#0c6>&#39;Buckets&#39;</span>])
+        response_code <span style=color:#2c5dcd>=</span> s3_response[<span style=color:#0c6>&#39;ResponseMetadata&#39;</span>][<span style=color:#0c6>&#39;HTTPStatusCode&#39;</span>]
+        <span style=color:#5918bb;font-weight:700>print</span>(<span style=color:#0c6>f</span><span style=color:#0c6>&#39;AccessKeyId: </span><span style=color:#0c6>{</span>accesskey<span style=color:#0c6>}</span><span style=color:#0c6> -- Expiration: </span><span style=color:#0c6>{</span>expiration<span style=color:#0c6>}</span><span style=color:#0c6> -- LastUpdated: </span><span style=color:#0c6>{</span>last_update<span style=color:#0c6>}</span><span style=color:#0c6> -- ResponseCode: </span><span style=color:#0c6>{</span>response_code<span style=color:#0c6>}</span><span style=color:#0c6> -- NumberofBuckets: </span><span style=color:#0c6>{</span>number_of_buckets<span style=color:#0c6>}</span><span style=color:#0c6>&#39;</span>)
+      <span style=color:#2c5dcd;font-weight:700>except</span>:
+        <span style=color:#5918bb;font-weight:700>print</span>(<span style=color:#0c6>f</span><span style=color:#0c6>&#39;Keys no longer valid -- AccessKeyId: </span><span style=color:#0c6>{</span>accesskey<span style=color:#0c6>}</span><span style=color:#0c6> -- Expiration: </span><span style=color:#0c6>{</span>expiration<span style=color:#0c6>}</span><span style=color:#0c6> -- LastUpdated: </span><span style=color:#0c6>{</span>last_update<span style=color:#0c6>}</span><span style=color:#0c6>&#39;</span>)
+        <span style=color:#2c5dcd;font-weight:700>pass</span>
+      time<span style=color:#2c5dcd>.</span>sleep(<span style=color:#5918bb;font-weight:700>1</span>)
+    <span style=color:#2c5dcd;font-weight:700>except</span> <span style=color:#5918bb;font-weight:700>KeyboardInterrupt</span>:
+      <span style=color:#5918bb;font-weight:700>print</span>(<span style=color:#0c6>&#39;</span><span style=color:#c5060b;font-weight:700>\n</span><span style=color:#0c6> Bye&#39;</span>)
+      sys<span style=color:#2c5dcd>.</span>exit()
+
+<span style=color:#2c5dcd;font-weight:700>if</span> __name__ <span style=color:#2c5dcd>==</span> <span style=color:#0c6>&#34;__main__&#34;</span>:
+  main()</code></pre></td></tr></table>
+</div>
+</div>
+<p>Once again, this failed. Unexpectidly it still appeared that the boto client was retaining the original credentials. After doing some digging it appears that this is true, even though I am setting the credentials with each iteration, boto3 apparently still caches the session. The only way to work around this is to create a new session with botocore.</p>
+<hr>
+<h3 id=test-3>Test 3</h3>
+<p>I rewrote the script to leverage botocore.session and ended up with the code below:</p>
+<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
+<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
+<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style=display:block;width:100%;background-color:#e5e5e5><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span></span><span style=display:block;width:100%;background-color:#e5e5e5><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span></span><span style=display:block;width:100%;background-color:#e5e5e5><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span></span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span></code></pre></td>
+<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
+<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=color:#2c5dcd;font-weight:700>import</span> requests
+<span style=color:#2c5dcd;font-weight:700>import</span> boto3
+<span style=color:#2c5dcd;font-weight:700>import</span> time
+<span style=color:#2c5dcd;font-weight:700>import</span> sys
+
+<span style=color:#2c5dcd;font-weight:700>def</span> <span style=color:#ff8000;font-weight:700>main</span>():
+  <span style=color:#2c5dcd;font-weight:700>try</span>:
+    <span style=color:#2c5dcd;font-weight:700>while</span> <span style=color:#2c5dcd;font-weight:700>True</span>:
+      response <span style=color:#2c5dcd>=</span> requests<span style=color:#2c5dcd>.</span>get(<span style=color:#0c6>&#39;http://169.254.169.254/latest/meta-data/identity-credentials/ec2/security-credentials/ec2-instance/&#39;</span>)
+      response <span style=color:#2c5dcd>=</span> response<span style=color:#2c5dcd>.</span>json()
+      expiration <span style=color:#2c5dcd>=</span> response[<span style=color:#0c6>&#39;Expiration&#39;</span>]
+      last_update <span style=color:#2c5dcd>=</span> response[<span style=color:#0c6>&#39;LastUpdated&#39;</span>]
+      token <span style=color:#2c5dcd>=</span> response[<span style=color:#0c6>&#39;Token&#39;</span>]
+      secret <span style=color:#2c5dcd>=</span> response[<span style=color:#0c6>&#39;SecretAccessKey&#39;</span>]
+      accesskey <span style=color:#2c5dcd>=</span> response[<span style=color:#0c6>&#39;AccessKeyId&#39;</span>]
+<span style=display:block;width:100%;background-color:#e5e5e5>      s3_session <span style=color:#2c5dcd>=</span> <span style=color:#0c6>&#39;&#39;</span>
+</span><span style=display:block;width:100%;background-color:#e5e5e5>      s3_session <span style=color:#2c5dcd>=</span> botocore<span style=color:#2c5dcd>.</span>session<span style=color:#2c5dcd>.</span>get_session()
+</span><span style=display:block;width:100%;background-color:#e5e5e5>      s3_client <span style=color:#2c5dcd>=</span> s3_session<span style=color:#2c5dcd>.</span>create_client(<span style=color:#0c6>&#39;s3&#39;</span>, region_name<span style=color:#2c5dcd>=</span><span style=color:#0c6>&#39;us-east-1&#39;</span>)
+</span>      <span style=color:#2c5dcd;font-weight:700>try</span>:
+        s3_response <span style=color:#2c5dcd>=</span> s3_client<span style=color:#2c5dcd>.</span>list_buckets()
+        number_of_buckets <span style=color:#2c5dcd>=</span> <span style=color:#5918bb;font-weight:700>len</span>(s3_response[<span style=color:#0c6>&#39;Buckets&#39;</span>])
+        response_code <span style=color:#2c5dcd>=</span> s3_response[<span style=color:#0c6>&#39;ResponseMetadata&#39;</span>][<span style=color:#0c6>&#39;HTTPStatusCode&#39;</span>]
+        <span style=color:#5918bb;font-weight:700>print</span>(<span style=color:#0c6>f</span><span style=color:#0c6>&#39;AccessKeyId: </span><span style=color:#0c6>{</span>accesskey<span style=color:#0c6>}</span><span style=color:#0c6> -- Expiration: </span><span style=color:#0c6>{</span>expiration<span style=color:#0c6>}</span><span style=color:#0c6> -- LastUpdated: </span><span style=color:#0c6>{</span>last_update<span style=color:#0c6>}</span><span style=color:#0c6> -- ResponseCode: </span><span style=color:#0c6>{</span>response_code<span style=color:#0c6>}</span><span style=color:#0c6> -- NumberofBuckets: </span><span style=color:#0c6>{</span>number_of_buckets<span style=color:#0c6>}</span><span style=color:#0c6>&#39;</span>)
+      <span style=color:#2c5dcd;font-weight:700>except</span>:
+        <span style=color:#5918bb;font-weight:700>print</span>(<span style=color:#0c6>f</span><span style=color:#0c6>&#39;Keys no longer valid -- AccessKeyId: </span><span style=color:#0c6>{</span>accesskey<span style=color:#0c6>}</span><span style=color:#0c6> -- Expiration: </span><span style=color:#0c6>{</span>expiration<span style=color:#0c6>}</span><span style=color:#0c6> -- LastUpdated: </span><span style=color:#0c6>{</span>last_update<span style=color:#0c6>}</span><span style=color:#0c6>&#39;</span>)
+        <span style=color:#2c5dcd;font-weight:700>pass</span>
+      time<span style=color:#2c5dcd>.</span>sleep(<span style=color:#5918bb;font-weight:700>1</span>)
+    <span style=color:#2c5dcd;font-weight:700>except</span> <span style=color:#5918bb;font-weight:700>KeyboardInterrupt</span>:
+      <span style=color:#5918bb;font-weight:700>print</span>(<span style=color:#0c6>&#39;</span><span style=color:#c5060b;font-weight:700>\n</span><span style=color:#0c6> Bye&#39;</span>)
+      sys<span style=color:#2c5dcd>.</span>exit()
+
+<span style=color:#2c5dcd;font-weight:700>if</span> __name__ <span style=color:#2c5dcd>==</span> <span style=color:#0c6>&#34;__main__&#34;</span>:
+  main()</code></pre></td></tr></table>
+</div>
+</div>
+<p>Now when I ran the script, each new loop was ACTUALLY get new credentials and not leveraging cached ones. The process worke just as it should and I recieved the outputs below as I progressed through each stage.</p>
+<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
+<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
+<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td>
+<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
+<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>AccessKeyId: ASIA4NX323S76LIV -- Expiration: 2020-07-04T20:23:29Z -- LastUpdated: 2020-07-04T14:13:19Z -- ResponseCode: <span style=color:#5918bb;font-weight:700>200</span> -- NumberofBuckets: <span style=color:#5918bb;font-weight:700>9</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>Revoke the role credentials in IAM.</p>
+<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
+<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
+<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td>
+<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
+<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>Keys no longer valid -- AccessKeyId: ASIA4NX323S76LIV -- Expiration: 2020-07-04T20:23:29Z -- LastUpdated: 2020-07-04T14:13:19Z -- Exception: An error occurred <span style=color:#2c5dcd>(</span>AccessDenied<span style=color:#2c5dcd>)</span> when calling the ListBuckets operation: Access Denied
+</code></pre></td></tr></table>
+</div>
+</div><p>Remove the role to generate a new set of credentials instead of waiting for the old credentials to expire sometime within the next 12 hours.</p>
+<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
+<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
+<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td>
+<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
+<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>Keys no longer valid -- AccessKeyId: ASIA4NX325UZ6YFR -- Expiration: 2020-07-04T20:25:21Z -- LastUpdated: 2020-07-04T14:16:02Z -- Exception: Unable to locate credentials
+</code></pre></td></tr></table>
+</div>
+</div><p>Re-apply the role to the ec2 instance and generate yet another set of credentials.</p>
+<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
+<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
+<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td>
+<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
+<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>AccessKeyId: ASIA4NX3WW2QDQ5K -- Expiration: 2020-07-04T20:42:54Z -- LastUpdated: 2020-07-04T14:17:33Z -- ResponseCode: <span style=color:#5918bb;font-weight:700>200</span> -- NumberofBuckets: <span style=color:#5918bb;font-weight:700>9</span>
+</code></pre></td></tr></table>
+</div>
+</div><hr>
+<h3 id=key-takeaways>Key Takeaways</h3>
+<p>The behavior of the scripts was very interesting and should not be taken lightly. I would assume there is a high chance that any scripts running on an EC2 instance would be written in a way similar to the script in the first test. If as an IR team we revoked the credentials for the role (due to compromise), removed the instance profile, and then reapplied the profile in an effort to maintain &lsquo;uptime&rsquo; for the business process it may still cause an outage because the client has cached credentials.</p>
+<p>Rebooting the instance may fix this issue, but at that point you&rsquo;ve still rebooted the instance potentially causing an outage. Obviously the best case scenario is to fully remediate before having the instance available again, but sometimes the businesses needs outweigh the risk.</p>
+</div>
+</div>
+<footer>
+</footer>
+</body>
+<script src=https://code.jquery.com/jquery-3.3.1.slim.min.js integrity=sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo crossorigin=anonymous></script>
+<script src=https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js integrity=sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1 crossorigin=anonymous></script>
+<script src=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js integrity=sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM crossorigin=anonymous></script>
+<script>includeHTML()</script>
+</html>

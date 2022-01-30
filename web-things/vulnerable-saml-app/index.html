@@ -23,12 +23,17 @@ Yogi's Vulnerable SAML app | jellyparks
 <span class="sticky hamburger" style=font-size:30px;cursor:pointer onclick=openNav()>&#9776;</span>
 </div>
 <div class=container>
+<div class=blog-header>
 <h1>Yogi's Vulnerable SAML app</h1>
+</div>
+<div class=row>
+<div class="col-sm-8 blog-main">
+<div class=blog-post>
 <hr>
 <h3 id=what-is-this-thing>What is this thing?</h3>
 <p>I built this app because I wanted to better understand SAML and I wanted to know how to discover, exploit, and remediate vulnearbilities associated with implementations. I created an easily deployable docker environment <a href=https://github.com/yogisec/VulnerableSAMLApp>here</a> that can be spun up on a local machine in about 5 minutes. I also have instructions to split the deployment across multiple hosts.</p>
 <p>This includes a fully functional IDP and a Service Provider. The Service Provider has several configuration options that allow for post deployment on the fly adjustments to the security stance of the application. When its fully deployed the environment will be similar to the architecture and data flows below:</p>
-<p><img src=images/vuln-saml-environment.png alt=environment></p>
+<p><img src=images/vuln-saml-environment.png alt=environment class=img-fluid></p>
 <p>Not sure what SAML is or looking for a refesher? Check out the <a href=https://jellyparks.com/web-things/saml-overview.html>saml_overview</a> page.</p>
 <hr>
 <h3 id=back-story>Back Story</h3>
@@ -230,15 +235,15 @@ sudo docker build -t sp:1.0 .
 </tbody>
 </table>
 <p>After successfully logging in we are presented with our profile as seen by the application. This is a quick and easy way to confirm which user we are, as well as our current group membership.</p>
-<p><img src=images/profile.png alt=profile></p>
+<p><img src=images/profile.png alt=profile class=img-fluid></p>
 <p>The complaints tab is where all of the complaints are stored and is the overall goal of the application.</p>
-<p><img src=images/complaints.png alt=complaints></p>
+<p><img src=images/complaints.png alt=complaints class=img-fluid></p>
 <p>In the screenshot below we have authenticated with the admin user account and have a new capability to delete complaints.</p>
-<p><img src=images/delete-complaints.png alt=delete></p>
+<p><img src=images/delete-complaints.png alt=delete class=img-fluid></p>
 <p>The <code>instructor</code> account has several special features to help maintain order within the application. There is a &lsquo;Restore Complaints&rsquo; button on the complaints page that reverts all of the complaints back to the starting state of the application.</p>
-<p><img src=images/restore-complaints.png alt=restore></p>
+<p><img src=images/restore-complaints.png alt=restore class=img-fluid></p>
 <p>The instructor account also has a new tab called <code>Saml Settings</code>. Within this tab we can make the application more or less security by checking the features we want to have turned on or off.</p>
-<p><img src=images/settings.png alt=settings></p>
+<p><img src=images/settings.png alt=settings class=img-fluid></p>
 <hr>
 <h3 id=the-scenarios>The Scenarios</h3>
 <table class=table>
@@ -276,7 +281,7 @@ sudo docker build -t sp:1.0 .
 <hr>
 <h4 id=nothing-configured>Nothing Configured</h4>
 <p>For this scenario we&rsquo;ll use the security configuration pictured below.</p>
-<p><img src=images/nothing-config.png alt=nothing_config></p>
+<p><img src=images/nothing-config.png alt=nothing_config class=img-fluid></p>
 <p>Before we get to far into this scenario, I wanted to take a moment and say that this scenario, this configuration issue, is the MOST common implementation flaw that I come across.</p>
 <p>Once we authenticate to our IDP we can make any changes to the SAML response that we want. The message will not be checked, the SP will simply process it as valid. The screenshot below shows the original assertion before tamper:</p>
 <p>nothing_orig_assertion</p>
@@ -359,6 +364,31 @@ sudo docker build -t sp:1.0 .
 <li><a href=https://research.aurainfosec.io/bypassing-saml20-SSO/>Bypassing SAML 2.0 SSO with XML Signature Attracks</a></li>
 <li><a href=https://duo.com/blog/duo-finds-saml-vulnerabilities-affecting-multiple-implementations>Duo Finds SAML Vulnerabilities Affecting Multiple Implementations</a></li>
 </ul>
+</div>
+</div>
+<div class=col-md-3 id=sidebar data-spy=affix-bottom data-offset-top=0>
+<nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id=post-nav>
+<h5>contents</h5>
+<ul class="nav post-sidenav">
+<li><nav id=TableOfContents>
+<ul>
+<li>
+<ul>
+<li><a href=#what-is-this-thing>What is this thing?</a></li>
+<li><a href=#back-story>Back Story</a></li>
+<li><a href=#setting-up-the-test-environment>Setting up the test environment</a></li>
+<li><a href=#features-of-the-environment>Features of the environment</a></li>
+<li><a href=#the-scenarios>The Scenarios</a></li>
+<li><a href=#other-attacks>Other attacks</a></li>
+<li><a href=#references>References</a></li>
+</ul>
+</li>
+</ul>
+</nav></li>
+</ul>
+</nav>
+</div>
+</div>
 </div>
 </div>
 <footer>

@@ -23,7 +23,12 @@ ec2_ssrf | jellyparks
 <span class="sticky hamburger" style=font-size:30px;cursor:pointer onclick=openNav()>&#9776;</span>
 </div>
 <div class=container>
+<div class=blog-header>
 <h1>ec2_ssrf</h1>
+</div>
+<div class=row>
+<div class="col-sm-8 blog-main">
+<div class=blog-post>
 <hr>
 <p>According to the official documentation for this scenario (<a href=https://github.com/RhinoSecurityLabs/cloudgoat/tree/master/scenarios/ec2_ssrf>here</a>) the overall goal is to &ldquo;Invoke the &ldquo;cg-lambda-[ CloudGoat ID ]&rdquo; Lambda function.&rdquo;</p>
 <h3 id=scenario-setup>Scenario Setup</h3>
@@ -80,9 +85,9 @@ aws --profile solus lambda list-functions
 </code></pre></td></tr></table>
 </div>
 </div><p>All of those commands result in an access denied error with the exception of the lambda request</p>
-<p><img src=images/accessdenied.png alt="Access Denied"></p>
+<p><img src=images/accessdenied.png alt="Access Denied" class=img-fluid></p>
 <p>The lambda call returns details for one function called <code>cg-lambda-cgidheuaifn6y6</code>. Looking at the output pictured below we can see that there is a second set or credentials stored as environment variables for this function.</p>
-<p><img src=images/list-functions.png alt="List Functions"></p>
+<p><img src=images/list-functions.png alt="List Functions" class=img-fluid></p>
 <p>Additionally, we can see that the function has a role associated with it. This means that the function more than likely has permissions to make additional calls. Before switching to the new credetntials let&rsquo;s grab the Lambda function and see if there are any additional details that may be of use. We can do that by running the following command:</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -93,10 +98,10 @@ aws --profile solus lambda list-functions
 </code></pre></td></tr></table>
 </div>
 </div><p>This will produce the output below. Which contains a link where we can download a zipped copy of the function code.</p>
-<p><img src=images/get-function.png alt="Get Functions"></p>
+<p><img src=images/get-function.png alt="Get Functions" class=img-fluid></p>
 <p>After downloading, and extracting the code we discover it&rsquo;s a simple python script which returns the message <code>You win!</code>. This is the function that we need to invoke in order to &lsquo;win&rsquo; the challenge. We will see if we can run the function with the Solus user in a moment, but first let&rsquo;s look at how we could leverage Pacu to grab the function for us.</p>
 <p>Once Pacu is configured with Solus credentials we can run the <code>lambda__enum</code> enumeration function for the us-east-1 region. The output from that command is below:</p>
-<p><img src=images/broken.png alt=Pacu_enum></p>
+<p><img src=images/broken.png alt=Pacu_enum class=img-fluid></p>
 <p>As expected one function was discovered. When we run the <code>data Lambda</code> command in Pacu we can see that Pacu has already requested the function data for us and we have a download link to grab the code. The enum__lambda module automatically makes the list-functiosn call and the get-function call for each function discovered. This is helpful if there are a large number of functions to parse through.</p>
 <p>Now, let&rsquo;s see if we can invoke the function and win this challenge with our Solus user credentials. We can invoke the function with the following command</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
@@ -151,11 +156,11 @@ aws --profile wrex lambda list-functions
 </code></pre></td></tr></table>
 </div>
 </div><p>All of the commands fail with the exception of the ec2 describe-instances command. Looking at the output below we can see that the ec2 instance has a public IP and according to the security group looks to be listening on port 80. We can also see the instance has an instance profile associated with it which means there are more than likely permissions that we can leverage to gain further access within aws.</p>
-<p><img src=images/ec2-describe.png alt=ec2-describe></p>
+<p><img src=images/ec2-describe.png alt=ec2-describe class=img-fluid></p>
 <hr>
 <h3 id=curl>curl</h3>
 <p>Curling the url results initially in an error:</p>
-<p><img src=images/curl-error.png alt="curl error"></p>
+<p><img src=images/curl-error.png alt="curl error" class=img-fluid></p>
 <p>The error stats that URL must be a string, not undefied. Perhaps this is a parameter we can pass in? Running the following command results in the same error:</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -175,7 +180,7 @@ aws --profile wrex lambda list-functions
 </code></pre></td></tr></table>
 </div>
 </div><p>Awesome, we get the output pictured below. It looks like this application is proxying web traffic for us.</p>
-<p><img src=images/raw-html.png alt="raw html"></p>
+<p><img src=images/raw-html.png alt="raw html" class=img-fluid></p>
 <p>If that is the case then any url we enter into the url parameter this application will fetch for us. Let&rsquo;s see if we can talk to the meta-data service for this instance.</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -186,7 +191,7 @@ aws --profile wrex lambda list-functions
 </code></pre></td></tr></table>
 </div>
 </div><p>This results in the output below:</p>
-<p><img src=images/meta-data.png alt="meta data"></p>
+<p><img src=images/meta-data.png alt="meta data" class=img-fluid></p>
 <p>Knowing we can talk to the meta data endpoint lets see if we can pull the credentials off of this ec2 instance. We can accomplish this with the following command:</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -197,10 +202,10 @@ aws --profile wrex lambda list-functions
 </code></pre></td></tr></table>
 </div>
 </div><p>The server responds with everything we need to impersonate this instance and dig deeper into aws.</p>
-<p><img src=images/ec2-creds.png alt="ec2 credentials"></p>
+<p><img src=images/ec2-creds.png alt="ec2 credentials" class=img-fluid></p>
 <p><em>It&rsquo;s worth mentioning, while we jumped straight to pulling creds from this instance the user-data endpoint can hold very valuable information.</em></p>
 <p>Using the credentials from the instance we can run the get get-caller-identity command and make sure they are valid. We get the output below:</p>
-<p><img src=images/ec2-whoami.png alt="ec2 whoami"></p>
+<p><img src=images/ec2-whoami.png alt="ec2 whoami" class=img-fluid></p>
 <p>Once again, as we do with any new set of credentials, let&rsquo;s see what all we can do with them.</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -217,9 +222,9 @@ aws --profile ec2 lambda list-functions
 </code></pre></td></tr></table>
 </div>
 </div><p>Much like our previous enumeration attempts, everything failed except for one call. In this case the s3 ls command was successful and we get the name for every bucket in the account:</p>
-<p><img src=images/s3-ls.png alt="s3 ls"></p>
+<p><img src=images/s3-ls.png alt="s3 ls" class=img-fluid></p>
 <p>Running the s3 ls command on one of the buckets we get the response below showing a text file called &lsquo;admin-user.txt&rsquo;. This sounds potentially promising. Let&rsquo;s download the file.</p>
-<p><img src=images/s3-admin.png alt="s3 admin"></p>
+<p><img src=images/s3-admin.png alt="s3 admin" class=img-fluid></p>
 <p>To download the file we&rsquo;ll run the s3 cp command:</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -284,6 +289,30 @@ aws --profile ec2 lambda list-functions
 <p>What about GuardDuty? That should detect all of this right? The short answer is sort of, but it depends on who is looking. Since we used access keys for all of our access it limits the scope of which alerts would fire. The only alert that would potentially fire for all of the activity we conducted would have been the <code>UnauthorizedAccess:IAMUser/InstanceCredentialExfiltration</code>. When we exfiled the credentials from the Ec2 we ran all of our AWS commands from an IP address outside of AWS. This would trigger this particular alert. The <code>Recon:IAMUser/UserPermissions</code> alert may have also fired since we queried iam a few times attempting to list the roles within the account. Thats it, no other alerts would have been triggered.</p>
 <p>So how else could we catch this activity? One way would be to base line user activity, and if anyone deviates from that fire an alert. Another possible way to detect this behavior would be to add alerts for specific API calls. If iam listRoles isn&rsquo;t common in your organization you could fire on that. Perhaps GetCallerIdentity is not used frequently and you could alert on that. If those don&rsquo;t work, building something which thresholds API calls and once a certain amount of &lsquo;potentially malicious&rsquo; calls are made triggers an alert to fire. Example: ListRoles isn&rsquo;t bad when its alone, but if GetCallerIdentity fires, and then within 5 minutes ListRoles is, perhaps thats enough to trip an alert.</p>
 <p>What if the Admin access keys we found were honey tokens. As soon as we tried to use those keys the security team would have been notified and the race would be on.</p>
+</div>
+</div>
+<div class=col-md-3 id=sidebar data-spy=affix-bottom data-offset-top=0>
+<nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id=post-nav>
+<h5>contents</h5>
+<ul class="nav post-sidenav">
+<li><nav id=TableOfContents>
+<ul>
+<li>
+<ul>
+<li><a href=#scenario-setup>Scenario Setup</a></li>
+<li><a href=#solus>Solus</a></li>
+<li><a href=#wrex>Wrex</a></li>
+<li><a href=#curl>curl</a></li>
+<li><a href=#prevention>Prevention</a></li>
+<li><a href=#detection>Detection</a></li>
+</ul>
+</li>
+</ul>
+</nav></li>
+</ul>
+</nav>
+</div>
+</div>
 </div>
 </div>
 <footer>

@@ -23,7 +23,12 @@ codebuild_secrets | jellyparks
 <span class="sticky hamburger" style=font-size:30px;cursor:pointer onclick=openNav()>&#9776;</span>
 </div>
 <div class=container>
+<div class=blog-header>
 <h1>codebuild_secrets</h1>
+</div>
+<div class=row>
+<div class="col-sm-8 blog-main">
+<div class=blog-post>
 <hr>
 <p>According to the official documentation for this scenario (<a href=https://github.com/RhinoSecurityLabs/cloudgoat/tree/master/scenarios/codebuild_secrets>here</a>) the overall goal is &ldquo;a pair of secret strings that are stored in a secure RDS database.&rdquo;</p>
 <p>Once the scenario creation process completes we are presented with a set of access keys for the user account &lsquo;solo&rsquo;.</p>
@@ -39,14 +44,14 @@ codebuild_secrets | jellyparks
 </code></pre></td></tr></table>
 </div>
 </div><p>we get the following successful response:</p>
-<p><img src=images/initial-user.png alt="Initial User"></p>
+<p><img src=images/initial-user.png alt="Initial User" class=img-fluid></p>
 <hr>
 <h3 id=what-can-we-do>What can we do?</h3>
 <p>Instead of heading to Pacu and using its handy enumeration lets do something that is a bit lighter on the logs and just poke around a bit. Perhaps we have access to make s3 calls, lets run <code>s3 ls</code> and see what happens.</p>
-<p><img src=images/s3-ls.png alt=s3-ls></p>
+<p><img src=images/s3-ls.png alt=s3-ls class=img-fluid></p>
 <p>Interesting, it does seem like we can see a bucket in s3. Perhaps we can dig deeper and this bucket has something useful in it. After all, judging by its name it probably has some sort of logs and probably other things and stuff in it. We can do this by running:</p>
 <pre tabindex=0><code>aws --profile solo s3 ls logaboutlogsthingsandstuff34343434
-</code></pre><p><img src=images/logsaboutstuff.png alt=logsaboutstuff></p>
+</code></pre><p><img src=images/logsaboutstuff.png alt=logsaboutstuff class=img-fluid></p>
 <p>Unfortunatly it looks like it errors out with a permission denied error. Lets continue on our path of manual enumeration. This time we will branch over into ec2&rsquo;s. Why ec2&rsquo;s, and why did we try s3 first? No real reason, other than to hit services that are fairly common, and that a vast majority of identities have access to.</p>
 <p>To enumerate the ec2&rsquo;s we will use the describe call:</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
@@ -58,7 +63,7 @@ codebuild_secrets | jellyparks
 </code></pre></td></tr></table>
 </div>
 </div><p>This produces the output below, showing us an active ec2 with a public ip address.</p>
-<p><img src=images/ec2-enum.png alt=ec2_enum></p>
+<p><img src=images/ec2-enum.png alt=ec2_enum class=img-fluid></p>
 <p>Interesting, lets see if we can dig a bit deeper into the security group that is attached with the name: <code>cg-ec2-ssh-cgidg25jfhzv9a</code>. Chances are that it only allows ssh since its in the name, but who knows a lazy admin could have added other ports to the security group for quick access. We can get the security group details with:</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -69,12 +74,12 @@ codebuild_secrets | jellyparks
 </code></pre></td></tr></table>
 </div>
 </div><p>As expected, the only port allowed with this security gorup is <code>TCP/22</code>.</p>
-<p><img src=images/ec2-sec.png alt=ec2_sec></p>
+<p><img src=images/ec2-sec.png alt=ec2_sec class=img-fluid></p>
 <hr>
 <h3 id=additional-service-enumeration>Additional Service Enumeration</h3>
 <p>We now know we cannot see anything useful in S3 and there is not much to do with the Ec2. We could pivot and attempt to log into the SSH. That however, is beyond the scope of this assessment. The great thing about AWS is there are several other services we can enumerate. These keys we have were created for a reason. Up to this point we really have not discovered that reason. MORE enumeration!</p>
 <p>For this next part we will switch over to Pacu and let it handle some of the additional enumeration for us. There are several services that are not included in Pacu that these keys could be used for, but sometimes its nice to let tools live up to there purpose. Looking at the picture below we can see Pacu has several options within the ENUM category:</p>
-<p><img src=images/pacu-enum-options.png alt=pacu_enum_options></p>
+<p><img src=images/pacu-enum-options.png alt=pacu_enum_options class=img-fluid></p>
 <p>Some of these we have lightly touched. Perhaps we have rights to Lambda? Lets see what happens if we try the <code>lambda__enum</code>.</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -85,7 +90,7 @@ codebuild_secrets | jellyparks
 </code></pre></td></tr></table>
 </div>
 </div><p>*<em>Note: In the command above I specify the us-east-1 region, this is because I know us-east-1 is only region in my account where workloads are being placed. If you do not know where the workloads exist, you will have to enumerate each region.</em></p>
-<p><img src=images/lambda-enum.png alt=lambda_enum></p>
+<p><img src=images/lambda-enum.png alt=lambda_enum class=img-fluid></p>
 <p>Once again, brick wall. We are missing the required permissions. All of the other service enumerations return the same results except for one, codebuild.</p>
 <hr>
 <h3 id=codebuild-enum>Codebuild Enum</h3>
@@ -97,7 +102,7 @@ codebuild_secrets | jellyparks
 <pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>run codebuild__enum
 </code></pre></td></tr></table>
 </div>
-</div><p><img src=images/codebuild-enum.png alt=codebuild_enum></p>
+</div><p><img src=images/codebuild-enum.png alt=codebuild_enum class=img-fluid></p>
 <p>Success! The codebuild enumeration found 1 project and 2 environment variables. Neat! In Pacu we can run the <code>data</code> command to see the information it pulled from our enumeration efforts. Below is a snippet of the data:</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -237,7 +242,7 @@ codebuild_secrets | jellyparks
 </code></pre></td></tr></table>
 </div>
 </div><p>This produces the name of the project <code>cg-codebuild-cgidg25jfhzv9a</code></p>
-<p><img src=images/codebuild-projects.png alt=codebuild_projects></p>
+<p><img src=images/codebuild-projects.png alt=codebuild_projects class=img-fluid></p>
 <p>Now that we have the project name we can query aws for the details about the project with:</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -257,7 +262,7 @@ codebuild_secrets | jellyparks
 </code></pre></td></tr></table>
 </div>
 </div><p>We get the clean output below.</p>
-<p><img src=images/codebuild-creds.png alt=codebuild_creds></p>
+<p><img src=images/codebuild-creds.png alt=codebuild_creds class=img-fluid></p>
 <hr>
 <h3 id=calrissian>Calrissian</h3>
 <p>It&rsquo;s time to find out what permissions we have as the Calrissian user. First we will make sure the credentials work by running <code>get-caller-identity</code>.</p>
@@ -269,7 +274,7 @@ codebuild_secrets | jellyparks
 <pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile cal sts get-caller-identity
 </code></pre></td></tr></table>
 </div>
-</div><p><img src=images/cal-whoami.png alt=cal_whoami></p>
+</div><p><img src=images/cal-whoami.png alt=cal_whoami class=img-fluid></p>
 <p>We have confirmed the credentials are still valid. Now we need to start the enumeration process over again. We can start just like last time and see if we have access to s3.</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -279,10 +284,10 @@ codebuild_secrets | jellyparks
 <pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile cal s3 ls
 </code></pre></td></tr></table>
 </div>
-</div><p><img src=images/cal-s3.png alt=cal_s3></p>
+</div><p><img src=images/cal-s3.png alt=cal_s3 class=img-fluid></p>
 <p>Unfortunatly, just like the solo user we do not have access to s3. In fact judging by this error we have even less permission to s3 now than we did with solo. Solo had a policy action to describe-buckets, and we do not.</p>
 <p>Attempting to describe instances returns a similar error that we are unauthorized.</p>
-<p><img src=images/cal-ec2.png alt=cal_ec2></p>
+<p><img src=images/cal-ec2.png alt=cal_ec2 class=img-fluid></p>
 <p>After lots of additional enumeration (and remembering the goal is to access an RDS database) we finally come across an area of aws where we have permissions, RDS. We can determine this and learn details about the environment with the following command:</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -293,7 +298,7 @@ codebuild_secrets | jellyparks
 </code></pre></td></tr></table>
 </div>
 </div><p>All kinds of useful information is returned as we can see in the screenshot below:</p>
-<p><img src=images/cal-rds.png alt=cal_rds></p>
+<p><img src=images/cal-rds.png alt=cal_rds class=img-fluid></p>
 <p>From the details in the screenshot we can determine the type of database, its DNS name, port its listening on, the security group it is a part of, and subnet information.</p>
 <ul>
 <li>Instance Identifer: cg-rds-instance-cgidg25jfhzv9a</li>
@@ -357,7 +362,7 @@ Back to enumeration! Lets see if we can gain some insight into the subnets, and 
 </code></pre></td></tr></table>
 </div>
 </div><p>The output from the command above reveals that the group sg-096bb9f39aaa9334d is a security group that allows access to the postgres port. Screenshot is below.</p>
-<p><img src=images/rds-security-group.png alt=rds_security_group></p>
+<p><img src=images/rds-security-group.png alt=rds_security_group class=img-fluid></p>
 <hr>
 <h3 id=our-own-db>Our own DB</h3>
 <p>At this point we know we have a subnet, and a security group that we can apply to an RDS instance that should grant us the access we are looking for. The next thing we should do is see if we have rights to create a snapshot.</p>
@@ -370,7 +375,7 @@ Back to enumeration! Lets see if we can gain some insight into the subnets, and 
 </code></pre></td></tr></table>
 </div>
 </div><p>After running the command above we get an output that shows us that the command was successful, and that the current status is creating.</p>
-<p><img src=images/db-snap.png alt=db_snap>
+<p><img src=images/db-snap.png alt=db_snap class=img-fluid>
 Before we can restore our snapshot to an RDS instance that we control the snapshot needs to be completed. We can check that by using the describe-db-snapshots command.</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -381,7 +386,7 @@ Before we can restore our snapshot to an RDS instance that we control the snapsh
 </code></pre></td></tr></table>
 </div>
 </div><p>After executing that command we get the output below, which tells us that we do not have permissions to check on the status of our db.</p>
-<p><img src=images/rds-describe.png alt=rds_describe></p>
+<p><img src=images/rds-describe.png alt=rds_describe class=img-fluid></p>
 <p>Hopefully, this is not a sign of things to come. Since we do not know if the snapshot is complete the only option we have is to wait until we think its done. After that we can attempt to restore it, and hopefully we will have enough permissions to do so.</p>
 <p>To restore the database we need the following bits information that we discovered earlier:</p>
 <ul>
@@ -398,7 +403,7 @@ Before we can restore our snapshot to an RDS instance that we control the snapsh
 </code></pre></td></tr></table>
 </div>
 </div><p>The output should return something similar to the image below with the &lsquo;DBInstanceStatus&rsquo; of creating</p>
-<p><img src=images/db-creating.png alt=db_creating></p>
+<p><img src=images/db-creating.png alt=db_creating class=img-fluid></p>
 <p>After a couple of minutes we can check the status of our creation with:</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -417,7 +422,7 @@ Before we can restore our snapshot to an RDS instance that we control the snapsh
 <pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile cal rds describe-db-instances --db-instance-identifier yogidbinstance |jq <span style=color:#0c6>&#39;.DBInstances[] .Endpoint&#39;</span>
 </code></pre></td></tr></table>
 </div>
-</div><p><img src=images/yogi-instance.png alt=yogi_instance></p>
+</div><p><img src=images/yogi-instance.png alt=yogi_instance class=img-fluid></p>
 <p>We can use psql to attempt a connection to the db host:</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -427,7 +432,7 @@ Before we can restore our snapshot to an RDS instance that we control the snapsh
 <pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>psql -h yogidbinstance.cq9megh2xpgg.us-east-1.rds.amazonaws.com -p <span style=color:#5918bb;font-weight:700>5432</span>
 </code></pre></td></tr></table>
 </div>
-</div><p><img src=images/psql-success.png alt=psql_success></p>
+</div><p><img src=images/psql-success.png alt=psql_success class=img-fluid></p>
 <p>Great, we have a connetion! Now we need to connect with the default cgadmin and the admin password. However, before we do that we need to set the password to something we know. To do that we need to run the modify-db-instance command:</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -460,7 +465,7 @@ Before we can restore our snapshot to an RDS instance that we control the snapsh
 </code></pre></td></tr></table>
 </div>
 </div><p>We can list the databases with <code>\l</code></p>
-<p><img src=images/postgres-list.png alt=postgres_list></p>
+<p><img src=images/postgres-list.png alt=postgres_list class=img-fluid></p>
 <p>Looking at the output, the securedb looks interesting. Lets connect to it, list the tables, and print it all to the screen.</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -474,7 +479,7 @@ Before we can restore our snapshot to an RDS instance that we control the snapsh
 <span style=color:#2c5dcd;font-weight:700>SELECT</span> <span style=color:#2c5dcd>*</span> <span style=color:#2c5dcd;font-weight:700>FROM</span> sensitive_information;
 </code></pre></td></tr></table>
 </div>
-</div><p><img src=images/victory.png alt=victory.png></p>
+</div><p><img src=images/victory.png alt=victory.png class=img-fluid></p>
 <p>Awesome! We succesfull gained access to the secret information within the RDS database.</p>
 <hr>
 <h3 id=alternative-path>Alternative Path</h3>
@@ -490,6 +495,33 @@ Before we can restore our snapshot to an RDS instance that we control the snapsh
 </ol>
 <p>By fixing one of these things or all of them, it would have effected our ability to access the secret data within the database.</p>
 <p>From a logging and alerting point of view, we probably made several commands that were not &lsquo;normal&rsquo; for the solo and calrissian users to make. By alerting on this odd activity the response team could have detected us and shut the attack down. Additionally if there would have been a configuration management solution to monitor for RDS instances being made public and preventing it. It would have made our attack much more complicated.</p>
+</div>
+</div>
+<div class=col-md-3 id=sidebar data-spy=affix-bottom data-offset-top=0>
+<nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id=post-nav>
+<h5>contents</h5>
+<ul class="nav post-sidenav">
+<li><nav id=TableOfContents>
+<ul>
+<li>
+<ul>
+<li><a href=#who-are-we>Who are we?</a></li>
+<li><a href=#what-can-we-do>What can we do?</a></li>
+<li><a href=#additional-service-enumeration>Additional Service Enumeration</a></li>
+<li><a href=#codebuild-enum>Codebuild Enum</a></li>
+<li><a href=#codebuild-manual-enumeration>Codebuild Manual Enumeration</a></li>
+<li><a href=#calrissian>Calrissian</a></li>
+<li><a href=#our-own-db>Our own DB</a></li>
+<li><a href=#alternative-path>Alternative Path</a></li>
+<li><a href=#prevention>Prevention</a></li>
+</ul>
+</li>
+</ul>
+</nav></li>
+</ul>
+</nav>
+</div>
+</div>
 </div>
 </div>
 <footer>

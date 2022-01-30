@@ -23,7 +23,12 @@ iam_privesc_by_rollback | jellyparks
 <span class="sticky hamburger" style=font-size:30px;cursor:pointer onclick=openNav()>&#9776;</span>
 </div>
 <div class=container>
+<div class=blog-header>
 <h1>iam_privesc_by_rollback</h1>
+</div>
+<div class=row>
+<div class="col-sm-8 blog-main">
+<div class=blog-post>
 <hr>
 <p>According to the official documentation for this scenario (<a href=https://github.com/RhinoSecurityLabs/cloudgoat/tree/master/scenarios/iam_privesc_by_rollback>here</a>) the overall goal is to &ldquo;Acquire full admin privileges.&rdquo;</p>
 <p>We can create the challenge by running</p>
@@ -63,7 +68,7 @@ aws --profile solus lambda list-functions
 </code></pre></td></tr></table>
 </div>
 </div><p>This command will produce an output similar to the one below.</p>
-<p><img src=images/jq-list-roles.png alt=jq-list-roles.png></p>
+<p><img src=images/jq-list-roles.png alt=jq-list-roles.png class=img-fluid></p>
 <p>The key takeaway here is that we have access to a user account with some level of IAM permissions. How much access do we have? One way to find out is by leveraging Pacu to bruteforce those permissions for us. The other option is to make iam calls one at a time to determine where our limits may exist. For this example we&rsquo;ll leverage Pacu and run the iam__enum_users_roles_policies_groups module.</p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -74,7 +79,7 @@ aws --profile solus lambda list-functions
 </code></pre></td></tr></table>
 </div>
 </div><p>Once the module finishes its execution we see that it successfully enumeated various aspects of the account.</p>
-<p><img src=images/iam-enum-results.png alt=iam-enum-results.png></p>
+<p><img src=images/iam-enum-results.png alt=iam-enum-results.png class=img-fluid></p>
 <p>We can run the data <code>IAM command</code> to see information associated with the enumeration. At first glance of the policies it appears there is a specific policy listed for our user account: <code>cg-raynor-policy</code></p>
 <div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
 <table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
@@ -339,6 +344,27 @@ aws --profile solus lambda list-functions
 <li>The most important is to not expose credentials. If we were not able to leverage raynors credentials we would not have been able to authenticate and further escalate privileges.</li>
 <li>Limit what users can do. The policy associated with raynor allowed for too much access. I imagine in the real world a user with this set of actions at there disposal would likely have much more persmissions within the account.</li>
 </ol>
+</div>
+</div>
+<div class=col-md-3 id=sidebar data-spy=affix-bottom data-offset-top=0>
+<nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id=post-nav>
+<h5>contents</h5>
+<ul class="nav post-sidenav">
+<li><nav id=TableOfContents>
+<ul>
+<li>
+<ul>
+<li><a href=#raynor>Raynor</a></li>
+<li><a href=#versions>Versions</a></li>
+<li><a href=#prevention>Prevention</a></li>
+</ul>
+</li>
+</ul>
+</nav></li>
+</ul>
+</nav>
+</div>
+</div>
 </div>
 </div>
 <footer>

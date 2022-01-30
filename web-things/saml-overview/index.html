@@ -23,7 +23,12 @@ saml_overview | jellyparks
 <span class="sticky hamburger" style=font-size:30px;cursor:pointer onclick=openNav()>&#9776;</span>
 </div>
 <div class=container>
+<div class=blog-header>
 <h1>saml_overview</h1>
+</div>
+<div class=row>
+<div class="col-sm-8 blog-main">
+<div class=blog-post>
 <hr>
 <h3 id=what-is-it>What is it</h3>
 <p>According to <a href=https://tools.ietf.org/html/rfc7522>RFC7522</a> &ldquo;the Security Assertion Markup Language (SAML) 2.0 is an XML-based framework that alllows identity and security information to be shared across security domains.&rdquo; In a nutshell SAML provides a way to tell a web application you are who you say you are without having to maintain a user/password database within each web application users access. Instead the authentication occurs at a trusted identity provider (IDP) and authorization is left to the web application which people are trying to access once they authenticate with the IDP.</p>
@@ -36,7 +41,7 @@ saml_overview | jellyparks
 <hr>
 <h3 id=how-does-it-work>How Does it Work</h3>
 <p>SAML has a couple different authentication flows, the IDP initiated flow and the service provider initiated flow. Once the user reaches the IDP the flows are basically the same. For this writeup we will focus on the service provider initiated flow. Looking at the picture below we can see three high level steps for this flow.</p>
-<p><img src=images/environment.png alt=environment></p>
+<p><img src=images/environment.png alt=environment class=img-fluid></p>
 <p>Lets break these down:</p>
 <p>1 - In this step the user browses to the web application (Service Provider) and selects the login button.
 2 - The web application sends SAML request back to the browser and redirects it to the IDP. The browser relays the request to the IDP. The IDP prompts to user to to authenticate. With the defined requirements. This could be a username/password, MFA, both, etc.
@@ -452,6 +457,28 @@ SAMLResponse=PHNhbWxwOlJlc...truncated based 64 blob...&amp;RelayState=http%3A%2
 <li><a href=https://research.aurainfosec.io/bypassing-saml20-SSO/>Bypassing SAML 2.0 SSO with XML Signature Attracks</a></li>
 <li><a href=https://duo.com/blog/duo-finds-saml-vulnerabilities-affecting-multiple-implementations>Duo Finds SAML Vulnerabilities Affecting Multiple Implementations</a></li>
 </ul>
+</div>
+</div>
+<div class=col-md-3 id=sidebar data-spy=affix-bottom data-offset-top=0>
+<nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id=post-nav>
+<h5>contents</h5>
+<ul class="nav post-sidenav">
+<li><nav id=TableOfContents>
+<ul>
+<li>
+<ul>
+<li><a href=#what-is-it>What is it</a></li>
+<li><a href=#how-does-it-work>How Does it Work</a></li>
+<li><a href=#message-breakdown>Message Breakdown</a></li>
+<li><a href=#references>References</a></li>
+</ul>
+</li>
+</ul>
+</nav></li>
+</ul>
+</nav>
+</div>
+</div>
 </div>
 </div>
 <footer>

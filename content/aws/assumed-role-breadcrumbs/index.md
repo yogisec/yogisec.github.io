@@ -13,7 +13,7 @@ Cloudtrail events in AWS offer a lot of visibility into the calls that roles lev
 The Scenario
 Let's set up a scenario, and work backwards through the logs. For this scenario we'll pretend that we are alerted to an anomalous api call. This anomaly is a call to the STS get-caller-identity endpoint. The principal ID `AROA5B64I5MBKOV6DYPCR` has never made a call to this endpoint. The full raw event is below. Next we'll begin to disscet it.
 
-![raw_sts](images/raw_event.png)
+![raw_sts](images/raw_event.png  "img-fluid")
 
 Digging into this, there are several fields that as an analyst are important to us while we try to unravel the intent behind this call. Lets break them down a bit:
 
@@ -40,7 +40,7 @@ To understand where and who made this call we need to find the inital authentica
 
 We need to somehow correlate an event (`GetCallerIdentity`) to an assume role action. To do that there are several fields that can help. In the picture below I've called them out with arrows.
 
-![raw_assumerole](images/assumerole.png)
+![raw_assumerole](images/assumerole.png  "img-fluid")
 
 One of the best ways to narrow and better correlate events is with time. Its not foolproof, but it can be a good starting point. The best correlation points are going to be the accessKeyId and the assumeRoleID. Also make note, if you're searching these logs in splunk, kibana, etc. the first event for this principal ID depending on how you've filtered will likely be this event.
 
@@ -65,7 +65,7 @@ To confirm what we think we know from our previous event, lets look for the init
 - The assumeRole eventname: `AssumeRole`
 - The accesKeyId in the responseElement: `ASIA5X73I5MBJI37NG6J`
 
-![raw_initialassumerole](images/initial_assume_request.png)
+![raw_initialassumerole](images/initial_assume_request.png  "img-fluid")
 
 The event that we discover (pictured above) provides us with several pieces of context and confirmation. We now know without a doubt that the request came from this account and that we have the correct principal. We can use this information to find the resource within the account and do futher investigation.
 
@@ -75,11 +75,11 @@ Looking at the userAgent field is one way we can determine what the resource is.
 
 Another way is to look at the role that is being leveraged by the principal. In our event the role being leveraged by the lambda can be seen by looking sessionIssuer values. The friendly name of the role being leveraged can be found within the userName field:
 
-![raw_initialassumerole](images/session_issuer.png)
+![raw_initialassumerole](images/session_issuer.png  "img-fluid")
 
 All of the information within `sessionIssur` can be helpful, in our case the friendly name of `power-users-lambda` is enough for us. We can now pivot to the IAM roles section of aws within the `12121212121212` account and search for our `power-users-lambda` role. The results  of that search are below:
 
-![raw_trustedentities](images/trusted_entities.png)
+![raw_trustedentities](images/trusted_entities.png  "img-fluid")
 
 The important field here, is the trusted entities column. In this case it shows AWS service: lambda. This tells us that this role can only be used by Lambda scripts. We can quickly bounce over to the lambda section and find our resource. The name of the lambda is sts-tester which we discovered earlier in our principalId within the userIdentity key.
 

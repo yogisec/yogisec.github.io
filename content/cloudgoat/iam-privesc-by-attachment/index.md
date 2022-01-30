@@ -6,7 +6,7 @@ date: 2018-11-28T15:14:39+10:00
 ---
 Once the scenario is creation process completes we are presented with a set of access keys for a user account 'kerrigan'
 
-![Initial User](images/initial-user.png)
+![Initial User](images/initial-user.png "img-fluid")
 
 ---
 
@@ -17,7 +17,7 @@ First lets make sure the credentials that we have obtained are valid:
 aws sts get-caller-identity --profile xxx |jq
 ```
 
-![whoami](images/whoami.png)
+![whoami](images/whoami.png "img-fluid")
 
 Perfect, looks like the credentials work. Now, what can they do?
 
@@ -31,11 +31,11 @@ Lets use pacu to brute force some permissions. We can do this by running:
 run iam__bruteforce_permissions
 ```
 
-![brute_force](images/brute-force-perms.png)
+![brute_force](images/brute-force-perms.png "img-fluid")
 
 Once the command completes we see the output below:
 
-![brute_force_output](images/brute-force-output.png)
+![brute_force_output](images/brute-force-output.png "img-fluid")
 
 Overall the credentials are fairly limited. But it does look like we have the ability to learn about ec2 instances with the describe command. Lets bounce back to the aws cli and run:
 
@@ -53,7 +53,7 @@ aws --profile kerrigan ec2 describe-instances |jq -r '.Reservations[0].Instances
 
 This cleans up the verbose output and prints the instance id, security groups, and some networking details about the instance
 
-![jq_fun](images/jq-fun.png)
+![jq_fun](images/jq-fun.png "img-fluid")
 
 Lets see what else our permissions can do. We'll start with the instance profiles command. According to Pacu we have rights to invoke this command.
 
@@ -63,7 +63,7 @@ aws iam list-instance-profiles |jq
 
 Looking at the output below we see a profile with the 'cg-ec2-meek-role' associated with it.
 
-![iam_list_profiles](images/iam-list-profiles.png)
+![iam_list_profiles](images/iam-list-profiles.png "img-fluid")
 
 Lets use pacu to see what instances,security groups, vpcs, and subnets exist within the environment:
 
@@ -73,7 +73,7 @@ run ec2__enum --region=us-east-1
 
 Looking at the output we can see that there are currently 4 instances in the region as well as additional information that may become useful.
 
-![ec2_enum](images/ec2-enum.png)
+![ec2_enum](images/ec2-enum.png "img-fluid")
 
 Within Pacu running the `data` command will dump all of the data from the current session. This will include all of the details we just enumerated about the EC2's within the account.
 
@@ -85,7 +85,7 @@ aws --profile kerrigan ec2 describe-instances --output table
 
 Looking at the output we can see that there is an ec2 and one of the `tags` is that it is a `super critical server`.
 
-![critical_ec2_enum](images/super-critical-tag.png)
+![critical_ec2_enum](images/super-critical-tag.png "img-fluid")
 
 ---
 
@@ -105,7 +105,7 @@ run iam__enum_users_roles_policies_groups
 
 In the output below it looks like we do not have permissions to make the: `list_users, list_groups, or list_policies calls`. We do however have permissions to list roles within the account.
 
-![iam_enum](images/iam-permission-failure.png)
+![iam_enum](images/iam-permission-failure.png "img-fluid")
 
 Lets dig into those a big more. This can be done by either running the `data` command from within Pacu or by running the following command via the aws cli:
 
@@ -113,11 +113,11 @@ Lets dig into those a big more. This can be done by either running the `data` co
 aws --profile kerrigan iam list-roles | jq '.Roles[].RoleName'
 ```
 
-![iam_roles](images/account-iam-roles.png)
+![iam_roles](images/account-iam-roles.png "img-fluid")
 
 Considering the role we saw associated with the ec2 instance earlier was called `meek` it's interesting to see another role with the name of `mightly`. Lets dig into that a bit more. Instead of making another `iam list-role`s call to AWS, lets just use the existing `data` within Pacu by running the data command.
 
-![mighty_role](images/mighty-role.png)
+![mighty_role](images/mighty-role.png "img-fluid")
 
 In the picture above we can see that the `mighty` role is a role associated with the ec2 service. This is a role that can be associated with an ec2 profile, and the profile can be associated with an ec2 instance.
 
@@ -134,7 +134,7 @@ aws --profile kerrigan iam remove-role-from-instance-profile --instance-profile-
 
 If the command is successful, there will be no output, if it fails, it squawks. We can confirm it as successful by running the list-instance-profiles command again.
 
-![no_role](images/instance-profile-no-role.png)
+![no_role](images/instance-profile-no-role.png "img-fluid")
 
 In the output above we see the `meek` instance profile with no roles associated with it. Great! Now lets try associating the `mighty` role with the `meek` instance profile. In order to do this we need two pieces of information, the role name, and the instance profile name.
 
@@ -147,7 +147,7 @@ aws --profile kerrigan iam add-role-to-instance-profile --instance-profile-name=
 
 Similar to the output when we removed the role from the profile, there will be no output if successful. However running the `list-instance-profiles` command again we can see that the `mighty` role has been associated with the `meek` instance profile.
 
-![no_role](images/meek-profile-mighty-role.png)
+![no_role](images/meek-profile-mighty-role.png "img-fluid")
 
 Perfect! We now have the mighty role associated with the meek profile.
 
@@ -177,11 +177,11 @@ aws --profile kerrigan ec2 describe-security-groups
 
 Looking at the output we can see that there is already a group that fits our needs, it allows SSH from an IP address that we have access to.
 
-![security_group](images/ssh-security-group.png)
+![security_group](images/ssh-security-group.png "img-fluid")
 
 We know that the super critical server has a public IP address, we also have the subnet for that instance. We can use that subnet-id when we create our new instance.
 
-![ec2_subnet](images/ec2-subnet.png)
+![ec2_subnet](images/ec2-subnet.png "img-fluid")
  
 At this point We have all of the pieces that we need to create an instance that we will have access to (hopefully).
 
@@ -202,7 +202,7 @@ When this is successful all of the data bout our instance is returned. This incl
 "InstanceId": "i-06f3f5f9f8cdc9c6e"
 ```
 
-![ec2_provision](images/instance-provisioning.png)
+![ec2_provision](images/instance-provisioning.png "img-fluid")
 
 Unfortunatly, we don't seem to have a public IP address for our instance. Did something go wrong? Nope, the current stat of the instance was 'pending'. We need to check back in on the instance an wait for the state to change to 'running'. Once its running, we should also have public IP address information. We can do this with the `describe-instances` command.
 
@@ -210,7 +210,7 @@ Unfortunatly, we don't seem to have a public IP address for our instance. Did so
 aws --profile kerrigan ec2 describe-instances --instance-id=i-06f3f5f9f8cdc9c6e
 ```
 
-![ec2_running](images/ec2-running.png)
+![ec2_running](images/ec2-running.png "img-fluid")
 
 The output from the command in the picture above shows that the instance is 'running' and that we have a public IP.
 
@@ -232,7 +232,7 @@ curl http://169.254.169.254/latest/meta-data/iam/
 
 Weird, looking at the output below we get a 404 error and no access keys. What could cause that?
 
-![404_iam](images/404-iam.png)
+![404_iam](images/404-iam.png "img-fluid")
 
 ---
 
@@ -255,7 +255,7 @@ aws --profile kerrigan ec2 associate-iam-instance-profile --instance-id=i-06f3f5
 
 Once the command is executed we'll see an output similar to the one below with a state of `associating`
 
-![associate_profile](images/associate-profile.png)
+![associate_profile](images/associate-profile.png "img-fluid")
 
 After a minute or two we can check back in on our instsance and attempt to curl for credentials again:
 
@@ -265,7 +265,7 @@ curl http://169.254.169.254/latest/meta-data/iam/
 
 The output has changed, from a 404 error to the one below.
 
-![curl_iam](images/curl-iam.png)
+![curl_iam](images/curl-iam.png "img-fluid")
 
 Digging deeper into the meta data we can find an AccessKey, SecretAcessKey, and a Token needed to access the aws api
 
@@ -273,7 +273,7 @@ Digging deeper into the meta data we can find an AccessKey, SecretAcessKey, and 
 curl http://169.254.169.254/latest/meta-data/iam/security-credentials/cg-ec2-mighty-role-cgidawtm15fqxm
 ```
 
-![access_key](images/access-key.png)
+![access_key](images/access-key.png "img-fluid")
 
 We have a few options at this point:
 
@@ -291,7 +291,7 @@ Once its install we can validate that we have working credentials:
 sts get-caller-identity
 ```
 
-![ec2_whoami](images/ec2-whoami.png)
+![ec2_whoami](images/ec2-whoami.png "img-fluid")
 
 Perfect we have no pivoted from the `kerrigan` user to whatever permissions we have through the new mighty role. We should use our new abilities to see if we can determine the full extent of the `mighty` role.
 
@@ -301,14 +301,14 @@ aws iam list-attached-role-policies --role-name=cg-ec2-mighty-role-cgidawtm15fqx
 
 and thankfully, it looks like we have some measure of IAM privileges because the output from that command shows us the policy associated with the role:
 
-![mighty_polices](images/mighty-policies.png)
+![mighty_polices](images/mighty-policies.png "img-fluid")
 Perhaps we have the ability to also see the configuration of that policy. Fist we'll pull in some general information about the policy:
 
 ```
 aws iam get-policy --policy-arn=arn:aws:iam:::policy/cg-ec2-mighty-policy
 ```
 
-![policy_version](images/policy-version.png)
+![policy_version](images/policy-version.png "img-fluid")
 
 Looking at the output above we are currently using policy version v1.
 
@@ -318,7 +318,7 @@ We can now get the configuration of the policy with:
 aws iam get-policy-version --policy-arn=arn:aws:iam:::policy/cg-ec2-mighty-policy --version-id=v1
 ```
 
-![policy](images/policy.png)
+![policy](images/policy.png "img-fluid")
 
 The output shows that we can take any action Action: * and we can access any resource Resource: *. Through this ec2 instance with the mighty role we are effectivly and administrator within this account. We can do anything that we would like.
 

@@ -16,11 +16,11 @@ Amazon has done an amazing job at making it really easy to deploy an EMR cluster
 
 Select the key pair to use for the instances which will be part of the cluster, and then click the `Create Cluster` button. A screenshot of the configuration setup is below.
 
-![create_cluster](images/create_cluster.png)
+![create_cluster](images/create_cluster.png "img-fluid")
 
 The instances will spin up fairly quickly, the cluster will become fully operational in about 3-5 minutes. Once it's ready the cluster status will be `Waiting, Cluster Ready` the green dot next to the cluster name will be solid green as pictured below
 
-![cluster_ready.png](images/cluster_ready.png)
+![cluster_ready.png](images/cluster_ready.png "img-fluid")
 
 In order to access the cluster make sure to add a security group to the primary node which gives access to 8088. **DO NOT EXPOSE THIS TO THE ENTIRE INTERNET**. I cannot stress this enough, do not expose the port to entire Internet, only allow access from a trusted IP.
 
@@ -95,7 +95,7 @@ Once the curl request is made to run the application we can expect a 202 respons
 
 In the web GUI at `http://PRIMARYHOST:8088/cluster` we see that the application ID we called to run will now have an execution history. The user will be `dr.who` because we created and called the application without authenticating. The other columns have details about various things such as the start times, launch times, etc. Even though the 'State' and 'FinalStatus' columns may say failed the shell code within the application was probably ran. 
 
-![application_run](images/application_run.png)
+![application_run](images/application_run.png "img-fluid")
 
 ---
 

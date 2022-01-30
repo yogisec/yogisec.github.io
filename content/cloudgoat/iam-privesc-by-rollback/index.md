@@ -36,7 +36,7 @@ aws --profile raynor iam list-roles | jq '.Roles[].RoleName'
 
 This command will produce an output similar to the one below.
 
-![jq-list-roles.png](images/jq-list-roles.png)
+![jq-list-roles.png](images/jq-list-roles.png "img-fluid")
 
 The key takeaway here is that we have access to a user account with some level of IAM permissions. How much access do we have? One way to find out is by leveraging Pacu to bruteforce those permissions for us. The other option is to make iam calls one at a time to determine where our limits may exist. For this example we'll leverage Pacu and run the iam__enum_users_roles_policies_groups module.
 
@@ -46,7 +46,7 @@ run iam__enum_users_roles_policies_groups
 
 Once the module finishes its execution we see that it successfully enumeated various aspects of the account.
 
-![iam-enum-results.png](images/iam-enum-results.png)
+![iam-enum-results.png](images/iam-enum-results.png "img-fluid")
 
 We can run the data `IAM command` to see information associated with the enumeration. At first glance of the policies it appears there is a specific policy listed for our user account: `cg-raynor-policy`
 

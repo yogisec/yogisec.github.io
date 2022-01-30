@@ -26,7 +26,7 @@ An high level explaination for each of the steps in the diagram is below:
 7. Each unique record is checked against DynamoDB table. If its new alert (if it meets criteria).
 8. Send alerts to Splunk
 
-![data-flow](images/data_flow.png)
+![data-flow](images/data_flow.png "img-fluid")
 
 ---
 
@@ -45,7 +45,7 @@ Below is a expanded data flow showing the Lambda scripts, and what occurs at eac
 2. SNS message triggers discernment Lambdas. One account per Lambda execution.
 3. The discernment lambda checks for an Athena table for the account, if it doesn't exist it makes it, it also builds the table partition if it does not exist. Queries the CloudTrail logs in from an S3 bucket for ALL account activity for the past hour. The function gathers the results, parses them per ROLE, and checks the activity vs the DynamoDB table. If new behavior is detected, and it meets 'alert' criteria, an alert event is pushed to Splunk.
 
-![data-flow](images/lambda_flow.png)
+![data-flow](images/lambda_flow.png "img-fluid")
 
 The next major difference is the Athena queries. The original code provides the ability to create a table if it does not exist. However, depending on how the data is structured within the S3 buckets, it may need to have paritions manually defined so that Athena can quickly search for the results it needs. Once the partitions have been defined, they must constantly be updated and maintained for each new day. Both of these were challenges that I had to address.
 

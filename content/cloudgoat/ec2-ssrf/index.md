@@ -43,11 +43,11 @@ aws --profile solus lambda list-functions
 
 All of those commands result in an access denied error with the exception of the lambda request
 
-![Access Denied](images/accessdenied.png)
+![Access Denied](images/accessdenied.png "img-fluid")
 
 The lambda call returns details for one function called `cg-lambda-cgidheuaifn6y6`. Looking at the output pictured below we can see that there is a second set or credentials stored as environment variables for this function.
 
-![List Functions](images/list-functions.png)
+![List Functions](images/list-functions.png "img-fluid")
 
 Additionally, we can see that the function has a role associated with it. This means that the function more than likely has permissions to make additional calls. Before switching to the new credetntials let's grab the Lambda function and see if there are any additional details that may be of use. We can do that by running the following command:
 
@@ -57,13 +57,13 @@ aws --profile solus lambda get-function --function-name cg-lambda-cgidheuaifn6y6
 
 This will produce the output below. Which contains a link where we can download a zipped copy of the function code.
 
-![Get Functions](images/get-function.png)
+![Get Functions](images/get-function.png "img-fluid")
 
 After downloading, and extracting the code we discover it's a simple python script which returns the message `You win!`. This is the function that we need to invoke in order to 'win' the challenge. We will see if we can run the function with the Solus user in a moment, but first let's look at how we could leverage Pacu to grab the function for us.
 
 Once Pacu is configured with Solus credentials we can run the `lambda__enum` enumeration function for the us-east-1 region. The output from that command is below:
 
-![Pacu_enum](images/broken.png)
+![Pacu_enum](images/broken.png "img-fluid")
 
 As expected one function was discovered. When we run the `data Lambda` command in Pacu we can see that Pacu has already requested the function data for us and we have a download link to grab the code. The enum__lambda module automatically makes the list-functiosn call and the get-function call for each function discovered. This is helpful if there are a large number of functions to parse through.
 
@@ -104,7 +104,7 @@ aws --profile wrex lambda list-functions
 
 All of the commands fail with the exception of the ec2 describe-instances command. Looking at the output below we can see that the ec2 instance has a public IP and according to the security group looks to be listening on port 80. We can also see the instance has an instance profile associated with it which means there are more than likely permissions that we can leverage to gain further access within aws.
 
-![ec2-describe](images/ec2-describe.png)
+![ec2-describe](images/ec2-describe.png "img-fluid")
 
 ---
 
@@ -112,7 +112,7 @@ All of the commands fail with the exception of the ec2 describe-instances comman
 
 Curling the url results initially in an error:
 
-![curl error](images/curl-error.png)
+![curl error](images/curl-error.png "img-fluid")
 
 The error stats that URL must be a string, not undefied. Perhaps this is a parameter we can pass in? Running the following command results in the same error:
 
@@ -129,7 +129,7 @@ curl http://ec2-34-229-224-250.compute-1.amazonaws.com/\?url\=asdf.com
 
 Awesome, we get the output pictured below. It looks like this application is proxying web traffic for us.
 
-![raw html](images/raw-html.png)
+![raw html](images/raw-html.png "img-fluid")
 
 If that is the case then any url we enter into the url parameter this application will fetch for us. Let's see if we can talk to the meta-data service for this instance.
 
@@ -139,7 +139,7 @@ curl http://ec2-34-229-224-250.compute-1.amazonaws.com/\?url\=http://169.254.169
 
 This results in the output below:
 
-![meta data](images/meta-data.png)
+![meta data](images/meta-data.png "img-fluid")
 
 
 Knowing we can talk to the meta data endpoint lets see if we can pull the credentials off of this ec2 instance. We can accomplish this with the following command:
@@ -150,13 +150,13 @@ curl http://ec2-34-229-224-250.compute-1.amazonaws.com/\?url\=http://169.254.169
 
 The server responds with everything we need to impersonate this instance and dig deeper into aws.
 
-![ec2 credentials](images/ec2-creds.png)
+![ec2 credentials](images/ec2-creds.png "img-fluid")
 
 *It's worth mentioning, while we jumped straight to pulling creds from this instance the user-data endpoint can hold very valuable information.*
 
 Using the credentials from the instance we can run the get get-caller-identity command and make sure they are valid. We get the output below:
 
-![ec2 whoami](images/ec2-whoami.png)
+![ec2 whoami](images/ec2-whoami.png "img-fluid")
 
 Once again, as we do with any new set of credentials, let's see what all we can do with them.
 
@@ -169,11 +169,11 @@ aws --profile ec2 lambda list-functions
 
 Much like our previous enumeration attempts, everything failed except for one call. In this case the s3 ls command was successful and we get the name for every bucket in the account:
 
-![s3 ls](images/s3-ls.png)
+![s3 ls](images/s3-ls.png "img-fluid")
 
 Running the s3 ls command on one of the buckets we get the response below showing a text file called 'admin-user.txt'. This sounds potentially promising. Let's download the file.
 
-![s3 admin](images/s3-admin.png)
+![s3 admin](images/s3-admin.png "img-fluid")
 
 To download the file we'll run the s3 cp command:
 

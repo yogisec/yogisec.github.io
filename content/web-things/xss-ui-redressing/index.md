@@ -63,12 +63,12 @@ http://dvwa/vulnerabilities/xss_r/?name=<script>history.replaceState(null, null,
 
 Even though the page that is expected to load looks similar to this:
 
-![UI Redressing 1](images/xssuiredressing1.png)
+![UI Redressing 1](images/xssuiredressing1.png "img-fluid")
 
 
 When the victim clicks the link the login page below will load:
 
-![UI Redressing 2](images/xssuiredressing2.png)
+![UI Redressing 2](images/xssuiredressing2.png "img-fluid")
 
 What about site certificates? It is not a problem. The victim is still on the real site. They are just at a destination that does not really exist except for them.
 

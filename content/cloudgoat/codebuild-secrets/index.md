@@ -20,7 +20,7 @@ aws --profile solo sts get-caller-identity
 
 we get the following successful response:
 
-![Initial User](images/initial-user.png)
+![Initial User](images/initial-user.png "img-fluid")
 
 ---
 
@@ -28,7 +28,7 @@ we get the following successful response:
 
 Instead of heading to Pacu and using its handy enumeration lets do something that is a bit lighter on the logs and just poke around a bit. Perhaps we have access to make s3 calls, lets run `s3 ls` and see what happens.
 
-![s3-ls](images/s3-ls.png)
+![s3-ls](images/s3-ls.png "img-fluid")
 
 Interesting, it does seem like we can see a bucket in s3. Perhaps we can dig deeper and this bucket has something useful in it. After all, judging by its name it probably has some sort of logs and probably other things and stuff in it. We can do this by running:
 
@@ -36,7 +36,7 @@ Interesting, it does seem like we can see a bucket in s3. Perhaps we can dig dee
 aws --profile solo s3 ls logaboutlogsthingsandstuff34343434
 ```
 
-![logsaboutstuff](images/logsaboutstuff.png)
+![logsaboutstuff](images/logsaboutstuff.png "img-fluid")
 
 Unfortunatly it looks like it errors out with a permission denied error. Lets continue on our path of manual enumeration. This time we will branch over into ec2's. Why ec2's, and why did we try s3 first? No real reason, other than to hit services that are fairly common, and that a vast majority of identities have access to.
 
@@ -48,7 +48,7 @@ aws --profile solo ec2 describe-instances |jq '.Reservations[].Instances[] | {In
 
 This produces the output below, showing us an active ec2 with a public ip address.
 
-![ec2_enum](images/ec2-enum.png)
+![ec2_enum](images/ec2-enum.png "img-fluid")
 
 Interesting, lets see if we can dig a bit deeper into the security group that is attached with the name: `cg-ec2-ssh-cgidg25jfhzv9a`. Chances are that it only allows ssh since its in the name, but who knows a lazy admin could have added other ports to the security group for quick access. We can get the security group details with:
 
@@ -58,7 +58,7 @@ aws --profile solo ec2 describe-security-groups --group-ids sg-09f30e4f217cd294a
 
 As expected, the only port allowed with this security gorup is `TCP/22`.
 
-![ec2_sec](images/ec2-sec.png)
+![ec2_sec](images/ec2-sec.png "img-fluid")
 
 ---
 
@@ -67,7 +67,7 @@ We now know we cannot see anything useful in S3 and there is not much to do with
 
 For this next part we will switch over to Pacu and let it handle some of the additional enumeration for us. There are several services that are not included in Pacu that these keys could be used for, but sometimes its nice to let tools live up to there purpose. Looking at the picture below we can see Pacu has several options within the ENUM category:
 
-![pacu_enum_options](images/pacu-enum-options.png)
+![pacu_enum_options](images/pacu-enum-options.png "img-fluid")
 
 Some of these we have lightly touched. Perhaps we have rights to Lambda? Lets see what happens if we try the `lambda__enum`.
 
@@ -77,7 +77,7 @@ run lambda__enum --region us-east-1
 
 **Note: In the command above I specify the us-east-1 region, this is because I know us-east-1 is only region in my account where workloads are being placed. If you do not know where the workloads exist, you will have to enumerate each region.*
 
-![lambda_enum](images/lambda-enum.png)
+![lambda_enum](images/lambda-enum.png "img-fluid")
 
 Once again, brick wall. We are missing the required permissions. All of the other service enumerations return the same results except for one, codebuild.
 
@@ -89,7 +89,7 @@ Once again, brick wall. We are missing the required permissions. All of the othe
 run codebuild__enum
 ```
 
-![codebuild_enum](images/codebuild-enum.png)
+![codebuild_enum](images/codebuild-enum.png "img-fluid")
 
 Success! The codebuild enumeration found 1 project and 2 environment variables. Neat! In Pacu we can run the `data` command to see the information it pulled from our enumeration efforts. Below is a snippet of the data:
 
@@ -170,7 +170,7 @@ aws --profile solo codebuild list-projects
 
 This produces the name of the project `cg-codebuild-cgidg25jfhzv9a`
 
-![codebuild_projects](images/codebuild-projects.png)
+![codebuild_projects](images/codebuild-projects.png "img-fluid")
 
 Now that we have the project name we can query aws for the details about the project with:
 
@@ -186,7 +186,7 @@ aws --profile solo codebuild batch-get-projects --names cg-codebuild-cgidg25jfhz
 
 We get the clean output below.
 
-![codebuild_creds](images/codebuild-creds.png)
+![codebuild_creds](images/codebuild-creds.png "img-fluid")
 
 ---
 
@@ -198,7 +198,7 @@ It's time to find out what permissions we have as the Calrissian user. First we 
 aws --profile cal sts get-caller-identity
 ```
 
-![cal_whoami](images/cal-whoami.png)
+![cal_whoami](images/cal-whoami.png "img-fluid")
 
 We have confirmed the credentials are still valid. Now we need to start the enumeration process over again. We can start just like last time and see if we have access to s3.
 
@@ -206,13 +206,13 @@ We have confirmed the credentials are still valid. Now we need to start the enum
 aws --profile cal s3 ls
 ```
 
-![cal_s3](images/cal-s3.png)
+![cal_s3](images/cal-s3.png "img-fluid")
 
 Unfortunatly, just like the solo user we do not have access to s3. In fact judging by this error we have even less permission to s3 now than we did with solo. Solo had a policy action to describe-buckets, and we do not.
 
 Attempting to describe instances returns a similar error that we are unauthorized.
 
-![cal_ec2](images/cal-ec2.png)
+![cal_ec2](images/cal-ec2.png "img-fluid")
 
 After lots of additional enumeration (and remembering the goal is to access an RDS database) we finally come across an area of aws where we have permissions, RDS. We can determine this and learn details about the environment with the following command:
 
@@ -222,7 +222,7 @@ aws --profile cal rds describe-db-instances |jq '.DBInstances[]'
 
 All kinds of useful information is returned as we can see in the screenshot below:
 
-![cal_rds](images/cal-rds.png)
+![cal_rds](images/cal-rds.png "img-fluid")
 
 From the details in the screenshot we can determine the type of database, its DNS name, port its listening on, the security group it is a part of, and subnet information.
 
@@ -274,7 +274,7 @@ aws --profile cal ec2 describe-security-groups |jq
 
 The output from the command above reveals that the group sg-096bb9f39aaa9334d is a security group that allows access to the postgres port. Screenshot is below.
 
-![rds_security_group](images/rds-security-group.png)
+![rds_security_group](images/rds-security-group.png "img-fluid")
 
 ---
 
@@ -287,7 +287,7 @@ aws --profile cal rds create-db-snapshot --db-instance-identifier cg-rds-instanc
 
 After running the command above we get an output that shows us that the command was successful, and that the current status is creating.
 
-![db_snap](images/db-snap.png)
+![db_snap](images/db-snap.png "img-fluid")
 Before we can restore our snapshot to an RDS instance that we control the snapshot needs to be completed. We can check that by using the describe-db-snapshots command.
 
 ```bash
@@ -296,7 +296,7 @@ aws --profile cal rds describe-db-snapshots --db-snapshot-identifier yogi-db-sna
 
 After executing that command we get the output below, which tells us that we do not have permissions to check on the status of our db.
 
-![rds_describe](images/rds-describe.png)
+![rds_describe](images/rds-describe.png "img-fluid")
 
 Hopefully, this is not a sign of things to come. Since we do not know if the snapshot is complete the only option we have is to wait until we think its done. After that we can attempt to restore it, and hopefully we will have enough permissions to do so.
 
@@ -313,7 +313,7 @@ aws --profile cal rds restore-db-instance-from-db-snapshot --db-instance-identif
 
 The output should return something similar to the image below with the 'DBInstanceStatus' of creating
 
-![db_creating](images/db-creating.png)
+![db_creating](images/db-creating.png "img-fluid")
 
 After a couple of minutes we can check the status of our creation with:
 
@@ -327,7 +327,7 @@ Once the output shows that the db is 'available' we can attemp to connect. The c
 aws --profile cal rds describe-db-instances --db-instance-identifier yogidbinstance |jq '.DBInstances[] .Endpoint'
 ```
 
-![yogi_instance](images/yogi-instance.png)
+![yogi_instance](images/yogi-instance.png "img-fluid")
 
 We can use psql to attempt a connection to the db host:
 
@@ -335,7 +335,7 @@ We can use psql to attempt a connection to the db host:
 psql -h yogidbinstance.cq9megh2xpgg.us-east-1.rds.amazonaws.com -p 5432
 ```
 
-![psql_success](images/psql-success.png)
+![psql_success](images/psql-success.png "img-fluid")
 
 Great, we have a connetion! Now we need to connect with the default cgadmin and the admin password. However, before we do that we need to set the password to something we know. To do that we need to run the modify-db-instance command:
 
@@ -359,7 +359,7 @@ psql postgresql://cgadmin@yogidbinstance.cq9megh2xpgg.us-east-1.rds.amazonaws.co
 
 We can list the databases with `\l`
 
-![postgres_list](images/postgres-list.png)
+![postgres_list](images/postgres-list.png "img-fluid")
 
 Looking at the output, the securedb looks interesting. Lets connect to it, list the tables, and print it all to the screen.
 
@@ -369,7 +369,7 @@ Looking at the output, the securedb looks interesting. Lets connect to it, list 
 SELECT * FROM sensitive_information;
 ```
 
-![victory.png](images/victory.png)
+![victory.png](images/victory.png "img-fluid")
 
 Awesome! We succesfull gained access to the secret information within the RDS database.
 

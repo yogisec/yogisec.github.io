@@ -20,7 +20,7 @@ Terms:
 
 SAML has a couple different authentication flows, the IDP initiated flow and the service provider initiated flow. Once the user reaches the IDP the flows are basically the same. For this writeup we will focus on the service provider initiated flow. Looking at the picture below we can see three high level steps for this flow.
 
-![environment](images/environment.png)
+![environment](images/environment.png "img-fluid")
 
 Lets break these down:
 

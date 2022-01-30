@@ -10,7 +10,9 @@ I built this app because I wanted to better understand SAML and I wanted to know
 
 This includes a fully functional IDP and a Service Provider. The Service Provider has several configuration options that allow for post deployment on the fly adjustments to the security stance of the application. When its fully deployed the environment will be similar to the architecture and data flows below:
 
-![environment](images/vuln-saml-environment.png)
+
+![environment](images/vuln-saml-environment.png "img-fluid")
+
 
 Not sure what SAML is or looking for a refesher? Check out the [saml_overview](https://jellyparks.com/web-things/saml-overview.html) page.
 
@@ -154,23 +156,23 @@ instructor|	G0od-LuckGu3ssingThisButHeyItCouldHappenRight?|	This account is allo
 
 After successfully logging in we are presented with our profile as seen by the application. This is a quick and easy way to confirm which user we are, as well as our current group membership.
 
-![profile](images/profile.png)
+![profile](images/profile.png "img-fluid")
 
 The complaints tab is where all of the complaints are stored and is the overall goal of the application.
 
-![complaints](images/complaints.png)
+![complaints](images/complaints.png "img-fluid")
 
 In the screenshot below we have authenticated with the admin user account and have a new capability to delete complaints.
 
-![delete](images/delete-complaints.png)
+![delete](images/delete-complaints.png "img-fluid")
 
 The `instructor` account has several special features to help maintain order within the application. There is a 'Restore Complaints' button on the complaints page that reverts all of the complaints back to the starting state of the application.
 
-![restore](images/restore-complaints.png)
+![restore](images/restore-complaints.png "img-fluid")
 
 The instructor account also has a new tab called `Saml Settings`. Within this tab we can make the application more or less security by checking the features we want to have turned on or off.
 
-![settings](images/settings.png)
+![settings](images/settings.png "img-fluid")
 
 ---
 
@@ -195,7 +197,7 @@ Additional Note: When changing from one scenario to the next it is best to make 
 #### Nothing Configured
 For this scenario we'll use the security configuration pictured below.
 
-![nothing_config](images/nothing-config.png)
+![nothing_config](images/nothing-config.png "img-fluid")
 
 Before we get to far into this scenario, I wanted to take a moment and say that this scenario, this configuration issue, is the MOST common implementation flaw that I come across.
 

@@ -109,3 +109,6 @@ echo "\n${RED}Getting Started Volatility3:{$NC}"
 echo "- Volatility should automatically find the symbols file created."
 echo "- Get a pslist in volatility3 with:"
 echo "    python3 /home/ubuntu/git/volatility3/vol.py -f /home/ubuntu/ubuntu.lime linux.pstree.PsTree"
+
+
+

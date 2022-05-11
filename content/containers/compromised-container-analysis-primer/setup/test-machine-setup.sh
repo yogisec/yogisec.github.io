@@ -13,10 +13,10 @@ apt-get -y install linux-headers-$(uname -r)
 apt-get install -y falco
 
 echo -e "\n${RED}Installing Wget${NC}\n"
-apt-get install wget
+apt-get install wget -y
 
 echo -e "\n${RED}Configuring and Starting Faclo${NC}\n"
-cp /home/ubuntu/setup/falco.yaml /etc/falco/falco/yaml
+cp /home/ubuntu/setup/falco.yaml /etc/falco/falco/falco.yaml
 systemctl start falco
 
 echo -e "\n${RED}Installing Docker${NC}\n"

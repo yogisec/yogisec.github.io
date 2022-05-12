@@ -1,8 +1,7 @@
 ---
 title: "Yogi's Vulnerable SAML app"
-date: 2018-11-28
+date: 2019-11-28
 tags: ["saml", "identity", "ctf"]
-weight: 3
 categories: ["saml"]
 aliases: ["/vulnerable-saml-app"]
 author: "Travis"

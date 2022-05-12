@@ -1,9 +1,12 @@
 ---
-title: 'about'
-date: 2018-11-28T15:14:39+10:00
+title: 'me'
+date: 2018-11-28
+aliases: ["/me"]
+ShowToc: false
+ShowPostNavLinks: false
+hidemeta: true
 ---
 
----
 
 ### My Current Work
 Primarily focused on driving changes in the SOC to better monitor and maintain our cloud security posture. Successfully built, tuned, and deployed an AWS cloud anomaly detection platform based on CloudTrail events. Built several other custom pieces of cloud content and automations. Integrated our SOAR platform with AWS environments to automate IR and Forensic capabilities. Mentor members of the security team to better understand the cloud and container spaces.
@@ -37,7 +40,7 @@ Workshops:
 ### Technical Proficiencies
 |      |      |
 | ---- | ---- |
-|AWS multi cloud environments | Kubernetes |
+| AWS multi cloud environments | Kubernetes |
 | Docker/Containers | git |
 | Windows | Linux | 
 | O365 | Terraform | 

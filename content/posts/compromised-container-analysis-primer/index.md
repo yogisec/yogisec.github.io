@@ -1,7 +1,6 @@
 ---
 title: 'compromised_container_analysis_primer'
 date: 2022-05-10
-weight: 1
 tags: ["containers", "linux", "dfir"]
 categories: ["containers"]
 aliases: ["/compromised-container-analysis-primer"]

@@ -2,7 +2,6 @@
 title: "xss_ui_redressing"
 date: 2018-11-28
 tags: ["web"]
-weight: 3
 categories: ["web"]
 aliases: ["/xss-ui-redressing"]
 author: "Travis"

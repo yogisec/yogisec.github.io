@@ -1,7 +1,6 @@
 ---
 title: 'iam_privesc_by_rollback'
 date: 2018-11-28
-weight: 3
 tags: ["aws", "cloud", "cloudgoat", "walkthrough", "ctf"]
 categories: ["cloudgoat"]
 aliases: ["/iam-privesc-by-rollback"]

@@ -2,7 +2,6 @@
 title: 'saml_overview'
 date: 2018-11-28
 tags: ["saml", "identity", "web"]
-weight: 3
 categories: ["saml"]
 aliases: ["/saml-overview"]
 author: "Travis"

@@ -31,14 +31,15 @@ params:
     ShowShareButtons: true
     ShowPostNavLinks: true
     ShowBreadCrumbs: true
-    ShowCodeCopyButtons: false
+    ShowCodeCopyButtons: true
     disableSpecial1stPost: false
     disableScrollToTop: false
     comments: false
     hidemeta: false
     hideSummary: false
-    showtoc: false
+    showtoc: true
     tocopen: false
+
 
     assets:
         # disableHLJS: true # to disable highlight.js
@@ -56,16 +57,18 @@ params:
 
     # profile-mode
     profileMode:
-        enabled: false # needs to be explicitly set
-        title: ExampleSite
-        subtitle: "This is subtitle"
-        imageUrl: "<img location>"
-        imageWidth: 120
-        imageHeight: 120
-        imageTitle: my image
+        enabled: true # needs to be explicitly set
+        title: Welcome!
+        subtitle: "I write about security and things that I find interesting. Mostly you'll find security related posts tied to Cloud, Container, Orchestration, and Linux topics."
+        #imageUrl: "<img location>"
+        #imageWidth: 120
+        #imageHeight: 120
+        #imageTitle: my image
         buttons:
-            - name: Posts
+            - name: all_posts
               url: posts
+            - name: categories
+              url: categories
             - name: Tags
               url: tags
 
@@ -79,6 +82,8 @@ params:
           url: "https://twitter.com/yogisec"
         - name: github
           url: "https://github.com/yogisec"
+        - name: hackthebox
+          url: "https://app.hackthebox.com/profile/4806"
 
     analytics:
         google:
@@ -109,14 +114,10 @@ params:
         keys: ["title", "permalink", "summary", "content"]
 menu:
     main:
-        - identifier: archives
-          name: Archive
-          url: archives
+        - identifier: posts
+          name: all_posts
+          url: posts
           weight: 5
-        - identifier: search
-          name: Search
-          url: search/
-          weight: 8
         - identifier: categories
           name: categories
           url: /categories/
@@ -127,8 +128,15 @@ menu:
           weight: 20
         - identifier: me
           name: me
-          url: /me/about/
+          url: /me/
           weight: 30
+
+outputs:
+    home:
+        - HTML
+        - RSS
+        - JSON # is necessary
+
 # Read: https://github.com/adityatelange/hugo-PaperMod/wiki/FAQs#using-hugos-syntax-highlighter-chroma
 # pygmentsUseClasses: true
 # markup:

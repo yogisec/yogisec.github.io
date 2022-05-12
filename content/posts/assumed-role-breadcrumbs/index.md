@@ -2,7 +2,6 @@
 title: 'assumed_role_breadcrumbs'
 date: 2018-11-28
 tags: ["aws", "cloud", "dfir"]
-weight: 3
 categories: ["aws"]
 aliases: ["/assume-role-breadcrumbs"]
 author: "Travis"

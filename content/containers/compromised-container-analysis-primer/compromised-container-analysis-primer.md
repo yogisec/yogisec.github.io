@@ -1,6 +1,11 @@
 ---
 title: 'compromised_container_analysis_primer'
-date: 2022-05-05T15:14:39+10:00
+date: 2022-05-10T15:14:39+10:00
+tags: ["containers", "linux", "dfir"]
+categories: ["containers"]
+author: "Me"
+description: "Things and stuff"
+
 ---
 
 ---

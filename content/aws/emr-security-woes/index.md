@@ -1,8 +1,12 @@
 ---
 title: 'emr_security_woes'
-date: 2018-11-28T15:14:39+10:00
+date: 2018-11-28
+tags: ["aws", "cloud", "dfir"]
+categories: ["aws"]
+aliases: ["/emr-security-woes"]
+author: "Travis"
+summary: "Walkthrough of Elastic Map Reduce compromise, and why it should never be directly exposed to the Internet."
 ---
-
 --- 
 I recently had the opportunity to dig deeper into the Elastic Map Reduce (EMR) service in AWS. According to the official Amazon docs (here) "...EMR is a manged cluster platform that simlifies running big data frameworks..." Full disclosure I have virtually zero experience with big data and big data platforms. The closest I've gotten to that space is storing data in S3 and searching it with Athena. Oh, I also sometimes search enterprise Splunk without specifying an index or sourcetype. That counts right?
 

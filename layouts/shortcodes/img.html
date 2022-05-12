@@ -1,8 +1,0 @@
-{{ $htmlIMG := .Inner | markdownify }}
-{{ $class := .Get 0 }}
-{{ $src := .Get 1 }}
-{{ $alt := .Get 2 }}
-{{ $old := "<img>" }}
-{{ $new := printf "<img class=\"%s\" src=\"%s\" alt=\"%s\">" $class $src $alt }}
-{{ $htmlIMG := replace $htmlIMG $old $new }}
-{{ $htmlIMG | safeHTML }}

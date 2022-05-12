@@ -1,13 +1,18 @@
 ---
-title: 'xss_ui_redressing'
-date: 2018-11-28T15:14:39+10:00
+title: "xss_ui_redressing"
+date: 2018-11-28
+tags: ["web"]
+weight: 3
+categories: ["web"]
+aliases: ["/xss-ui-redressing"]
+author: "Travis"
+summary: "Moving beyond document.cookie xss and rewriting the entire browser window"
 ---
-
 ---
 
 ### Moving Beyond alert('xss')
 
-Most people know all about making an alert box pop or getting a cookie sent to an external site with document.cookie. It makes since, it is easy to demo and for the most part makes for a great proof of concept.
+Most people know all about making an alert box pop or getting a cookie sent to an external site with `document.cookie`. It makes since, it is easy to demo and for the most part makes for a great proof of concept.
 
 Unfortunately these sometimes fail to showcase some of the more potentially devious outcomes from having a site that is vulnerable to XSS.
 

@@ -1,8 +1,12 @@
 ---
 title: 'codebuild_secrets'
-date: 2018-11-28T15:14:39+10:00
+date: 2018-11-28
+tags: ["aws", "cloud", "cloudgoat", "walkthrough", "ctf"]
+categories: ["cloudgoat"]
+aliases: ["/codebuild-secrets"]
+author: "Travis"
+summary: "Cloud Goat codebuild secrets scenario walkthrough"
 ---
-
 ---
 According to the official documentation for this scenario ([here](https://github.com/RhinoSecurityLabs/cloudgoat/tree/master/scenarios/codebuild_secrets)) the overall goal is "a pair of secret strings that are stored in a secure RDS database."
 

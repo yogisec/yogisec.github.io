@@ -1,8 +1,13 @@
 ---
 title: 'iam_privesc_by_attachment'
-date: 2018-11-28T15:14:39+10:00
+date: 2018-11-28
+weight: 3
+tags: ["aws", "cloud", "cloudgoat", "walkthrough", "ctf"]
+categories: ["cloudgoat"]
+aliases: ["/iam-privesc-by-attachment"]
+author: "Travis"
+summary: "Cloud Goat IAM priviledge escalation by attachment scenario walkthrough"
 ---
-
 ---
 Once the scenario is creation process completes we are presented with a set of access keys for a user account 'kerrigan'
 

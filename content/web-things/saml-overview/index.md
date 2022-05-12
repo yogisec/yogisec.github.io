@@ -1,6 +1,12 @@
 ---
 title: 'saml_overview'
-date: 2018-11-28T15:14:39+10:00
+date: 2018-11-28
+tags: ["saml", "identity", "web"]
+weight: 3
+categories: ["saml"]
+aliases: ["/saml-overview"]
+author: "Travis"
+summary: "Let's dig into what SAML is, and how it works."
 ---
 
 ---

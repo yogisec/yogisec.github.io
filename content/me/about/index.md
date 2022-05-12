@@ -37,7 +37,8 @@ Workshops:
 ### Technical Proficiencies
 |      |      |
 | ---- | ---- |
-|AWS multi cloud environments | Docker |
+|AWS multi cloud environments | Kubernetes |
+| Docker/Containers | git |
 | Windows | Linux | 
 | O365 | Terraform | 
 | Python | JavaScript |

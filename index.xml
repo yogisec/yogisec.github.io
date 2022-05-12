@@ -12,142 +12,128 @@
     <lastBuildDate>Wed, 28 Nov 2018 15:14:39 +1000</lastBuildDate><atom:link href="https://jellyparks.com/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>compromised_container_analysis_primer</title>
-      <link>https://jellyparks.com/containers/compromised-container-analysis-primer/</link>
+      <link>https://jellyparks.com/posts/compromised-container-analysis-primer/</link>
       <pubDate>Tue, 10 May 2022 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/containers/compromised-container-analysis-primer/</guid>
+      <guid>https://jellyparks.com/posts/compromised-container-analysis-primer/</guid>
       <description>Walkthrough of basic triaging and analysis of a container which has been compromised.</description>
     </item>
     
     <item>
-      <title>ec2_ssrf</title>
-      <link>https://jellyparks.com/cloudgoat/ec2-ssrf/</link>
-      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
-      
-      <guid>https://jellyparks.com/cloudgoat/ec2-ssrf/</guid>
-      <description>Cloud Goat ec2 ssrf scenario walkthrough</description>
-    </item>
-    
-    <item>
-      <title>assumed_role_breadcrumbs</title>
-      <link>https://jellyparks.com/aws/assumed-role-breadcrumbs/</link>
-      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
-      
-      <guid>https://jellyparks.com/aws/assumed-role-breadcrumbs/</guid>
-      <description>Cloudtrail events in AWS offer a lot of visibility into the calls that roles leverage within the platform. Sometimes tracking the original source of the activity can be challenging. When users and other aws services from one account assume role into another hunting the origin can take a bit of backtracking.</description>
-    </item>
-    
-    <item>
-      <title>iam_privesc_by_attachment</title>
-      <link>https://jellyparks.com/cloudgoat/iam-privesc-by-attachment/</link>
-      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
-      
-      <guid>https://jellyparks.com/cloudgoat/iam-privesc-by-attachment/</guid>
-      <description>Cloud Goat IAM priviledge escalation by attachment scenario walkthrough</description>
-    </item>
-    
-    <item>
-      <title>iam_privesc_by_rollback</title>
-      <link>https://jellyparks.com/cloudgoat/iam-privesc-by-rollback/</link>
-      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
-      
-      <guid>https://jellyparks.com/cloudgoat/iam-privesc-by-rollback/</guid>
-      <description>Cloud Goat IAM priviledge escalation by rollback scenario walkthrough</description>
-    </item>
-    
-    <item>
-      <title>saml_overview</title>
-      <link>https://jellyparks.com/web-things/saml-overview/</link>
-      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
-      
-      <guid>https://jellyparks.com/web-things/saml-overview/</guid>
-      <description>Let&amp;rsquo;s dig into what SAML is, and how it works.</description>
-    </item>
-    
-    <item>
-      <title>xss_ui_redressing</title>
-      <link>https://jellyparks.com/web-things/xss-ui-redressing/</link>
-      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
-      
-      <guid>https://jellyparks.com/web-things/xss-ui-redressing/</guid>
-      <description>Moving beyond document.cookie xss and rewriting the entire browser window</description>
-    </item>
-    
-    <item>
       <title>Yogi&#39;s Vulnerable SAML app</title>
-      <link>https://jellyparks.com/web-things/vulnerable-saml-app/</link>
-      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      <link>https://jellyparks.com/posts/vulnerable-saml-app/</link>
+      <pubDate>Thu, 28 Nov 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/web-things/vulnerable-saml-app/</guid>
+      <guid>https://jellyparks.com/posts/vulnerable-saml-app/</guid>
       <description>Overview of a vulnerable saml platform built to allow for various saml exploits to occur.</description>
     </item>
     
     <item>
-      <title>about</title>
-      <link>https://jellyparks.com/me/about/</link>
-      <pubDate>Wed, 28 Nov 2018 15:14:39 +1000</pubDate>
+      <title>assumed_role_breadcrumbs</title>
+      <link>https://jellyparks.com/posts/assumed-role-breadcrumbs/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/me/about/</guid>
-      <description>My Current Work Primarily focused on driving changes in the SOC to better monitor and maintain our cloud security posture. Successfully built, tuned, and deployed an AWS cloud anomaly detection platform based on CloudTrail events. Built several other custom pieces of cloud content and automations. Integrated our SOAR platform with AWS environments to automate IR and Forensic capabilities. Mentor members of the security team to better understand the cloud and container spaces.</description>
-    </item>
-    
-    <item>
-      <title>thing1!</title>
-      <link>https://jellyparks.com/thing1/</link>
-      <pubDate>Wed, 28 Nov 2018 15:14:39 +1000</pubDate>
-      
-      <guid>https://jellyparks.com/thing1/</guid>
-      <description>More Markdown
- First item Second item Third item  Indented item Indented item   Fourth item   First item Second item Third item  Indented item Indented item   Fourth item  so bold
-italics can be used like this
-Code { &amp;#34;firstName&amp;#34;: &amp;#34;John&amp;#34;, &amp;#34;lastName&amp;#34;: &amp;#34;Smith&amp;#34;, &amp;#34;age&amp;#34;: 25 } Turn off line numbers:
-{ &amp;#34;firstName&amp;#34;: &amp;#34;John&amp;#34;, &amp;#34;lastName&amp;#34;: &amp;#34;Smith&amp;#34;, &amp;#34;age&amp;#34;: 25 } How to highlight lines:
-1 2 3 4 5  { &amp;#34;firstName&amp;#34;: &amp;#34;John&amp;#34;, &amp;#34;lastName&amp;#34;: &amp;#34;Smith&amp;#34;, &amp;#34;age&amp;#34;: 25 }   </description>
+      <guid>https://jellyparks.com/posts/assumed-role-breadcrumbs/</guid>
+      <description>Cloudtrail events in AWS offer a lot of visibility into the calls that roles leverage within the platform. Sometimes tracking the original source of the activity can be challenging. When users and other aws services from one account assume role into another hunting the origin can take a bit of backtracking.</description>
     </item>
     
     <item>
       <title>cloudtrail_anomaly_detection</title>
-      <link>https://jellyparks.com/aws/cloudtrail-anomaly-detection/</link>
+      <link>https://jellyparks.com/posts/cloudtrail-anomaly-detection/</link>
       <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/aws/cloudtrail-anomaly-detection/</guid>
+      <guid>https://jellyparks.com/posts/cloudtrail-anomaly-detection/</guid>
       <description>Overview of an anomaly detection platform using cloudtrail logs, athena, lambda, s3, and dynamodb</description>
     </item>
     
     <item>
       <title>codebuild_secrets</title>
-      <link>https://jellyparks.com/cloudgoat/codebuild-secrets/</link>
+      <link>https://jellyparks.com/posts/codebuild-secrets/</link>
       <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/cloudgoat/codebuild-secrets/</guid>
+      <guid>https://jellyparks.com/posts/codebuild-secrets/</guid>
       <description>Cloud Goat codebuild secrets scenario walkthrough</description>
     </item>
     
     <item>
-      <title>emr_security_woes</title>
-      <link>https://jellyparks.com/aws/emr-security-woes/</link>
+      <title>ec2_ssrf</title>
+      <link>https://jellyparks.com/posts/ec2-ssrf/</link>
       <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/aws/emr-security-woes/</guid>
+      <guid>https://jellyparks.com/posts/ec2-ssrf/</guid>
+      <description>Cloud Goat ec2 ssrf scenario walkthrough</description>
+    </item>
+    
+    <item>
+      <title>emr_security_woes</title>
+      <link>https://jellyparks.com/posts/emr-security-woes/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/posts/emr-security-woes/</guid>
       <description>Walkthrough of Elastic Map Reduce compromise, and why it should never be directly exposed to the Internet.</description>
     </item>
     
     <item>
-      <title>role_credential_revoking</title>
-      <link>https://jellyparks.com/aws/role-credential-revoking/</link>
+      <title>iam_privesc_by_attachment</title>
+      <link>https://jellyparks.com/posts/iam-privesc-by-attachment/</link>
       <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/aws/role-credential-revoking/</guid>
+      <guid>https://jellyparks.com/posts/iam-privesc-by-attachment/</guid>
+      <description>Cloud Goat IAM priviledge escalation by attachment scenario walkthrough</description>
+    </item>
+    
+    <item>
+      <title>iam_privesc_by_rollback</title>
+      <link>https://jellyparks.com/posts/iam-privesc-by-rollback/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/posts/iam-privesc-by-rollback/</guid>
+      <description>Cloud Goat IAM priviledge escalation by rollback scenario walkthrough</description>
+    </item>
+    
+    <item>
+      <title>me</title>
+      <link>https://jellyparks.com/posts/me/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/posts/me/</guid>
+      <description>My Current Work Primarily focused on driving changes in the SOC to better monitor and maintain our cloud security posture. Successfully built, tuned, and deployed an AWS cloud anomaly detection platform based on CloudTrail events. Built several other custom pieces of cloud content and automations. Integrated our SOAR platform with AWS environments to automate IR and Forensic capabilities. Mentor members of the security team to better understand the cloud and container spaces.</description>
+    </item>
+    
+    <item>
+      <title>role_credential_revoking</title>
+      <link>https://jellyparks.com/posts/role-credential-revoking/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/posts/role-credential-revoking/</guid>
       <description>IAM roles can have all current credentials revoked. This can be great to stop an attacker, but at what cost?</description>
     </item>
     
     <item>
-      <title>what_is_cloudgoat</title>
-      <link>https://jellyparks.com/cloudgoat/what-is-cloudgoat/</link>
+      <title>saml_overview</title>
+      <link>https://jellyparks.com/posts/saml-overview/</link>
       <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/cloudgoat/what-is-cloudgoat/</guid>
+      <guid>https://jellyparks.com/posts/saml-overview/</guid>
+      <description>Let&amp;rsquo;s dig into what SAML is, and how it works.</description>
+    </item>
+    
+    <item>
+      <title>what_is_cloudgoat</title>
+      <link>https://jellyparks.com/posts/what-is-cloudgoat/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/posts/what-is-cloudgoat/</guid>
       <description>Cloud Goat CTF Overview</description>
+    </item>
+    
+    <item>
+      <title>xss_ui_redressing</title>
+      <link>https://jellyparks.com/posts/xss-ui-redressing/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/posts/xss-ui-redressing/</guid>
+      <description>Moving beyond document.cookie xss and rewriting the entire browser window</description>
     </item>
     
     

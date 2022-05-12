@@ -12,19 +12,19 @@
     <lastBuildDate>Wed, 28 Nov 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://jellyparks.com/tags/web/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>saml_overview</title>
-      <link>https://jellyparks.com/web-things/saml-overview/</link>
+      <link>https://jellyparks.com/posts/saml-overview/</link>
       <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/web-things/saml-overview/</guid>
+      <guid>https://jellyparks.com/posts/saml-overview/</guid>
       <description>Let&amp;rsquo;s dig into what SAML is, and how it works.</description>
     </item>
     
     <item>
       <title>xss_ui_redressing</title>
-      <link>https://jellyparks.com/web-things/xss-ui-redressing/</link>
+      <link>https://jellyparks.com/posts/xss-ui-redressing/</link>
       <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/web-things/xss-ui-redressing/</guid>
+      <guid>https://jellyparks.com/posts/xss-ui-redressing/</guid>
       <description>Moving beyond document.cookie xss and rewriting the entire browser window</description>
     </item>
     

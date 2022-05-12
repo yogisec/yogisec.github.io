@@ -2,31 +2,10 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://jellyparks.com/containers/compromised-container-analysis-primer/</loc>
+    <loc>https://jellyparks.com/categories/</loc>
     <lastmod>2022-05-10T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://jellyparks.com/cloudgoat/ec2-ssrf/</loc>
-    <lastmod>2018-11-28T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://jellyparks.com/aws/assumed-role-breadcrumbs/</loc>
-    <lastmod>2018-11-28T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://jellyparks.com/cloudgoat/iam-privesc-by-attachment/</loc>
-    <lastmod>2018-11-28T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://jellyparks.com/cloudgoat/iam-privesc-by-rollback/</loc>
-    <lastmod>2018-11-28T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://jellyparks.com/web-things/saml-overview/</loc>
-    <lastmod>2018-11-28T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://jellyparks.com/web-things/xss-ui-redressing/</loc>
-    <lastmod>2018-11-28T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://jellyparks.com/web-things/vulnerable-saml-app/</loc>
-    <lastmod>2018-11-28T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://jellyparks.com/categories/</loc>
+    <loc>https://jellyparks.com/posts/compromised-container-analysis-primer/</loc>
     <lastmod>2022-05-10T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://jellyparks.com/tags/containers/</loc>
@@ -35,37 +14,43 @@
     <loc>https://jellyparks.com/categories/containers/</loc>
     <lastmod>2022-05-10T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://jellyparks.com/containers/</loc>
-    <lastmod>2022-05-10T00:00:00+00:00</lastmod>
-  </url><url>
     <loc>https://jellyparks.com/tags/dfir/</loc>
     <lastmod>2022-05-10T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://jellyparks.com/tags/linux/</loc>
     <lastmod>2022-05-10T00:00:00+00:00</lastmod>
   </url><url>
+    <loc>https://jellyparks.com/posts/</loc>
+    <lastmod>2022-05-10T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>https://jellyparks.com/tags/</loc>
     <lastmod>2022-05-10T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://jellyparks.com/me/about/</loc>
-    <lastmod>2018-11-28T15:14:39+10:00</lastmod>
+    <loc>https://jellyparks.com/tags/ctf/</loc>
+    <lastmod>2019-11-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://jellyparks.com/me/</loc>
-    <lastmod>2018-11-28T15:14:39+10:00</lastmod>
+    <loc>https://jellyparks.com/tags/identity/</loc>
+    <lastmod>2019-11-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://jellyparks.com/thing1/</loc>
-    <lastmod>2018-11-28T15:14:39+10:00</lastmod>
+    <loc>https://jellyparks.com/tags/saml/</loc>
+    <lastmod>2019-11-28T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://jellyparks.com/categories/saml/</loc>
+    <lastmod>2019-11-28T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://jellyparks.com/posts/vulnerable-saml-app/</loc>
+    <lastmod>2019-11-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://jellyparks.com/</loc>
     <lastmod>2018-11-28T15:14:39+10:00</lastmod>
+  </url><url>
+    <loc>https://jellyparks.com/posts/assumed-role-breadcrumbs/</loc>
+    <lastmod>2018-11-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://jellyparks.com/tags/aws/</loc>
     <lastmod>2018-11-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://jellyparks.com/categories/aws/</loc>
-    <lastmod>2018-11-28T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://jellyparks.com/aws/</loc>
     <lastmod>2018-11-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://jellyparks.com/tags/cloud/</loc>
@@ -77,31 +62,31 @@
     <loc>https://jellyparks.com/categories/cloudgoat/</loc>
     <lastmod>2018-11-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://jellyparks.com/cloudgoat/</loc>
+    <loc>https://jellyparks.com/posts/cloudtrail-anomaly-detection/</loc>
     <lastmod>2018-11-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://jellyparks.com/aws/cloudtrail-anomaly-detection/</loc>
+    <loc>https://jellyparks.com/posts/codebuild-secrets/</loc>
     <lastmod>2018-11-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://jellyparks.com/cloudgoat/codebuild-secrets/</loc>
+    <loc>https://jellyparks.com/posts/ec2-ssrf/</loc>
     <lastmod>2018-11-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://jellyparks.com/tags/ctf/</loc>
+    <loc>https://jellyparks.com/posts/emr-security-woes/</loc>
     <lastmod>2018-11-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://jellyparks.com/aws/emr-security-woes/</loc>
+    <loc>https://jellyparks.com/posts/iam-privesc-by-attachment/</loc>
     <lastmod>2018-11-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://jellyparks.com/tags/identity/</loc>
+    <loc>https://jellyparks.com/posts/iam-privesc-by-rollback/</loc>
     <lastmod>2018-11-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://jellyparks.com/aws/role-credential-revoking/</loc>
+    <loc>https://jellyparks.com/posts/me/</loc>
     <lastmod>2018-11-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://jellyparks.com/tags/saml/</loc>
+    <loc>https://jellyparks.com/posts/role-credential-revoking/</loc>
     <lastmod>2018-11-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://jellyparks.com/categories/saml/</loc>
+    <loc>https://jellyparks.com/posts/saml-overview/</loc>
     <lastmod>2018-11-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://jellyparks.com/tags/walkthrough/</loc>
@@ -113,10 +98,10 @@
     <loc>https://jellyparks.com/categories/web/</loc>
     <lastmod>2018-11-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://jellyparks.com/web-things/</loc>
+    <loc>https://jellyparks.com/posts/what-is-cloudgoat/</loc>
     <lastmod>2018-11-28T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://jellyparks.com/cloudgoat/what-is-cloudgoat/</loc>
+    <loc>https://jellyparks.com/posts/xss-ui-redressing/</loc>
     <lastmod>2018-11-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://jellyparks.com/archives/</loc>

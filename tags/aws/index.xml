@@ -11,83 +11,83 @@
     <generator>Hugo -- gohugo.io</generator>
     <lastBuildDate>Wed, 28 Nov 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://jellyparks.com/tags/aws/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>ec2_ssrf</title>
-      <link>https://jellyparks.com/cloudgoat/ec2-ssrf/</link>
-      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
-      
-      <guid>https://jellyparks.com/cloudgoat/ec2-ssrf/</guid>
-      <description>Cloud Goat ec2 ssrf scenario walkthrough</description>
-    </item>
-    
-    <item>
       <title>assumed_role_breadcrumbs</title>
-      <link>https://jellyparks.com/aws/assumed-role-breadcrumbs/</link>
+      <link>https://jellyparks.com/posts/assumed-role-breadcrumbs/</link>
       <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/aws/assumed-role-breadcrumbs/</guid>
+      <guid>https://jellyparks.com/posts/assumed-role-breadcrumbs/</guid>
       <description>Cloudtrail events in AWS offer a lot of visibility into the calls that roles leverage within the platform. Sometimes tracking the original source of the activity can be challenging. When users and other aws services from one account assume role into another hunting the origin can take a bit of backtracking.</description>
     </item>
     
     <item>
-      <title>iam_privesc_by_attachment</title>
-      <link>https://jellyparks.com/cloudgoat/iam-privesc-by-attachment/</link>
-      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
-      
-      <guid>https://jellyparks.com/cloudgoat/iam-privesc-by-attachment/</guid>
-      <description>Cloud Goat IAM priviledge escalation by attachment scenario walkthrough</description>
-    </item>
-    
-    <item>
-      <title>iam_privesc_by_rollback</title>
-      <link>https://jellyparks.com/cloudgoat/iam-privesc-by-rollback/</link>
-      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
-      
-      <guid>https://jellyparks.com/cloudgoat/iam-privesc-by-rollback/</guid>
-      <description>Cloud Goat IAM priviledge escalation by rollback scenario walkthrough</description>
-    </item>
-    
-    <item>
       <title>cloudtrail_anomaly_detection</title>
-      <link>https://jellyparks.com/aws/cloudtrail-anomaly-detection/</link>
+      <link>https://jellyparks.com/posts/cloudtrail-anomaly-detection/</link>
       <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/aws/cloudtrail-anomaly-detection/</guid>
+      <guid>https://jellyparks.com/posts/cloudtrail-anomaly-detection/</guid>
       <description>Overview of an anomaly detection platform using cloudtrail logs, athena, lambda, s3, and dynamodb</description>
     </item>
     
     <item>
       <title>codebuild_secrets</title>
-      <link>https://jellyparks.com/cloudgoat/codebuild-secrets/</link>
+      <link>https://jellyparks.com/posts/codebuild-secrets/</link>
       <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/cloudgoat/codebuild-secrets/</guid>
+      <guid>https://jellyparks.com/posts/codebuild-secrets/</guid>
       <description>Cloud Goat codebuild secrets scenario walkthrough</description>
     </item>
     
     <item>
-      <title>emr_security_woes</title>
-      <link>https://jellyparks.com/aws/emr-security-woes/</link>
+      <title>ec2_ssrf</title>
+      <link>https://jellyparks.com/posts/ec2-ssrf/</link>
       <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/aws/emr-security-woes/</guid>
+      <guid>https://jellyparks.com/posts/ec2-ssrf/</guid>
+      <description>Cloud Goat ec2 ssrf scenario walkthrough</description>
+    </item>
+    
+    <item>
+      <title>emr_security_woes</title>
+      <link>https://jellyparks.com/posts/emr-security-woes/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/posts/emr-security-woes/</guid>
       <description>Walkthrough of Elastic Map Reduce compromise, and why it should never be directly exposed to the Internet.</description>
     </item>
     
     <item>
-      <title>role_credential_revoking</title>
-      <link>https://jellyparks.com/aws/role-credential-revoking/</link>
+      <title>iam_privesc_by_attachment</title>
+      <link>https://jellyparks.com/posts/iam-privesc-by-attachment/</link>
       <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/aws/role-credential-revoking/</guid>
+      <guid>https://jellyparks.com/posts/iam-privesc-by-attachment/</guid>
+      <description>Cloud Goat IAM priviledge escalation by attachment scenario walkthrough</description>
+    </item>
+    
+    <item>
+      <title>iam_privesc_by_rollback</title>
+      <link>https://jellyparks.com/posts/iam-privesc-by-rollback/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/posts/iam-privesc-by-rollback/</guid>
+      <description>Cloud Goat IAM priviledge escalation by rollback scenario walkthrough</description>
+    </item>
+    
+    <item>
+      <title>role_credential_revoking</title>
+      <link>https://jellyparks.com/posts/role-credential-revoking/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/posts/role-credential-revoking/</guid>
       <description>IAM roles can have all current credentials revoked. This can be great to stop an attacker, but at what cost?</description>
     </item>
     
     <item>
       <title>what_is_cloudgoat</title>
-      <link>https://jellyparks.com/cloudgoat/what-is-cloudgoat/</link>
+      <link>https://jellyparks.com/posts/what-is-cloudgoat/</link>
       <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/cloudgoat/what-is-cloudgoat/</guid>
+      <guid>https://jellyparks.com/posts/what-is-cloudgoat/</guid>
       <description>Cloud Goat CTF Overview</description>
     </item>
     

@@ -11,47 +11,47 @@
     <generator>Hugo -- gohugo.io</generator>
     <lastBuildDate>Wed, 28 Nov 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://jellyparks.com/categories/cloudgoat/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>ec2_ssrf</title>
-      <link>https://jellyparks.com/cloudgoat/ec2-ssrf/</link>
+      <title>codebuild_secrets</title>
+      <link>https://jellyparks.com/posts/codebuild-secrets/</link>
       <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/cloudgoat/ec2-ssrf/</guid>
+      <guid>https://jellyparks.com/posts/codebuild-secrets/</guid>
+      <description>Cloud Goat codebuild secrets scenario walkthrough</description>
+    </item>
+    
+    <item>
+      <title>ec2_ssrf</title>
+      <link>https://jellyparks.com/posts/ec2-ssrf/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/posts/ec2-ssrf/</guid>
       <description>Cloud Goat ec2 ssrf scenario walkthrough</description>
     </item>
     
     <item>
       <title>iam_privesc_by_attachment</title>
-      <link>https://jellyparks.com/cloudgoat/iam-privesc-by-attachment/</link>
+      <link>https://jellyparks.com/posts/iam-privesc-by-attachment/</link>
       <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/cloudgoat/iam-privesc-by-attachment/</guid>
+      <guid>https://jellyparks.com/posts/iam-privesc-by-attachment/</guid>
       <description>Cloud Goat IAM priviledge escalation by attachment scenario walkthrough</description>
     </item>
     
     <item>
       <title>iam_privesc_by_rollback</title>
-      <link>https://jellyparks.com/cloudgoat/iam-privesc-by-rollback/</link>
+      <link>https://jellyparks.com/posts/iam-privesc-by-rollback/</link>
       <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/cloudgoat/iam-privesc-by-rollback/</guid>
+      <guid>https://jellyparks.com/posts/iam-privesc-by-rollback/</guid>
       <description>Cloud Goat IAM priviledge escalation by rollback scenario walkthrough</description>
     </item>
     
     <item>
-      <title>codebuild_secrets</title>
-      <link>https://jellyparks.com/cloudgoat/codebuild-secrets/</link>
-      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
-      
-      <guid>https://jellyparks.com/cloudgoat/codebuild-secrets/</guid>
-      <description>Cloud Goat codebuild secrets scenario walkthrough</description>
-    </item>
-    
-    <item>
       <title>what_is_cloudgoat</title>
-      <link>https://jellyparks.com/cloudgoat/what-is-cloudgoat/</link>
+      <link>https://jellyparks.com/posts/what-is-cloudgoat/</link>
       <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://jellyparks.com/cloudgoat/what-is-cloudgoat/</guid>
+      <guid>https://jellyparks.com/posts/what-is-cloudgoat/</guid>
       <description>Cloud Goat CTF Overview</description>
     </item>
     

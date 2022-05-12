@@ -1,8 +1,12 @@
 ---
 title: 'role_credential_revoking'
-date: 2018-11-28T15:14:39+10:00
+date: 2018-11-28
+tags: ["aws", "cloud", "dfir"]
+categories: ["aws"]
+aliases: ["/role-credential-revoking"]
+author: "Travis"
+summary: "IAM roles can have all current credentials revoked. This can be great to stop an attacker, but at what cost?"
 ---
-
 ---
 
 The conversation came up about revoking credentials for a role associated which had ec2 instances associated with it. Does it impact the instance at all? When will the instance refresh its access keys? Is there just a blip in the EC2's access to AWS API calls or is it unable to make calls until its keys TTL ends? These were all questions that we did not know the answer to. The official Amazon docs here and here don't necessarily cover the fall out or recovery from this action.

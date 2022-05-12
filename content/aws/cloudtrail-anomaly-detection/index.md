@@ -1,13 +1,17 @@
 ---
 title: 'cloudtrail_anomaly_detection'
-date: 2018-11-28T15:14:39+10:00
+date: 2018-11-28
+tags: ["aws", "cloud", "dfir"]
+categories: ["aws"]
+aliases: ["/cloudtrail-anomaly-detection"]
+author: "Travis"
+summary: "Overview of an anomaly detection platform using cloudtrail logs, athena, lambda, s3, and dynamodb"
 ---
-
 ---
 
 This is going to be an ongoing post for awhile. It was inspired by Netflix's skunkworks group who gave a [talk](https://www.youtube.com/watch?v=kWJoiZ9yMpg) at re:invent 2019 in regards to building a cloudtrail anomaly detection platform leveraging Amazon services. I highly recommend watching the talk.
 
-I liked the idea, but not the deployment method netflix showcased. It didn't scale to the size I needed it to (Looking at the final product in production now it probably would have, but I didn't want to run and maintain an EC2 instnace). Additionally there were also some aspects that I reworked to lessen the load (and cost) of Athena queries. We'll talk more about these differences and more further in the post. This post will walk through [this](https://github.com/yogisec/cloudtrail-anomaly-serverless) code.
+I liked the idea, but not the deployment method netflix showcased. It didn't scale to the size I needed it to (Looking at the final product in production now it probably would have, but I didn't want to run and maintain an EC2 instance). Additionally there were also some aspects that I reworked to lessen the load (and cost) of Athena queries. We'll talk more about these differences and more further in the post. This post will walk through [this](https://github.com/yogisec/cloudtrail-anomaly-serverless) code.
 
 ---
 

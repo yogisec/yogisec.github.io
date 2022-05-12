@@ -1,8 +1,13 @@
 ---
 title: 'ec2_ssrf'
-date: 2018-11-28T15:14:39+10:00
+date: 2018-11-28
+weight: 2
+tags: ["aws", "cloud", "cloudgoat", "walkthrough", "ctf"]
+categories: ["cloudgoat"]
+aliases: ["/ec2-ssrf"]
+author: "Travis"
+summary: "Cloud Goat ec2 ssrf scenario walkthrough"
 ---
-
 ---
 
 According to the official documentation for this scenario ([here](https://github.com/RhinoSecurityLabs/cloudgoat/tree/master/scenarios/ec2_ssrf)) the overall goal is to "Invoke the "cg-lambda-[ CloudGoat ID ]" Lambda function."

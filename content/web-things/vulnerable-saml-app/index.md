@@ -1,8 +1,13 @@
 ---
 title: "Yogi's Vulnerable SAML app"
-date: 2018-11-28T15:14:39+10:00
+date: 2018-11-28
+tags: ["saml", "identity", "ctf"]
+weight: 3
+categories: ["saml"]
+aliases: ["/vulnerable-saml-app"]
+author: "Travis"
+summary: "Overview of a vulnerable saml platform built to allow for various saml exploits to occur."
 ---
-
 ---
 
 ### What is this thing?
@@ -145,14 +150,13 @@ At this point the IDP and the SP should be up and running and accessible. The ne
 
 Login credentials:
 
-{{<table "table" "thead-dark">}}
 |Username|	Password|	Description|
 |---|---|---|
-yogi|	bear|	Basic user account, memeber of the 'users' group. No special permissions|
-admin|	this-is-the-administrator-pasword-oh-no-is-that-a-typo-in-password|	Regular administrator account, member of the admin group. This account has the ability to delete the complaints.|
-brubble|	password|	This is account was registered specifically for CVE-2017-11427|
-instructor|	G0od-LuckGu3ssingThisButHeyItCouldHappenRight?|	This account is allowed to reset the complain board back to its original state. Additionally this account was the ability to increase or decrease the security posture of the application.|
-{{</table>}}
+|yogi|	bear|	Basic user account, memeber of the 'users' group. No special permissions|
+|admin|	this-is-the-administrator-pasword-oh-no-is-that-a-typo-in-password|	Regular administrator account, member of the admin group. This account has the ability to delete the complaints.|
+|brubble|	password|	This is account was registered specifically for CVE-2017-11427|
+|instructor|	G0od-LuckGu3ssingThisButHeyItCouldHappenRight?|	This account is allowed to reset the complain board back to its original state. Additionally this account was the ability to increase or decrease the security posture of the application.|
+
 
 After successfully logging in we are presented with our profile as seen by the application. This is a quick and easy way to confirm which user we are, as well as our current group membership.
 
@@ -178,7 +182,6 @@ The instructor account also has a new tab called `Saml Settings`. Within this ta
 
 ### The Scenarios
 
-{{<table "table" "thead-dark">}}
 |Setting|	Description|
 |---|---|
 |Nothing Configured|	The application accepts any SAML message, edit away, the application trusts everything.|
@@ -186,7 +189,6 @@ The instructor account also has a new tab called `Saml Settings`. Within this ta
 |Want Assertions / Messages Signed|	The Service Provider requires the messages to be signed, but it doesn't check to see if they are valid signatures.|
 |Everything Signed, Everything Valid|	This is the ideal deployment, messages must be signed and they must be valid, no tampering allowed.|
 |CVE-2017-11427|	This is an implementation of CVE-2017-11427 which leverages comments within the SAML response XML to bypass security controls.|
-{{</table>}}
 
 Note: for all of the SAML message tampering below I am leveraging the SAML Raider plugin for burp. It handles the decoding of the messages on the fly and allows for edits. It also supports XSW attacks which are currently beyond the scope of this application.
 

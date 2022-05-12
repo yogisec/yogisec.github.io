@@ -43,16 +43,16 @@ params:
     assets:
         # disableHLJS: true # to disable highlight.js
         # disableFingerprinting: true
-        favicon: "https://jellyparks.com/favicon.ico"
+        favicon: "/favicon.ico"
         favicon16x16: "<link / abs url>"
         favicon32x32: "<link / abs url>"
-        #apple_touch_icon: "<link / abs url>"
+        apple_touch_icon: "<link / abs url>"
         safari_pinned_tab: "<link / abs url>"
 
     label:
         text: "Home"
-        icon: /apple-touch-icon.png
-        iconHeight: 35
+        # icon: images/apple-touch-icon.png
+        # iconHeight: 35
 
     # profile-mode
     profileMode:
@@ -94,10 +94,9 @@ params:
         hiddenInSingle: true # hide on single page
 
     editPost:
-        URL: "https://github.com/<path_to_repo>/content"
+        URL: "https://github.com/yogisec/yogisec.github.io/blob/main/content"
         Text: "Suggest Changes" # edit text
         appendFilePath: true # to append file path to Edit link
-
     # for search
     # https://fusejs.io/api/options.html
     fuseOpts:
@@ -110,6 +109,14 @@ params:
         keys: ["title", "permalink", "summary", "content"]
 menu:
     main:
+        - identifier: archives
+          name: Archive
+          url: archives
+          weight: 5
+        - identifier: search
+          name: Search
+          url: search/
+          weight: 8
         - identifier: categories
           name: categories
           url: /categories/
@@ -118,9 +125,9 @@ menu:
           name: tags
           url: /tags/
           weight: 20
-        - identifier: example
-          name: example.org
-          url: https://example.org
+        - identifier: me
+          name: me
+          url: /me/about/
           weight: 30
 # Read: https://github.com/adityatelange/hugo-PaperMod/wiki/FAQs#using-hugos-syntax-highlighter-chroma
 # pygmentsUseClasses: true

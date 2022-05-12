@@ -1,62 +1,8 @@
-<!doctype html><html lang=en>
-<head>
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-133811886-2"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date),gtag('config','UA-133811886-2')</script>
-<meta charset=utf-8>
-<meta name=viewport content="width=device-width,initial-scale=1">
-<meta http-equiv=x-ua-compatible content="IE=edge">
-<script src=/js/nav.js></script>
-<link rel="shortcut icon" href=/favicon.ico>
-<link rel=stylesheet href=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css integrity=sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T crossorigin=anonymous>
-<link rel=stylesheet href=/css/main.css>
-<title>
-saml_overview | jellyparks
-</title>
-</head>
-<body>
-<header>
-</header>
-<div class=site-wrapper>
-<div class="sticky top-bar">
-<div id=mySidenav class=sidenav include-nav=/nav.html>
-</div>
-<span class="sticky hamburger" style=font-size:30px;cursor:pointer onclick=openNav()>&#9776;</span>
-</div>
-<div class=container>
-<div class=blog-header>
-<h1>saml_overview</h1>
-</div>
-<div class=row>
-<div class="col-sm-8 blog-main">
-<div class=blog-post>
-<hr>
-<h3 id=what-is-it>What is it</h3>
-<p>According to <a href=https://tools.ietf.org/html/rfc7522>RFC7522</a> &ldquo;the Security Assertion Markup Language (SAML) 2.0 is an XML-based framework that alllows identity and security information to be shared across security domains.&rdquo; In a nutshell SAML provides a way to tell a web application you are who you say you are without having to maintain a user/password database within each web application users access. Instead the authentication occurs at a trusted identity provider (IDP) and authorization is left to the web application which people are trying to access once they authenticate with the IDP.</p>
-<p>Terms:</p>
-<ul>
-<li><strong>Identity Provider (IDP)</strong>: This is the server that handles the authentication. In the test environment below the IDP is the &lsquo;Jellystone IDP.&rsquo; This is the platform you prove you are who you say you are. An IDP may have back end connections to AD, or it could check against another database of users. IDPs can also help to easily implment mutli-factor authentication. Removing the burden from the application developer.</li>
-<li><strong>Service Provider (SP)</strong>: This is the application a user is attempting to access. In the case of the example below the SP is &lsquo;Yogi&rsquo;s SAML App&rsquo;.</li>
-<li><strong>Client</strong>: This is you. A client is anyone or anything that is sending a request to the SP.</li>
-</ul>
-<hr>
-<h3 id=how-does-it-work>How Does it Work</h3>
-<p>SAML has a couple different authentication flows, the IDP initiated flow and the service provider initiated flow. Once the user reaches the IDP the flows are basically the same. For this writeup we will focus on the service provider initiated flow. Looking at the picture below we can see three high level steps for this flow.</p>
-<p><img src=images/environment.png alt=environment class=img-fluid></p>
-<p>Lets break these down:</p>
-<p>1 - In this step the user browses to the web application (Service Provider) and selects the login button.
+<!doctype html><html lang=en><head><script async src="https://www.googletagmanager.com/gtag/js?id=UA-133811886-2"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-133811886-2")</script><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><script src=/js/nav.js></script>
+<link rel="shortcut icon" href=/favicon.ico><link rel=stylesheet href=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css integrity=sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T crossorigin=anonymous><link rel=stylesheet href=/css/main.css><title>saml_overview | jellyparks</title></head><body><header></header><div class=site-wrapper><div class="sticky top-bar"><div id=mySidenav class=sidenav include-nav=/nav.html></div><span class="sticky hamburger" style=font-size:30px;cursor:pointer onclick=openNav()>&#9776;</span></div><div class=container><div class=blog-header><h1>saml_overview</h1></div><div class=row><div class="col-sm-8 blog-main"><div class=blog-post><hr><h3 id=what-is-it>What is it</h3><p>According to <a href=https://tools.ietf.org/html/rfc7522>RFC7522</a> &ldquo;the Security Assertion Markup Language (SAML) 2.0 is an XML-based framework that alllows identity and security information to be shared across security domains.&rdquo; In a nutshell SAML provides a way to tell a web application you are who you say you are without having to maintain a user/password database within each web application users access. Instead the authentication occurs at a trusted identity provider (IDP) and authorization is left to the web application which people are trying to access once they authenticate with the IDP.</p><p>Terms:</p><ul><li><strong>Identity Provider (IDP)</strong>: This is the server that handles the authentication. In the test environment below the IDP is the &lsquo;Jellystone IDP.&rsquo; This is the platform you prove you are who you say you are. An IDP may have back end connections to AD, or it could check against another database of users. IDPs can also help to easily implment mutli-factor authentication. Removing the burden from the application developer.</li><li><strong>Service Provider (SP)</strong>: This is the application a user is attempting to access. In the case of the example below the SP is &lsquo;Yogi&rsquo;s SAML App&rsquo;.</li><li><strong>Client</strong>: This is you. A client is anyone or anything that is sending a request to the SP.</li></ul><hr><h3 id=how-does-it-work>How Does it Work</h3><p>SAML has a couple different authentication flows, the IDP initiated flow and the service provider initiated flow. Once the user reaches the IDP the flows are basically the same. For this writeup we will focus on the service provider initiated flow. Looking at the picture below we can see three high level steps for this flow.</p><p><img src=images/environment.png alt=environment class=img-fluid></p><p>Lets break these down:</p><p>1 - In this step the user browses to the web application (Service Provider) and selects the login button.
 2 - The web application sends SAML request back to the browser and redirects it to the IDP. The browser relays the request to the IDP. The IDP prompts to user to to authenticate. With the defined requirements. This could be a username/password, MFA, both, etc.
-3 - Once the user proves they are who they say they are the IDP generates a SAML assertion and sends it back to the browser and redirects the browser back to the Service Provider. The service provider confirms that the user should have access to the application and grants them access to resources they are allowed to access.</p>
-<p>The assertion messages which is provided to the Service Provider is the most important thing to secure. This can be done by configuring the Service Provider so confirm that the messages from the IDP that are relayed through the user are signed, and valid. More often than not this is where security issues arise.</p>
-<p>If the messages are not signed, or are signed but not valid the application should reject them. For example the three attacks below should all result in an assertion message being rejected:</p>
-<ul>
-<li>Attacker removes the signature and edits the message - Unsigned message</li>
-<li>Attacker leaves the signature and edits the message - Signed but not valid message</li>
-<li>Attacker edits the message and resigns it - Signed but not valid message/signature</li>
-</ul>
-<hr>
-<h3 id=message-breakdown>Message Breakdown</h3>
-<h4 id=request-id-like-to-login>Request: I&rsquo;d Like to Login</h4>
-<pre tabindex=0><code>GET /?sso2 HTTP/1.1
+3 - Once the user proves they are who they say they are the IDP generates a SAML assertion and sends it back to the browser and redirects the browser back to the Service Provider. The service provider confirms that the user should have access to the application and grants them access to resources they are allowed to access.</p><p>The assertion messages which is provided to the Service Provider is the most important thing to secure. This can be done by configuring the Service Provider so confirm that the messages from the IDP that are relayed through the user are signed, and valid. More often than not this is where security issues arise.</p><p>If the messages are not signed, or are signed but not valid the application should reject them. For example the three attacks below should all result in an assertion message being rejected:</p><ul><li>Attacker removes the signature and edits the message - Unsigned message</li><li>Attacker leaves the signature and edits the message - Signed but not valid message</li><li>Attacker edits the message and resigns it - Signed but not valid message/signature</li></ul><hr><h3 id=message-breakdown>Message Breakdown</h3><h4 id=request-id-like-to-login>Request: I&rsquo;d Like to Login</h4><pre tabindex=0><code>GET /?sso2 HTTP/1.1
 Host: http://yogivulnerablesaml.jellystone.com:8000
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:65.0) Gecko/20100101 Firefox/65.0
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
@@ -65,73 +11,57 @@ Accept-Encoding: gzip, deflate
 Referer: http://yogivulnerablesaml.jellystone.com:8000/
 Connection: close
 Upgrade-Insecure-Requests: 1
-</code></pre><h4 id=response-sure-heres-some-information-go-auth-to-this-idp>Response: Sure heres some information, go auth to this IDP</h4>
-<pre tabindex=0><code>HTTP/1.1 302 FOUND
+</code></pre><h4 id=response-sure-heres-some-information-go-auth-to-this-idp>Response: Sure heres some information, go auth to this IDP</h4><pre tabindex=0><code>HTTP/1.1 302 FOUND
 Content-Type: text/html; charset=utf-8
 Content-Length: 1795
 Location: http://idp.jellystone.com/simplesamlphp/saml2/idp/SSOService.php?SAMLRequest=fVNNj9owEL3vr0C59ETsOMBmLUhFoR9IFCKSVmovlbGHxVJip7azS%2F99nYSltOriQyzNzHvz%2FGYytawqazpv3FHt4GcD1t0N%2FDlVpbK0S86CxiiqmZWWKlaBpY7TfP55TUmIaW2001yXwT%2Bw2yhmLRgntephq%2BUs2G7er7cfV5sfJOZjwkWCWUSAPMR7IGx0EII8sEk8IYLsR3Fyn0AP%2FQrGep5Z4Gn7SGb0kxRgNr7rLPimH%2BUbO8izcydrG1gp65hyHoMJHuLJkEyKaEJxREn0va9beiOkYq6jPjpXU4SiJCQxCcdRGOF7ZGVVl9A5dKxRexMkRY3yfJuDeZIcQp%2B4SOpMeieVkOrxtjf7vsjST0WRDbNtXvQk8xfPFlrZpgJzbvNlt75IjL3CcRglJBzRBGOM3jJue3jafaetUNq5YNLXQBU4JphjaIquy%2F8Q1LQ1d7XMdCn5ry7eng%2FaVMy9%2FjpvXBeRYnjoSmmjbA1cHiSI4EIzL0v9vDDAnJ%2BfMw0EA%2FRX8%2FOigujW1tvh4OQGC13VzEjbTgxOjLsgvVD2z74uX5R%2BB3dwSG%2BuKae8rfPhzF%2FP2oh2lMB978IwL14bdzbpv%2BS9anRDdnr3kr7%2BB9Pf&amp;RelayState=http%3A%2F%2Fyogivulnerablesaml.jellystone.com%3A8000%2Fprofile%2F
-</code></pre><p>The SAMLRequest parameter in the response above is a base64 encoded xml payload. If we decode it we get the information below:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-xml data-lang=xml><span style=color:#0080ff>&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;</span>
-<span style=color:#2c5dcd;font-weight:700>&lt;samlp:AuthnRequest</span>
- <span style=color:#2c5dcd;font-style:italic>AssertionConsumerServiceURL=</span><span style=color:#0c6>&#34;http://yogivulnerablesaml.jellystone.com:8000/?acs&#34;</span>
- <span style=color:#2c5dcd;font-style:italic>Destination=</span><span style=color:#0c6>&#34;http://idp.jellystone.com/simplesamlphp/saml2/idp/SSOService.php&#34;</span>
- <span style=color:#2c5dcd;font-style:italic>ID=</span><span style=color:#0c6>&#34;ONELOGIN_23c52cd80a12e293be2a4fdd29a6362d2b43878e&#34;</span>
- <span style=color:#2c5dcd;font-style:italic>IssueInstant=</span><span style=color:#0c6>&#34;2020-06-26T16:01:21Z&#34;</span>
- <span style=color:#2c5dcd;font-style:italic>ProtocolBinding=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST&#34;</span>
- <span style=color:#2c5dcd;font-style:italic>ProviderName=</span><span style=color:#0c6>&#34;Yogi&#39;s SP&#34;</span>
- <span style=color:#2c5dcd;font-style:italic>Version=</span><span style=color:#0c6>&#34;2.0&#34;</span>
- <span style=color:#2c5dcd;font-style:italic>xmlns:saml=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:assertion&#34;</span>
- <span style=color:#2c5dcd;font-style:italic>xmlns:samlp=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:protocol&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-<span style=color:#2c5dcd;font-weight:700>&lt;saml:Issuer&gt;</span>
- http://yogivulnerablesaml.jellystone.com:8000/metadata/
-<span style=color:#2c5dcd;font-weight:700>&lt;/saml:Issuer&gt;</span>
-<span style=color:#2c5dcd;font-weight:700>&lt;samlp:NameIDPolicy</span>
-  <span style=color:#2c5dcd;font-style:italic>AllowCreate=</span><span style=color:#0c6>&#34;true&#34;</span>
-  <span style=color:#2c5dcd;font-style:italic>Format=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
-<span style=color:#2c5dcd;font-weight:700>&lt;samlp:RequestedAuthnContext</span> <span style=color:#2c5dcd;font-style:italic>Comparison=</span><span style=color:#0c6>&#34;exact&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;saml:AuthnContextClassRef&gt;</span>
-    urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport
-  <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AuthnContextClassRef&gt;</span>
- <span style=color:#2c5dcd;font-weight:700>&lt;/samlp:RequestedAuthnContext&gt;</span>
-<span style=color:#2c5dcd;font-weight:700>&lt;/samlp:AuthnRequest&gt;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>Once we&rsquo;ve decoded the payload there isn&rsquo;t much to it. Rember at this point in the process the user has not authenticated yet, they have just started the process. The payload above is what the Service Provider gives to the user to then provide to the Identity Platform. Let&rsquo;s break down the three fields highlighted above:</p>
-<ul>
-<li>AssertionConsumerServiceURL: This field is the return address. Basically this is where we tell the IDP to point us to once we&rsquo;ve successfully authenticated.</li>
-<li>ID: This field is a transaction ID for this entire login request. Its how the service provider knows which session to attribute our authenticate request to. It becomes important later.</li>
-<li>ProviderName: If this is filled in, its just the name of the SP. From a logging standpoint it is very helpful.</li>
-</ul>
-<h4 id=response-welcome-to-the-idp-go-here-and-fill-this-form-out>Response: Welcome to the IDP, go here and fill this form out</h4>
-<p>IDP responds with a 302 to a login page the redirect also includes auth information</p>
-<pre tabindex=0><code>HTTP/1.1 302 Found
+</code></pre><p>The SAMLRequest parameter in the response above is a base64 encoded xml payload. If we decode it we get the information below:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-xml data-lang=xml><span style=display:flex><span><span style=color:#0080ff>&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;</span>
+</span></span><span style=display:flex><span><span style=color:#2c5dcd;font-weight:700>&lt;samlp:AuthnRequest</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-style:italic>AssertionConsumerServiceURL=</span><span style=color:#0c6>&#34;http://yogivulnerablesaml.jellystone.com:8000/?acs&#34;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-style:italic>Destination=</span><span style=color:#0c6>&#34;http://idp.jellystone.com/simplesamlphp/saml2/idp/SSOService.php&#34;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-style:italic>ID=</span><span style=color:#0c6>&#34;ONELOGIN_23c52cd80a12e293be2a4fdd29a6362d2b43878e&#34;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-style:italic>IssueInstant=</span><span style=color:#0c6>&#34;2020-06-26T16:01:21Z&#34;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-style:italic>ProtocolBinding=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST&#34;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-style:italic>ProviderName=</span><span style=color:#0c6>&#34;Yogi&#39;s SP&#34;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-style:italic>Version=</span><span style=color:#0c6>&#34;2.0&#34;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-style:italic>xmlns:saml=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:assertion&#34;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-style:italic>xmlns:samlp=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:protocol&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span><span style=color:#2c5dcd;font-weight:700>&lt;saml:Issuer&gt;</span>
+</span></span><span style=display:flex><span> http://yogivulnerablesaml.jellystone.com:8000/metadata/
+</span></span><span style=display:flex><span><span style=color:#2c5dcd;font-weight:700>&lt;/saml:Issuer&gt;</span>
+</span></span><span style=display:flex><span><span style=color:#2c5dcd;font-weight:700>&lt;samlp:NameIDPolicy</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-style:italic>AllowCreate=</span><span style=color:#0c6>&#34;true&#34;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-style:italic>Format=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
+</span></span><span style=display:flex><span><span style=color:#2c5dcd;font-weight:700>&lt;samlp:RequestedAuthnContext</span> <span style=color:#2c5dcd;font-style:italic>Comparison=</span><span style=color:#0c6>&#34;exact&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;saml:AuthnContextClassRef&gt;</span>
+</span></span><span style=display:flex><span>    urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AuthnContextClassRef&gt;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-weight:700>&lt;/samlp:RequestedAuthnContext&gt;</span>
+</span></span><span style=display:flex><span><span style=color:#2c5dcd;font-weight:700>&lt;/samlp:AuthnRequest&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>Once we&rsquo;ve decoded the payload there isn&rsquo;t much to it. Rember at this point in the process the user has not authenticated yet, they have just started the process. The payload above is what the Service Provider gives to the user to then provide to the Identity Platform. Let&rsquo;s break down the three fields highlighted above:</p><ul><li>AssertionConsumerServiceURL: This field is the return address. Basically this is where we tell the IDP to point us to once we&rsquo;ve successfully authenticated.</li><li>ID: This field is a transaction ID for this entire login request. Its how the service provider knows which session to attribute our authenticate request to. It becomes important later.</li><li>ProviderName: If this is filled in, its just the name of the SP. From a logging standpoint it is very helpful.</li></ul><h4 id=response-welcome-to-the-idp-go-here-and-fill-this-form-out>Response: Welcome to the IDP, go here and fill this form out</h4><p>IDP responds with a 302 to a login page the redirect also includes auth information</p><pre tabindex=0><code>HTTP/1.1 302 Found
 Date: Fri, 26 Jun 2020 16:01:21 GMT
 Server: Apache/2.4.18 (Ubuntu)
 Set-Cookie: PHPSESSID=1b1500050c1336f7bf7932336ccc957f; path=/; HttpOnly
@@ -142,9 +72,7 @@ Location: http://idp.jellystone.com/simplesamlphp/module.php/core/loginuserpass.
 Content-Length: 1267
 Connection: close
 Content-Type: text/html; charset=UTF-8
-</code></pre><h4 id=request-here-is-my-username-and-password>Request: Here is my username and password</h4>
-<p>Post request to the IDP</p>
-<pre tabindex=0><code>POST /simplesamlphp/module.php/core/loginuserpass.php? HTTP/1.1
+</code></pre><h4 id=request-here-is-my-username-and-password>Request: Here is my username and password</h4><p>Post request to the IDP</p><pre tabindex=0><code>POST /simplesamlphp/module.php/core/loginuserpass.php? HTTP/1.1
 Host: idp.jellystone.com
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:65.0) Gecko/20100101 Firefox/65.0
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
@@ -158,9 +86,7 @@ Cookie: PHPSESSID=1b1500050c1336f7bf7932336ccc957f
 Upgrade-Insecure-Requests: 1
 
 username=yogi&amp;password=bear&amp;AuthState=_a87e532c1d8e81a590e643b9a38caba90d77c86a31%3Ahttp%3A%2F%2Fidp.jellystone.com%2Fsimplesamlphp%2Fsaml2%2Fidp%2FSSOService.php%3Fspentityid%3Dhttp%253A%252F%252Fyogivulnerablesaml.jellystone.com%253A8000%252Fmetadata%252F%26cookieTime%3D1593187281%26RelayState%3Dhttp%253A%252F%252Fyogivulnerablesaml.jellystone.com%253A8000%252Fprofile%252F
-</code></pre><p>The IDP responds with a 200 OK and executes javascript to make post request to the Service Provider with the assertion payload. The post request to the Service provider is below:</p>
-<h4 id=request-im-back-and-i-am-who-i-say-i-am-here-is-my-proof>Request: I&rsquo;m back and I am who I say I am, here is my proof</h4>
-<pre tabindex=0><code>POST /?acs HTTP/1.1
+</code></pre><p>The IDP responds with a 200 OK and executes javascript to make post request to the Service Provider with the assertion payload. The post request to the Service provider is below:</p><h4 id=request-im-back-and-i-am-who-i-say-i-am-here-is-my-proof>Request: I&rsquo;m back and I am who I say I am, here is my proof</h4><pre tabindex=0><code>POST /?acs HTTP/1.1
 Host: yogivulnerablesaml.jellystone.com:8000
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:65.0) Gecko/20100101 Firefox/65.0
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
@@ -173,319 +99,259 @@ Connection: close
 Upgrade-Insecure-Requests: 1
 
 SAMLResponse=PHNhbWxwOlJlc...truncated based 64 blob...&amp;RelayState=http%3A%2F%2Fyogivulnerablesaml.jellystone.com%3A8000%2Fprofile%2F
-</code></pre><p>Whats in the truncated based64 blob? Its our assertion payload that contains the signing information, the identity information, and metadata about the message. There are sever parts to it but for this write up we care about the Signature portion, and the Assertion portion. WHen we decode the blob we are presented with xml data. Lets take a look at the message. For the next few sections I&rsquo;ve broken up the entire message into smaller chunks for readability</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-xml data-lang=xml><span style=color:#0080ff>&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;</span>
-<span style=color:#2c5dcd;font-weight:700>&lt;samlp:Response</span> <span style=color:#2c5dcd;font-style:italic>Destination=</span><span style=color:#0c6>&#34;http://yogivulnerablesaml.jellystone.com:8000/?acs&#34;</span>
-  <span style=color:#2c5dcd;font-style:italic>ID=</span><span style=color:#0c6>&#34;_680413d1f1dbb580a36385e5f6bcb985d5bb2404bd&#34;</span>
-  <span style=color:#2c5dcd;font-style:italic>InResponseTo=</span><span style=color:#0c6>&#34;ONELOGIN_23c52cd80a12e293be2a4fdd29a6362d2b43878e&#34;</span>
-  <span style=color:#2c5dcd;font-style:italic>IssueInstant=</span><span style=color:#0c6>&#34;2020-06-26T16:01:31Z&#34;</span> <span style=color:#2c5dcd;font-style:italic>Version=</span><span style=color:#0c6>&#34;2.0&#34;</span>
-  <span style=color:#2c5dcd;font-style:italic>xmlns:saml=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:assertion&#34;</span>
-  <span style=color:#2c5dcd;font-style:italic>xmlns:samlp=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:protocol&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;saml:Issuer&gt;</span>
-    http://idp.jellystone.com/simplesamlphp/saml2/idp/metadata.php
-  <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Issuer&gt;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>The section below contains signature information</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">41
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">42
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">43
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">44
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">45
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">46
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">47
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">48
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">49
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-xml data-lang=xml>  <span style=color:#2c5dcd;font-weight:700>&lt;ds:Signature</span> <span style=color:#2c5dcd;font-style:italic>xmlns:ds=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;ds:SignedInfo&gt;</span>
-    <span style=color:#2c5dcd;font-weight:700>&lt;ds:CanonicalizationMethod</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
-    <span style=color:#2c5dcd;font-weight:700>&lt;ds:SignatureMethod</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
-    <span style=color:#2c5dcd;font-weight:700>&lt;ds:Reference</span> <span style=color:#2c5dcd;font-style:italic>URI=</span><span style=color:#0c6>&#34;#_680413d1f1dbb580a36385e5f6bcb985d5bb2404bd&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;ds:Transforms&gt;</span>
-    <span style=color:#2c5dcd;font-weight:700>&lt;ds:Transform</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
-    <span style=color:#2c5dcd;font-weight:700>&lt;ds:Transform</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;/ds:Transforms&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;ds:DigestMethod</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;ds:DigestValue&gt;</span>LDuhdC47bWPLtaWR+DifMF5Ad/s=<span style=color:#2c5dcd;font-weight:700>&lt;/ds:DigestValue&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;/ds:Reference&gt;</span>
- <span style=color:#2c5dcd;font-weight:700>&lt;/ds:SignedInfo&gt;</span>
- <span style=color:#2c5dcd;font-weight:700>&lt;ds:SignatureValue&gt;</span>truncated=<span style=color:#2c5dcd;font-weight:700>&lt;/ds:SignatureValue&gt;</span>
- <span style=color:#2c5dcd;font-weight:700>&lt;ds:KeyInfo&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;ds:X509Data&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;ds:X509Certificate&gt;</span>certificate bits<span style=color:#2c5dcd;font-weight:700>&lt;/ds:X509Certificate&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;/ds:X509Data&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;/ds:KeyInfo&gt;</span>
- <span style=color:#2c5dcd;font-weight:700>&lt;/ds:Signature&gt;</span>
- <span style=color:#2c5dcd;font-weight:700>&lt;samlp:Status&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;samlp:StatusCode</span> <span style=color:#2c5dcd;font-style:italic>Value=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:status:Success&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
- <span style=color:#2c5dcd;font-weight:700>&lt;/samlp:Status&gt;</span>
- <span style=color:#2c5dcd;font-weight:700>&lt;saml:Assertion</span> <span style=color:#2c5dcd;font-style:italic>ID=</span><span style=color:#0c6>&#34;_59c561cc8e12b4cfab5c0f2d1d55ce541028d3342a&#34;</span>
-  <span style=color:#2c5dcd;font-style:italic>IssueInstant=</span><span style=color:#0c6>&#34;2020-06-26T16:01:31Z&#34;</span> <span style=color:#2c5dcd;font-style:italic>Version=</span><span style=color:#0c6>&#34;2.0&#34;</span>
-  <span style=color:#2c5dcd;font-style:italic>xmlns:xs=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span> <span style=color:#2c5dcd;font-style:italic>xmlns:xsi=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;saml:Issuer&gt;</span>
-   http://idp.jellystone.com/simplesamlphp/saml2/idp/metadata.php
-  <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Issuer&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;ds:Signature</span> <span style=color:#2c5dcd;font-style:italic>xmlns:ds=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;ds:SignedInfo&gt;</span>
-     <span style=color:#2c5dcd;font-weight:700>&lt;ds:CanonicalizationMethod</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
-    <span style=color:#2c5dcd;font-weight:700>&lt;ds:SignatureMethod</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
-    <span style=color:#2c5dcd;font-weight:700>&lt;ds:Reference</span> <span style=color:#2c5dcd;font-style:italic>URI=</span><span style=color:#0c6>&#34;#_59c561cc8e12b4cfab5c0f2d1d55ce541028d3342a&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-     <span style=color:#2c5dcd;font-weight:700>&lt;ds:Transforms&gt;</span>
-     <span style=color:#2c5dcd;font-weight:700>&lt;ds:Transform</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
-     <span style=color:#2c5dcd;font-weight:700>&lt;ds:Transform</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
-    <span style=color:#2c5dcd;font-weight:700>&lt;/ds:Transforms&gt;</span>
-    <span style=color:#2c5dcd;font-weight:700>&lt;ds:DigestMethod</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
-     <span style=color:#2c5dcd;font-weight:700>&lt;ds:DigestValue&gt;</span>cSXkNHBuvGm64eH1ldvgm8n1ArY=<span style=color:#2c5dcd;font-weight:700>&lt;/ds:DigestValue&gt;</span>
-    <span style=color:#2c5dcd;font-weight:700>&lt;/ds:Reference&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;/ds:SignedInfo&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;ds:SignatureValue&gt;</span>signature bits<span style=color:#2c5dcd;font-weight:700>&lt;/ds:SignatureValue&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;ds:KeyInfo&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;ds:X509Data&gt;</span>
-    <span style=color:#2c5dcd;font-weight:700>&lt;ds:X509Certificate&gt;</span>certificate bits<span style=color:#2c5dcd;font-weight:700>&lt;/ds:X509Certificate&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;/ds:X509Data&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;/ds:KeyInfo&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;/ds:Signature&gt;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>The last section includes all of the attributes about the subject, group memberships, etc.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">41
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">42
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">43
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">44
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">45
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">46
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">47
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">48
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">49
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">50
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">51
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">52
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">53
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">54
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">55
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">56
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">57
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">58
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">59
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">60
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">61
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">62
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">63
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">64
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">65
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">66
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">67
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-xml data-lang=xml>  <span style=color:#2c5dcd;font-weight:700>&lt;saml:Subject&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;saml:NameID</span>
-    <span style=color:#2c5dcd;font-style:italic>Format=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:nameid-format:transient&#34;</span>
-    <span style=color:#2c5dcd;font-style:italic>SPNameQualifier=</span><span style=color:#0c6>&#34;http://yogivulnerablesaml.jellystone.com:8000/metadata/&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>_77a94f4b52ba9f7fd80ac091a8c561136b697837d2
-   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:NameID&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;saml:SubjectConfirmation</span> <span style=color:#2c5dcd;font-style:italic>Method=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:cm:bearer&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;saml:SubjectConfirmationData</span>
-    <span style=color:#2c5dcd;font-style:italic>InResponseTo=</span><span style=color:#0c6>&#34;ONELOGIN_23c52cd80a12e293be2a4fdd29a6362d2b43878e&#34;</span>
-    <span style=color:#2c5dcd;font-style:italic>NotOnOrAfter=</span><span style=color:#0c6>&#34;2020-06-26T16:06:31Z&#34;</span>
-    <span style=color:#2c5dcd;font-style:italic>Recipient=</span><span style=color:#0c6>&#34;http://yogivulnerablesaml.jellystone.com:8000/?acs&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:SubjectConfirmation&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Subject&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;saml:Conditions</span>
-   <span style=color:#2c5dcd;font-style:italic>NotBefore=</span><span style=color:#0c6>&#34;2020-06-26T16:01:01Z&#34;</span>
-   <span style=color:#2c5dcd;font-style:italic>NotOnOrAfter=</span><span style=color:#0c6>&#34;2020-06-26T16:06:31Z&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;saml:AudienceRestriction&gt;</span>
-    <span style=color:#2c5dcd;font-weight:700>&lt;saml:Audience&gt;</span>http://yogivulnerablesaml.jellystone.com:8000/metadata/<span style=color:#2c5dcd;font-weight:700>&lt;/saml:Audience&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AudienceRestriction&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Conditions&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;saml:AuthnStatement</span>
-   <span style=color:#2c5dcd;font-style:italic>AuthnInstant=</span><span style=color:#0c6>&#34;2020-06-26T16:01:31Z&#34;</span>
-   <span style=color:#2c5dcd;font-style:italic>SessionIndex=</span><span style=color:#0c6>&#34;_f2d9382c86855d907f7462337c2a0716cdeae5fde5&#34;</span>
-   <span style=color:#2c5dcd;font-style:italic>SessionNotOnOrAfter=</span><span style=color:#0c6>&#34;2020-06-27T00:01:31Z&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;saml:AuthnContext&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;saml:AuthnContextClassRef&gt;</span>
-    urn:oasis:names:tc:SAML:2.0:ac:classes:Password<span style=color:#2c5dcd;font-weight:700>&lt;/saml:AuthnContextClassRef&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AuthnContext&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AuthnStatement&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;saml:AttributeStatement&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;saml:Attribute</span>
-    <span style=color:#2c5dcd;font-style:italic>Name=</span><span style=color:#0c6>&#34;memberOf&#34;</span>
-    <span style=color:#2c5dcd;font-style:italic>NameFormat=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:attrname-format:uri&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-    <span style=color:#2c5dcd;font-weight:700>&lt;saml:AttributeValue</span> <span style=color:#2c5dcd;font-style:italic>xsi:type=</span><span style=color:#0c6>&#34;xs:string&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-     users
-    <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AttributeValue&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Attribute&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;saml:Attribute</span>
-    <span style=color:#2c5dcd;font-style:italic>Name=</span><span style=color:#0c6>&#34;firstName&#34;</span>
-    <span style=color:#2c5dcd;font-style:italic>NameFormat=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:attrname-format:uri&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-    <span style=color:#2c5dcd;font-weight:700>&lt;saml:AttributeValue</span> <span style=color:#2c5dcd;font-style:italic>xsi:type=</span><span style=color:#0c6>&#34;xs:string&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-     Yogi
-    <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AttributeValue&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Attribute&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;saml:Attribute</span>
-    <span style=color:#2c5dcd;font-style:italic>Name=</span><span style=color:#0c6>&#34;lastName&#34;</span>
-    <span style=color:#2c5dcd;font-style:italic>NameFormat=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:attrname-format:uri&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-    <span style=color:#2c5dcd;font-weight:700>&lt;saml:AttributeValue</span> <span style=color:#2c5dcd;font-style:italic>xsi:type=</span><span style=color:#0c6>&#34;xs:string&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-     Bear
-    <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AttributeValue&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Attribute&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;saml:Attribute</span>
-    <span style=color:#2c5dcd;font-style:italic>Name=</span><span style=color:#0c6>&#34;username&#34;</span>
-    <span style=color:#2c5dcd;font-style:italic>NameFormat=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:attrname-format:uri&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-    <span style=color:#2c5dcd;font-weight:700>&lt;saml:AttributeValue</span> <span style=color:#2c5dcd;font-style:italic>xsi:type=</span><span style=color:#0c6>&#34;xs:string&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-     yogi
-    <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AttributeValue&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Attribute&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;saml:Attribute</span>
-    <span style=color:#2c5dcd;font-style:italic>Name=</span><span style=color:#0c6>&#34;urn:oid:1.2.840.113549.1.9.1&#34;</span>
-    <span style=color:#2c5dcd;font-style:italic>NameFormat=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:attrname-format:uri&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-    <span style=color:#2c5dcd;font-weight:700>&lt;saml:AttributeValue</span> <span style=color:#2c5dcd;font-style:italic>xsi:type=</span><span style=color:#0c6>&#34;xs:string&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
-     yogi@jellystonep.com
-    <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AttributeValue&gt;</span>
-   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Attribute&gt;</span>
-  <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AttributeStatement&gt;</span>
- <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Assertion&gt;</span>
-<span style=color:#2c5dcd;font-weight:700>&lt;/samlp:Response&gt;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>At this point the service provider should validate the message, and confirm that the user (Subject) that is requesting access is authorized to access resources within the application. If they are provie them with a 302 redirect to some page within the application now that they are authorized.</p>
-<h3 id=references>References</h3>
-<p>Great References:</p>
-<ul>
-<li><a href=https://tools.ietf.org/html/rfc7522>RFC7522</a></li>
-<li><a href=https://developer.okta.com/docs/concepts/saml/>SAML</a></li>
-<li><a href=https://developers.onelogin.com/saml>Overview of SAML</a></li>
-<li><a href=https://auth0.com/docs/authorization/concepts/authz-and-authn>Authentication vs Authorization</a></li>
-<li><a href=https://research.aurainfosec.io/bypassing-saml20-SSO/>Bypassing SAML 2.0 SSO with XML Signature Attracks</a></li>
-<li><a href=https://duo.com/blog/duo-finds-saml-vulnerabilities-affecting-multiple-implementations>Duo Finds SAML Vulnerabilities Affecting Multiple Implementations</a></li>
-</ul>
-</div>
-</div>
-<div class=col-md-3 id=sidebar data-spy=affix-bottom data-offset-top=0>
-<nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id=post-nav>
-<h5>contents</h5>
-<ul class="nav post-sidenav">
-<li><nav id=TableOfContents>
-<ul>
-<li>
-<ul>
-<li><a href=#what-is-it>What is it</a></li>
-<li><a href=#how-does-it-work>How Does it Work</a></li>
-<li><a href=#message-breakdown>Message Breakdown</a></li>
-<li><a href=#references>References</a></li>
-</ul>
-</li>
-</ul>
-</nav></li>
-</ul>
-</nav>
-</div>
-</div>
-</div>
-</div>
-<footer>
-</footer>
-</body>
-<script src=https://code.jquery.com/jquery-3.3.1.slim.min.js integrity=sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo crossorigin=anonymous></script>
+</code></pre><p>Whats in the truncated based64 blob? Its our assertion payload that contains the signing information, the identity information, and metadata about the message. There are sever parts to it but for this write up we care about the Signature portion, and the Assertion portion. WHen we decode the blob we are presented with xml data. Lets take a look at the message. For the next few sections I&rsquo;ve broken up the entire message into smaller chunks for readability</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-xml data-lang=xml><span style=display:flex><span><span style=color:#0080ff>&lt;?xml version=&#34;1.0&#34; encoding=&#34;UTF-8&#34;?&gt;</span>
+</span></span><span style=display:flex><span><span style=color:#2c5dcd;font-weight:700>&lt;samlp:Response</span> <span style=color:#2c5dcd;font-style:italic>Destination=</span><span style=color:#0c6>&#34;http://yogivulnerablesaml.jellystone.com:8000/?acs&#34;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-style:italic>ID=</span><span style=color:#0c6>&#34;_680413d1f1dbb580a36385e5f6bcb985d5bb2404bd&#34;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-style:italic>InResponseTo=</span><span style=color:#0c6>&#34;ONELOGIN_23c52cd80a12e293be2a4fdd29a6362d2b43878e&#34;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-style:italic>IssueInstant=</span><span style=color:#0c6>&#34;2020-06-26T16:01:31Z&#34;</span> <span style=color:#2c5dcd;font-style:italic>Version=</span><span style=color:#0c6>&#34;2.0&#34;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-style:italic>xmlns:saml=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:assertion&#34;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-style:italic>xmlns:samlp=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:protocol&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;saml:Issuer&gt;</span>
+</span></span><span style=display:flex><span>    http://idp.jellystone.com/simplesamlphp/saml2/idp/metadata.php
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Issuer&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>The section below contains signature information</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">41
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">42
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">43
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">44
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">45
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">46
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">47
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">48
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">49
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-xml data-lang=xml><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;ds:Signature</span> <span style=color:#2c5dcd;font-style:italic>xmlns:ds=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;ds:SignedInfo&gt;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;ds:CanonicalizationMethod</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;ds:SignatureMethod</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;ds:Reference</span> <span style=color:#2c5dcd;font-style:italic>URI=</span><span style=color:#0c6>&#34;#_680413d1f1dbb580a36385e5f6bcb985d5bb2404bd&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;ds:Transforms&gt;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;ds:Transform</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;ds:Transform</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;/ds:Transforms&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;ds:DigestMethod</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;ds:DigestValue&gt;</span>LDuhdC47bWPLtaWR+DifMF5Ad/s=<span style=color:#2c5dcd;font-weight:700>&lt;/ds:DigestValue&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;/ds:Reference&gt;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-weight:700>&lt;/ds:SignedInfo&gt;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-weight:700>&lt;ds:SignatureValue&gt;</span>truncated=<span style=color:#2c5dcd;font-weight:700>&lt;/ds:SignatureValue&gt;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-weight:700>&lt;ds:KeyInfo&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;ds:X509Data&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;ds:X509Certificate&gt;</span>certificate bits<span style=color:#2c5dcd;font-weight:700>&lt;/ds:X509Certificate&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;/ds:X509Data&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;/ds:KeyInfo&gt;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-weight:700>&lt;/ds:Signature&gt;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-weight:700>&lt;samlp:Status&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;samlp:StatusCode</span> <span style=color:#2c5dcd;font-style:italic>Value=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:status:Success&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-weight:700>&lt;/samlp:Status&gt;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-weight:700>&lt;saml:Assertion</span> <span style=color:#2c5dcd;font-style:italic>ID=</span><span style=color:#0c6>&#34;_59c561cc8e12b4cfab5c0f2d1d55ce541028d3342a&#34;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-style:italic>IssueInstant=</span><span style=color:#0c6>&#34;2020-06-26T16:01:31Z&#34;</span> <span style=color:#2c5dcd;font-style:italic>Version=</span><span style=color:#0c6>&#34;2.0&#34;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-style:italic>xmlns:xs=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span> <span style=color:#2c5dcd;font-style:italic>xmlns:xsi=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;saml:Issuer&gt;</span>
+</span></span><span style=display:flex><span>   http://idp.jellystone.com/simplesamlphp/saml2/idp/metadata.php
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Issuer&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;ds:Signature</span> <span style=color:#2c5dcd;font-style:italic>xmlns:ds=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;ds:SignedInfo&gt;</span>
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd;font-weight:700>&lt;ds:CanonicalizationMethod</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;ds:SignatureMethod</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;ds:Reference</span> <span style=color:#2c5dcd;font-style:italic>URI=</span><span style=color:#0c6>&#34;#_59c561cc8e12b4cfab5c0f2d1d55ce541028d3342a&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd;font-weight:700>&lt;ds:Transforms&gt;</span>
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd;font-weight:700>&lt;ds:Transform</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd;font-weight:700>&lt;ds:Transform</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;/ds:Transforms&gt;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;ds:DigestMethod</span> <span style=color:#2c5dcd;font-style:italic>Algorithm=</span><span style=color:#0c6>&#34;http://w3.org/...&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
+</span></span><span style=display:flex><span>     <span style=color:#2c5dcd;font-weight:700>&lt;ds:DigestValue&gt;</span>cSXkNHBuvGm64eH1ldvgm8n1ArY=<span style=color:#2c5dcd;font-weight:700>&lt;/ds:DigestValue&gt;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;/ds:Reference&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;/ds:SignedInfo&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;ds:SignatureValue&gt;</span>signature bits<span style=color:#2c5dcd;font-weight:700>&lt;/ds:SignatureValue&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;ds:KeyInfo&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;ds:X509Data&gt;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;ds:X509Certificate&gt;</span>certificate bits<span style=color:#2c5dcd;font-weight:700>&lt;/ds:X509Certificate&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;/ds:X509Data&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;/ds:KeyInfo&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;/ds:Signature&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>The last section includes all of the attributes about the subject, group memberships, etc.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">41
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">42
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">43
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">44
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">45
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">46
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">47
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">48
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">49
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">50
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">51
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">52
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">53
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">54
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">55
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">56
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">57
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">58
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">59
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">60
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">61
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">62
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">63
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">64
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">65
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">66
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">67
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-xml data-lang=xml><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;saml:Subject&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;saml:NameID</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-style:italic>Format=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:nameid-format:transient&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-style:italic>SPNameQualifier=</span><span style=color:#0c6>&#34;http://yogivulnerablesaml.jellystone.com:8000/metadata/&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>_77a94f4b52ba9f7fd80ac091a8c561136b697837d2
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:NameID&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;saml:SubjectConfirmation</span> <span style=color:#2c5dcd;font-style:italic>Method=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:cm:bearer&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;saml:SubjectConfirmationData</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-style:italic>InResponseTo=</span><span style=color:#0c6>&#34;ONELOGIN_23c52cd80a12e293be2a4fdd29a6362d2b43878e&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-style:italic>NotOnOrAfter=</span><span style=color:#0c6>&#34;2020-06-26T16:06:31Z&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-style:italic>Recipient=</span><span style=color:#0c6>&#34;http://yogivulnerablesaml.jellystone.com:8000/?acs&#34;</span><span style=color:#2c5dcd;font-weight:700>/&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:SubjectConfirmation&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Subject&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;saml:Conditions</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-style:italic>NotBefore=</span><span style=color:#0c6>&#34;2020-06-26T16:01:01Z&#34;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-style:italic>NotOnOrAfter=</span><span style=color:#0c6>&#34;2020-06-26T16:06:31Z&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;saml:AudienceRestriction&gt;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;saml:Audience&gt;</span>http://yogivulnerablesaml.jellystone.com:8000/metadata/<span style=color:#2c5dcd;font-weight:700>&lt;/saml:Audience&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AudienceRestriction&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Conditions&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;saml:AuthnStatement</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-style:italic>AuthnInstant=</span><span style=color:#0c6>&#34;2020-06-26T16:01:31Z&#34;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-style:italic>SessionIndex=</span><span style=color:#0c6>&#34;_f2d9382c86855d907f7462337c2a0716cdeae5fde5&#34;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-style:italic>SessionNotOnOrAfter=</span><span style=color:#0c6>&#34;2020-06-27T00:01:31Z&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;saml:AuthnContext&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;saml:AuthnContextClassRef&gt;</span>
+</span></span><span style=display:flex><span>    urn:oasis:names:tc:SAML:2.0:ac:classes:Password<span style=color:#2c5dcd;font-weight:700>&lt;/saml:AuthnContextClassRef&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AuthnContext&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AuthnStatement&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;saml:AttributeStatement&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;saml:Attribute</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-style:italic>Name=</span><span style=color:#0c6>&#34;memberOf&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-style:italic>NameFormat=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:attrname-format:uri&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;saml:AttributeValue</span> <span style=color:#2c5dcd;font-style:italic>xsi:type=</span><span style=color:#0c6>&#34;xs:string&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>     users
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AttributeValue&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Attribute&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;saml:Attribute</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-style:italic>Name=</span><span style=color:#0c6>&#34;firstName&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-style:italic>NameFormat=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:attrname-format:uri&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;saml:AttributeValue</span> <span style=color:#2c5dcd;font-style:italic>xsi:type=</span><span style=color:#0c6>&#34;xs:string&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>     Yogi
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AttributeValue&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Attribute&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;saml:Attribute</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-style:italic>Name=</span><span style=color:#0c6>&#34;lastName&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-style:italic>NameFormat=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:attrname-format:uri&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;saml:AttributeValue</span> <span style=color:#2c5dcd;font-style:italic>xsi:type=</span><span style=color:#0c6>&#34;xs:string&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>     Bear
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AttributeValue&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Attribute&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;saml:Attribute</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-style:italic>Name=</span><span style=color:#0c6>&#34;username&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-style:italic>NameFormat=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:attrname-format:uri&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;saml:AttributeValue</span> <span style=color:#2c5dcd;font-style:italic>xsi:type=</span><span style=color:#0c6>&#34;xs:string&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>     yogi
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AttributeValue&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Attribute&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;saml:Attribute</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-style:italic>Name=</span><span style=color:#0c6>&#34;urn:oid:1.2.840.113549.1.9.1&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-style:italic>NameFormat=</span><span style=color:#0c6>&#34;urn:oasis:names:tc:SAML:2.0:attrname-format:uri&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;saml:AttributeValue</span> <span style=color:#2c5dcd;font-style:italic>xsi:type=</span><span style=color:#0c6>&#34;xs:string&#34;</span><span style=color:#2c5dcd;font-weight:700>&gt;</span>
+</span></span><span style=display:flex><span>     yogi@jellystonep.com
+</span></span><span style=display:flex><span>    <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AttributeValue&gt;</span>
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Attribute&gt;</span>
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&lt;/saml:AttributeStatement&gt;</span>
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-weight:700>&lt;/saml:Assertion&gt;</span>
+</span></span><span style=display:flex><span><span style=color:#2c5dcd;font-weight:700>&lt;/samlp:Response&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>At this point the service provider should validate the message, and confirm that the user (Subject) that is requesting access is authorized to access resources within the application. If they are provie them with a 302 redirect to some page within the application now that they are authorized.</p><h3 id=references>References</h3><p>Great References:</p><ul><li><a href=https://tools.ietf.org/html/rfc7522>RFC7522</a></li><li><a href=https://developer.okta.com/docs/concepts/saml/>SAML</a></li><li><a href=https://developers.onelogin.com/saml>Overview of SAML</a></li><li><a href=https://auth0.com/docs/authorization/concepts/authz-and-authn>Authentication vs Authorization</a></li><li><a href=https://research.aurainfosec.io/bypassing-saml20-SSO/>Bypassing SAML 2.0 SSO with XML Signature Attracks</a></li><li><a href=https://duo.com/blog/duo-finds-saml-vulnerabilities-affecting-multiple-implementations>Duo Finds SAML Vulnerabilities Affecting Multiple Implementations</a></li></ul></div></div><div class=col-md-3 id=sidebar data-spy=affix-bottom data-offset-top=0><nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id=post-nav><h5>contents</h5><ul class="nav post-sidenav"><li><nav id=TableOfContents><ul><li><ul><li><a href=#what-is-it>What is it</a></li><li><a href=#how-does-it-work>How Does it Work</a></li><li><a href=#message-breakdown>Message Breakdown</a></li><li><a href=#references>References</a></li></ul></li></ul></nav></li></ul></nav></div></div></div></div><footer></footer></body><script src=https://code.jquery.com/jquery-3.3.1.slim.min.js integrity=sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo crossorigin=anonymous></script>
 <script src=https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js integrity=sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1 crossorigin=anonymous></script>
 <script src=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js integrity=sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM crossorigin=anonymous></script>
-<script>includeHTML()</script>
-</html>
+<script>includeHTML()</script></html>

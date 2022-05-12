@@ -9,7 +9,7 @@ What can I do? Lets use pacu to brute force some permissions. We can do this by 
 We can create the challenge by running
 1 python3 cloudgoat.py create iam_privesc_by_rollback The build process will begin and when it finishes we will be provided with a set of credentials for the Raynor user account.
 Raynor In the real world, we probably wouldn&amp;rsquo;t just be handed these credentials.</description></item><item><title>what_is_this</title><link>https://jellyparks.com/cloudgoat/what-is-this/</link><pubDate>Wed, 28 Nov 2018 15:14:39 +1000</pubDate><guid>https://jellyparks.com/cloudgoat/what-is-this/</guid><description>First CloudGoat was created by the RhinoSecurity Group.
-What is CloudGoat? According to the github repo &amp;ldquo;CloudGoat is Rhino Security Labs' &amp;ldquo;Vulnerable by Design&amp;rdquo; AWS deployment tool.&amp;rdquo;
+What is CloudGoat? According to the github repo &amp;ldquo;CloudGoat is Rhino Security Labs&amp;rsquo; &amp;ldquo;Vulnerable by Design&amp;rdquo; AWS deployment tool.&amp;rdquo;
 CloudGoat is a collection of terraform configuration files that when deployed create very specific, and very vulnerable aws environments.
 The documentation in the repository walks through the setup process.
 This tool removes the complexity of having to setup an environment. More importantly it provides and opportunity to blindly (mostly) work through the enumeration portion of an assessment</description></item></channel></rss>

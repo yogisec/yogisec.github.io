@@ -45,7 +45,7 @@ For a much more indepth explaination I highly reccommend the book [Container Sec
 
 ---
 ### The Scene
-Moving on to a more practical example let's pretend that we get an alert from a Falco agent running on a host. In fact several alerts are generated for this behavior, but for our purposes just the one will be enough to kick of this investigation. Falco is a great tool and free to use. The fact that it is container aware makes it a great tool when looking to detect suspicious and malicious behavior in a container environment. The alert which was generated is below:
+Moving on to a more practical example let's pretend that we get an alert from a Falco agent running on a host. In fact several alerts are generated for this behavior, but for our purposes just the one will be enough to kick of this investigation. Falco is a great tool and free to use. The fact that it is container aware makes very helpful when looking to detect suspicious and malicious behavior in a container environment. The alert which was generated is below:
 
 ```json
 {
@@ -89,7 +89,7 @@ output: >
     command=%proc.cmdline container_id=%container.id container_name=%container.name image=%container.image.repository:%container.image.tag)
 ```
 
-If we wanted to have additional information such as process id or parent process id in the output we could add that. Hindsight being what it is, had I thought of this before starting to write this I would have added pid details to the rule output for additional context.
+If we wanted to have additional information such as process id or parent process id in the output we could add that. Hindsight being what it is, had I thought of this before starting to write this post I would have added pid details to the rule output for additional context.
 
 Comparing the rule to the process cmdline included in the output_fields we can see clearly why it was triggered. 
 
@@ -124,7 +124,19 @@ We know there is an active nc session, but what else has occured in the containe
 
 First lets grab the eqivilant of a disk image of the running container this. We'll be able to perform an analysis on the image and it also preserves the image in the event that the container is killed. *Note: this post mainly focuses on the container itself, opperating within a Kubernetes cluster is highly likely in a scenario similar to this. There are additional things that should occur when performing analysis on a Kubernetes cluster to preserve and protect both the running container and the host that the container is running on. Failure to do so may result in the entire node being terminated and all relevant evidence along with it.*
 
-Lets determine the container id where this process lives. We can do this by looking at the `-id` parameter associated with the containerd-shim process from the pstree command. If multiple containers exist we would need to trace the tree up to the relevant container-shim process. Additionally in our scenario Falco provided the container id in the alert for us. If we want we can run the `docker ps` command to validate the container is still running.
+Lets determine the container id where this process lives. We can do this by looking at the `-id` parameter associated with the containerd-shim process from the pstree command. 
+
+```
+  └─containerd-shim,11971 -namespace moby -id 60795d68fdeeda1241083ffb35c96e3df8c295380ec4da7bc2b277db4d428216 -address /run/containerd/containerd.sock
+```
+
+If multiple containers exist we would need to trace the tree up to the relevant container-shim process. Additionally in our scenario Falco provided the container id in the alert for us. 
+
+```
+"container.id": "60795d68fdee",
+```
+
+If we want we can run the `docker ps` command to validate the container is still running.
 
 ```bash
 docker ps
@@ -152,9 +164,9 @@ Comparing the sizes of the two images there have been lots of changes within the
 docker save sec-incident:123 -o sec-incident.tar
 ```
 
-It is important to note we are using the `docker save` command specifying the image we created from the running container instead of the `docker export` command on the running container. Both with produce a tar file. The biggest difference is that the export command will flatten the image/layer history. Save on the other hand will preserve all of the layer history. For our use case preserving the history is very helpful when analyzing how the image has shifted from its initial launch. From here as an analyst the tar files will more than likely be exported to an analysis machine.
+It is important to note we are using the `docker save` command specifying the image we created from the running container instead of the `docker export` command on the running container. Both will produce a tar file. The biggest difference is that the export command will flatten the image/layer history. Save on the other hand will preserve all of the layer history. For our use case preserving the history is very helpful when analyzing how the image has shifted from its initial launch. From here as an analyst the tar files will more than likely be exported to an analysis machine.
 
-Once on our analyst workstation we need to perform a `docker load` on the tar file produced from the `docker save` command above. This will trigger the following output:
+Once we are on our analyst workstation we need to perform a `docker load` on the tar file produced from the `docker save` command above. This will trigger the following output:
 
 ```bash
 docker load < sec-incident.tar
@@ -173,11 +185,11 @@ Loaded image: sec-incident-123:latest
 From this output we can tell there are 9 unique layers to this image. 
 
 ---
-### What is an image
+### What is an Image
 
 Before progressing any further lets take a step back and talk about what an image is. An image according to docker.com is "...a lightweight, standalone, executable package of software that includes everything needed to run an application: code, runtime, system tools, system libraries and settings." Technically however an image is just a collection of tar'd files/folders. Each layer is a folder within the tar file. Within each layers folder contains information about the layer, and then any files associated with that particular layer.
 
-In our example when we extract the sec-incident.tar file we see an out put that contains a layer folder, inside of that folder is a VERSION, json, and layer.tar file. Additionally at the root level of the image there is `manifest.json`, `repositories`, and a `9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json` file. The `9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json` file uses the hash of the image. The image hash is a sha256sum of this config file. 
+In our example when we extract the sec-incident.tar file we see an output that contains a layer folder, inside of that folder is a VERSION, json, and layer.tar file. Additionally at the root level of the image there is `manifest.json`, `repositories`, and a `9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json` file. The `9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json` file uses the hash of the image. The image hash is a sha256sum of this config file. 
 
 ```bash
 tar -xvf sec-incident.tar
@@ -262,7 +274,7 @@ The `repositories` file is just meta-data about the image:
 {"sec-incident":{"123":"6d07a8a501ec407bab89b3e4843765871b2535f6c014766e39593e301a864cb2"}}
 ```
 
-When we look at the `9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json` config file we can see all of the layers and what command(s) were used to create the layer. Below is a snip from the file:
+When we look at the `9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed21543192.json` config file we can see all of the layers and what commands were used to create the layer. Below is a snip from the file:
 
 ```json
     {
@@ -282,12 +294,12 @@ When we look at the `9f64c8bead0ee4c81d3cbf354000bcfa73fb2172b2bb475ed814f2ed215
       "created": "2022-05-11T00:38:09.016419258Z"
     }
 ```
-In the above output we can clearly see the original image launch layer which was created by the command `/bin/sh -c` with the entrypoint of `main.sh`. Below that we see two additional layers added by the application owner for troubleshooting purposes where they copied `nc` into the image and then made the file executable `/bin/sh -c chmod +x /bin/nc`. The last layer only has a timestamp, but no other information. This is the layer where we will want to look because it will contain any changes to the file system since the container was started. Before we start to unpack each layer and manually trompsing through all the files lets make things easier and utilize a tool built specifically to help us visualize the data we want to see.
+In the above output we can clearly see the original image launch layer which was created 2018-10-12 by the command `/bin/sh -c` with the entrypoint of `main.sh`. Below that we see two additional layers added by the application owner for troubleshooting purposes where they copied `nc` into the image and then made the file executable `/bin/sh -c chmod +x /bin/nc`. The last layer only has a timestamp, but no other information. This is the layer where we will want to look because it will contain any changes to the file system since the container was started. Before we start to unpack each layer and manually trompsing through all the files lets make things easier and utilize a tool built specifically to help us visualize the data we want to see.
 
 ---
 ### Dive
 
-There are several tools that can be used to perform static analysis of a container image. One of my favorites is dive. Dive is "a tool for exploring a docker image, layer contents, and discovering ways to shrink the size of your Docker/OCI Image." Obviously for our purposes we do not care about shrinking the image we just want to be able to explore the image at each of the various layers.
+There are a few different tools that can be used to perform static analysis of a container image. One of my favorites is [dive](https://github.com/wagoodman/dive). Dive is "a tool for exploring a docker image, layer contents, and discovering ways to shrink the size of your Docker/OCI Image." Obviously for our purposes we do not care about shrinking the image we just want to be able to explore the image at each of the various layers.
 
 Once installed on our analysis system we can run the tool with:
 
@@ -295,9 +307,9 @@ Once installed on our analysis system we can run the tool with:
 dive sec-incident:123
 ```
 
-Which will process our image and provide us with a really nice ui to navigate through it.
+This will process our image and provide us with a really nice ui to navigate through it.
 
-Once the ui loads in the top left panel we can see all of the image layers. The bottom layer contains all of the changes that occurred since the image was started up to the time we saved the image. In our case ~132MB of changes occured.
+Once the ui loads in the top left panel we can see all of the image layers. Using the arrow keys we can move between the layers. The bottom layer contains all of the changes that occurred since the image was started up to the time we saved the image. In our case ~132MB of changes occured.
 
 ![dive-layers.png](images/dive-layers.png "dive-layers")
 
@@ -305,15 +317,15 @@ In the section below we can see the layer details. This includes the ID and Dige
 
 ![dive-layer-details.png](images/dive-layer-details.png "dive-layer-details")
 
-On the right we can see all of the contents of the filesystem at the current layer. This includes files from the previous layers. Dive color codes the files to show files that are new to the layer (green) and those files which have been modified when compared to the previous layer (yellow).
+On the right we can see all of the contents of the filesystem at the current layer. Pressing `tab` will allow us to use the arrow keys once again to navigate through the file system, space will collapse/expand a folder. This includes files from the previous layers. Dive color codes the files to show files that are new to the layer (green) and those files which have been modified when compared to the previous layer (yellow).
 
 ![dive-layer-contents.png](images/dive-layer-contents.png "dive-layer-contents")
 
-We can see that a new session file was created, and that the access and error log files were modified, likely due to webtraffic to the application. In the image below we see several new files that have been created. Each file is worth digging into deeper to gain some understanding as to what has occurred.
+We can see that a new php session file was created, and that the access and error log files were modified, likely due to webtraffic to the application. In the image below we see several new files that have been created. Each file is worth digging into deeper to gain some understanding as to what has occurred.
 
 ![dive-layer-contents-2.png](images/dive-layer-contents-2.png "dive-layer-contents-2")
 
-Unfortunatly dive does not offer the ability to extract a file directly. To dig into the files themselves to better understand what has occured we will have to extract the layer from the image. 
+Unfortunatly dive does not offer the ability to extract a file directly. To dig into the files themselves to better understand what has occured we will have to extract the layer from the raw image file. 
 
 ---
 ### File Analysis
@@ -323,7 +335,7 @@ We want to carve files out that occured within the most recent layer created for
 
 ![extracted-layer-details.png](images/extracted-layer-details.png "extracted-layer-details")
 
-Within the folder for the layer we will extract the `layer.tar` file with a  `tar -xvf layer.tar`. This presents us with the filesystem at the current layer of the image. Using what we learned from Dive above we can navigate to files of interest and begin to inspect them to determine what there intent was. This is only part of the picture though. 
+Within the folder for the layer we will extract the `layer.tar` file with a  `tar -xvf layer.tar`. This presents us with the changes in the filesystem at the current layer of the image. Using what we learned from Dive above we can navigate to files of interest and begin to inspect them to determine what there intent was.
 
 ---
 ### Intermission
@@ -333,7 +345,7 @@ During analysis we learn the `curl` binary was uploaded in parts and then rebuil
 ---
 ### Memory Analysis
 
-Collection of memory occurs just as it would for any other Linux host. For this post LiME was used, but avml is also an option. Since this is a lab environment and the scenario is a bit contrived disk analysis tells enough of the story for us to understand what has occurred. If this were a bit more realistic the 8 binary probably would have been deleted from disk and we would either recover it from `/proc/<PID>/exe` or we would carve it out of memory to perform analysis on it and determine what the binaries purpose was. With that in mind I chose to skip digging into that and instead dig into some special things about container memory analysis with volatility.
+Collection of memory occurs just as it would for any other Linux host. For this post LiME was used, but avml is also an option. Since this is a lab environment and the scenario is a bit contrived disk analysis tells enough of the story for us to understand what has occurred. If this were a bit more realistic the 8 binary probably would have been deleted from disk and we would either recover it from `/proc/<PID>/exe` or we would carve it out of memory to perform analysis on it and determine what the binaries purpose was. With that in mind I chose to skip digging into that and instead chose to dig into some special things about container memory analysis with volatility.
 
 
 #### Volatility2
@@ -343,9 +355,15 @@ When it comes to memory analysis with volatility there really isn't anything spe
 
 #### Volatility3
 
-Container analysis with volatility3 is a little bit different than it was with volatility. The main reason for this is the `volatility-docker` plugin built by Ofek Shaked & Amir Sheffer. This plugin adds namespace support and various docker commands which can aid in understanding the dump. 
+Container analysis with volatility3 is a little bit different than it is with volatility. The main reason for this is the `volatility-docker` plugin built by Ofek Shaked & Amir Sheffer. This plugin adds namespace support and various docker specific commands which can aid in understanding the dump. 
 
-One example is the additional argument added to the suite of ps commands: `nsinfo`. This argument will display information about the namespace associated with a particular pid. Below is a sample output of the pstree module showing nsinfo. 
+One example is the additional argument added to the suite of ps commands: `nsinfo`. This argument will display information about the namespace associated with a particular pid. 
+
+```
+python3 /home/ubuntu/git/volatility3/vol.py -f /home/ubuntu/webserver.lime linux.pstree.PsTree --nsinfo
+```
+
+Below is a sample output of the pstree module showing nsinfo. 
 
 |PID|PPID|COMM|Start Time (UTC)|PID in NS|UTS NS|IPC NS|MNT NS|NET NS|PID NS|USER NS|
 |----|----|----|----|----|----|----|----|----|----|----|
@@ -361,7 +379,7 @@ One example is the additional argument added to the suite of ps commands: `nsinf
 |******* 12798|12797|sh|2022-05-11 00:31:20.261|414|4026532238|4026532239|4026532237|4026532242|4026532240|4026531837|
 |******** 12816|12798|8|2022-05-11 00:33:19.062|430|4026532238|4026532239|4026532237|4026532242|4026532240|4026531837|
 
-In the table above we can see `main.sh` is a child of containerd-shim which indicates this is a process in a container. Additionally the pid for `main.sh` in the NS is 1 which tells us this is the pid used to start the container. Below that we can see other PIDs which are related to host pid 11992, and are in the same namespace. We can use the namespace information to determine all of the pids associated with this container even if they have forked away and no longer appear as child processes. Furthermore this mapping can be really helpful if the initial alert source that triggered the investigation is only showing the PID within the namespace.
+In the table above we can see `main.sh` is a child of containerd-shim which indicates this is a process in a container. Additionally the pid for `main.sh` in the NS (PID in NS column) is 1 which tells us this is the pid used to start the container. Below that we can see other PIDs which are related to host pid 11992, and are in the same namespace. We can use the namespace information to determine all of the pids associated with this container even if they have forked away and no longer appear as child processes. Furthermore this mapping can be really helpful if the initial alert source that triggered the investigation is only showing the PID within the namespace.
 
 The docker plugin itself adds several new capabilities. The output below shows the available arguments: 
 
@@ -382,7 +400,7 @@ optional arguments:
                         Show detailed list of containers networks
 ```
 
-The `--detector` argument attempts to detect if docker is being used on the system. This can be helpful if you are not sure if docker is being used on the system.
+The `--detector` argument attempts to detect if docker was being used on the system. This can be helpful if you are not sure if docker was being used on the system.
 ```bash
 python3 /home/ubuntu/git/volatility3/vol.py -f /home/ubuntu/webserver.lime docker.Docker --detector
 Volatility 3 Framework 2.1.0

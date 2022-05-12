@@ -1,2 +1,23 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Containers on jellyparks</title><link>https://jellyparks.com/containers/</link><description>Recent content in Containers on jellyparks</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Thu, 05 May 2022 15:14:39 +1000</lastBuildDate><atom:link href="https://jellyparks.com/containers/index.xml" rel="self" type="application/rss+xml"/><item><title>compromised_container_analysis_primer</title><link>https://jellyparks.com/containers/compromised-container-analysis-primer/</link><pubDate>Thu, 05 May 2022 15:14:39 +1000</pubDate><guid>https://jellyparks.com/containers/compromised-container-analysis-primer/</guid><description>This post is going to focus on the triaging and analysis of a container that has been compromised.
-PIDs Before we get into the actual analysis lets start with a quick overview of how processes exist in containers. When you run PS inside a container you typically get a very short list of running processes and not all of the processes that are currently running on the underlying host.</description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Containers on JellyParks</title>
+    <link>https://jellyparks.com/containers/</link>
+    <description>Recent content in Containers on JellyParks</description>
+    <image>
+      <url>https://jellyparks.com/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</url>
+      <link>https://jellyparks.com/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</link>
+    </image>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Tue, 10 May 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://jellyparks.com/containers/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>compromised_container_analysis_primer</title>
+      <link>https://jellyparks.com/containers/compromised-container-analysis-primer/</link>
+      <pubDate>Tue, 10 May 2022 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/containers/compromised-container-analysis-primer/</guid>
+      <description>Walkthrough of basic triaging and analysis of a container which has been compromised.</description>
+    </item>
+    
+  </channel>
+</rss>

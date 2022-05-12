@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>ctf on JellyParks</title>
+    <link>https://jellyparks.com/tags/ctf/</link>
+    <description>Recent content in ctf on JellyParks</description>
+    <image>
+      <url>https://jellyparks.com/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</url>
+      <link>https://jellyparks.com/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</link>
+    </image>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Wed, 28 Nov 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://jellyparks.com/tags/ctf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>ec2_ssrf</title>
+      <link>https://jellyparks.com/cloudgoat/ec2-ssrf/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/cloudgoat/ec2-ssrf/</guid>
+      <description>Cloud Goat ec2 ssrf scenario walkthrough</description>
+    </item>
+    
+    <item>
+      <title>iam_privesc_by_attachment</title>
+      <link>https://jellyparks.com/cloudgoat/iam-privesc-by-attachment/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/cloudgoat/iam-privesc-by-attachment/</guid>
+      <description>Cloud Goat IAM priviledge escalation by attachment scenario walkthrough</description>
+    </item>
+    
+    <item>
+      <title>iam_privesc_by_rollback</title>
+      <link>https://jellyparks.com/cloudgoat/iam-privesc-by-rollback/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/cloudgoat/iam-privesc-by-rollback/</guid>
+      <description>Cloud Goat IAM priviledge escalation by rollback scenario walkthrough</description>
+    </item>
+    
+    <item>
+      <title>Yogi&#39;s Vulnerable SAML app</title>
+      <link>https://jellyparks.com/web-things/vulnerable-saml-app/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/web-things/vulnerable-saml-app/</guid>
+      <description>Overview of a vulnerable saml platform built to allow for various saml exploits to occur.</description>
+    </item>
+    
+    <item>
+      <title>codebuild_secrets</title>
+      <link>https://jellyparks.com/cloudgoat/codebuild-secrets/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/cloudgoat/codebuild-secrets/</guid>
+      <description>Cloud Goat codebuild secrets scenario walkthrough</description>
+    </item>
+    
+    <item>
+      <title>what_is_cloudgoat</title>
+      <link>https://jellyparks.com/cloudgoat/what-is-cloudgoat/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/cloudgoat/what-is-cloudgoat/</guid>
+      <description>Cloud Goat CTF Overview</description>
+    </item>
+    
+  </channel>
+</rss>

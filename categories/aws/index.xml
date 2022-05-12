@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>aws on JellyParks</title>
+    <link>https://jellyparks.com/categories/aws/</link>
+    <description>Recent content in aws on JellyParks</description>
+    <image>
+      <url>https://jellyparks.com/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</url>
+      <link>https://jellyparks.com/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</link>
+    </image>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Wed, 28 Nov 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://jellyparks.com/categories/aws/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>assumed_role_breadcrumbs</title>
+      <link>https://jellyparks.com/aws/assumed-role-breadcrumbs/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/aws/assumed-role-breadcrumbs/</guid>
+      <description>Cloudtrail events in AWS offer a lot of visibility into the calls that roles leverage within the platform. Sometimes tracking the original source of the activity can be challenging. When users and other aws services from one account assume role into another hunting the origin can take a bit of backtracking.</description>
+    </item>
+    
+    <item>
+      <title>cloudtrail_anomaly_detection</title>
+      <link>https://jellyparks.com/aws/cloudtrail-anomaly-detection/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/aws/cloudtrail-anomaly-detection/</guid>
+      <description>Overview of an anomaly detection platform using cloudtrail logs, athena, lambda, s3, and dynamodb</description>
+    </item>
+    
+    <item>
+      <title>emr_security_woes</title>
+      <link>https://jellyparks.com/aws/emr-security-woes/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/aws/emr-security-woes/</guid>
+      <description>Walkthrough of Elastic Map Reduce compromise, and why it should never be directly exposed to the Internet.</description>
+    </item>
+    
+    <item>
+      <title>role_credential_revoking</title>
+      <link>https://jellyparks.com/aws/role-credential-revoking/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/aws/role-credential-revoking/</guid>
+      <description>IAM roles can have all current credentials revoked. This can be great to stop an attacker, but at what cost?</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>saml on JellyParks</title>
+    <link>https://jellyparks.com/categories/saml/</link>
+    <description>Recent content in saml on JellyParks</description>
+    <image>
+      <url>https://jellyparks.com/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</url>
+      <link>https://jellyparks.com/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</link>
+    </image>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Wed, 28 Nov 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://jellyparks.com/categories/saml/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>saml_overview</title>
+      <link>https://jellyparks.com/web-things/saml-overview/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/web-things/saml-overview/</guid>
+      <description>Let&amp;rsquo;s dig into what SAML is, and how it works.</description>
+    </item>
+    
+    <item>
+      <title>Yogi&#39;s Vulnerable SAML app</title>
+      <link>https://jellyparks.com/web-things/vulnerable-saml-app/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/web-things/vulnerable-saml-app/</guid>
+      <description>Overview of a vulnerable saml platform built to allow for various saml exploits to occur.</description>
+    </item>
+    
+  </channel>
+</rss>

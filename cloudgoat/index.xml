@@ -1,15 +1,59 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Cloudgoats on jellyparks</title><link>https://jellyparks.com/cloudgoat/</link><description>Recent content in Cloudgoats on jellyparks</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Wed, 28 Nov 2018 15:14:39 +1000</lastBuildDate><atom:link href="https://jellyparks.com/cloudgoat/index.xml" rel="self" type="application/rss+xml"/><item><title>codebuild_secrets</title><link>https://jellyparks.com/cloudgoat/codebuild-secrets/</link><pubDate>Wed, 28 Nov 2018 15:14:39 +1000</pubDate><guid>https://jellyparks.com/cloudgoat/codebuild-secrets/</guid><description>According to the official documentation for this scenario (here) the overall goal is &amp;ldquo;a pair of secret strings that are stored in a secure RDS database.&amp;rdquo;
-Once the scenario creation process completes we are presented with a set of access keys for the user account &amp;lsquo;solo&amp;rsquo;.
-Who are we? First lets make sure the credentials we have obtained are valid. We can do this with the following command:</description></item><item><title>ec2_ssrf</title><link>https://jellyparks.com/cloudgoat/ec2-ssrf/</link><pubDate>Wed, 28 Nov 2018 15:14:39 +1000</pubDate><guid>https://jellyparks.com/cloudgoat/ec2-ssrf/</guid><description>According to the official documentation for this scenario (here) the overall goal is to &amp;ldquo;Invoke the &amp;ldquo;cg-lambda-[ CloudGoat ID ]&amp;rdquo; Lambda function.&amp;rdquo;
-Scenario Setup To get everything up we just have to run:
-1 python3 cloudgoat.py create ec2_ssrf Once the build process compeletes we are provided with a set of credentials for the Solus user. We should validate that the credentials work. The get caller identity is a great command for this and is the equivilant to running whoami.</description></item><item><title>iam_privesc_by_attachment</title><link>https://jellyparks.com/cloudgoat/iam-privesc-by-attachment/</link><pubDate>Wed, 28 Nov 2018 15:14:39 +1000</pubDate><guid>https://jellyparks.com/cloudgoat/iam-privesc-by-attachment/</guid><description>Once the scenario is creation process completes we are presented with a set of access keys for a user account &amp;lsquo;kerrigan&amp;rsquo;
-whoami First lets make sure the credentials that we have obtained are valid:
-1 aws sts get-caller-identity --profile xxx |jq Perfect, looks like the credentials work. Now, what can they do?
-What can I do? Lets use pacu to brute force some permissions. We can do this by running:</description></item><item><title>iam_privesc_by_rollback</title><link>https://jellyparks.com/cloudgoat/iam-privesc-by-rollback/</link><pubDate>Wed, 28 Nov 2018 15:14:39 +1000</pubDate><guid>https://jellyparks.com/cloudgoat/iam-privesc-by-rollback/</guid><description>According to the official documentation for this scenario (here) the overall goal is to &amp;ldquo;Acquire full admin privileges.&amp;rdquo;
-We can create the challenge by running
-1 python3 cloudgoat.py create iam_privesc_by_rollback The build process will begin and when it finishes we will be provided with a set of credentials for the Raynor user account.
-Raynor In the real world, we probably wouldn&amp;rsquo;t just be handed these credentials.</description></item><item><title>what_is_this</title><link>https://jellyparks.com/cloudgoat/what-is-this/</link><pubDate>Wed, 28 Nov 2018 15:14:39 +1000</pubDate><guid>https://jellyparks.com/cloudgoat/what-is-this/</guid><description>First CloudGoat was created by the RhinoSecurity Group.
-What is CloudGoat? According to the github repo &amp;ldquo;CloudGoat is Rhino Security Labs&amp;rsquo; &amp;ldquo;Vulnerable by Design&amp;rdquo; AWS deployment tool.&amp;rdquo;
-CloudGoat is a collection of terraform configuration files that when deployed create very specific, and very vulnerable aws environments.
-The documentation in the repository walks through the setup process.
-This tool removes the complexity of having to setup an environment. More importantly it provides and opportunity to blindly (mostly) work through the enumeration portion of an assessment</description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Cloudgoats on JellyParks</title>
+    <link>https://jellyparks.com/cloudgoat/</link>
+    <description>Recent content in Cloudgoats on JellyParks</description>
+    <image>
+      <url>https://jellyparks.com/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</url>
+      <link>https://jellyparks.com/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</link>
+    </image>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Wed, 28 Nov 2018 00:00:00 +0000</lastBuildDate><atom:link href="https://jellyparks.com/cloudgoat/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>ec2_ssrf</title>
+      <link>https://jellyparks.com/cloudgoat/ec2-ssrf/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/cloudgoat/ec2-ssrf/</guid>
+      <description>Cloud Goat ec2 ssrf scenario walkthrough</description>
+    </item>
+    
+    <item>
+      <title>iam_privesc_by_attachment</title>
+      <link>https://jellyparks.com/cloudgoat/iam-privesc-by-attachment/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/cloudgoat/iam-privesc-by-attachment/</guid>
+      <description>Cloud Goat IAM priviledge escalation by attachment scenario walkthrough</description>
+    </item>
+    
+    <item>
+      <title>iam_privesc_by_rollback</title>
+      <link>https://jellyparks.com/cloudgoat/iam-privesc-by-rollback/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/cloudgoat/iam-privesc-by-rollback/</guid>
+      <description>Cloud Goat IAM priviledge escalation by rollback scenario walkthrough</description>
+    </item>
+    
+    <item>
+      <title>codebuild_secrets</title>
+      <link>https://jellyparks.com/cloudgoat/codebuild-secrets/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/cloudgoat/codebuild-secrets/</guid>
+      <description>Cloud Goat codebuild secrets scenario walkthrough</description>
+    </item>
+    
+    <item>
+      <title>what_is_cloudgoat</title>
+      <link>https://jellyparks.com/cloudgoat/what-is-cloudgoat/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/cloudgoat/what-is-cloudgoat/</guid>
+      <description>Cloud Goat CTF Overview</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,1 +1,59 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Categories on jellyparks</title><link>https://jellyparks.com/categories/</link><description>Recent content in Categories on jellyparks</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><atom:link href="https://jellyparks.com/categories/index.xml" rel="self" type="application/rss+xml"/></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Categories on JellyParks</title>
+    <link>https://jellyparks.com/categories/</link>
+    <description>Recent content in Categories on JellyParks</description>
+    <image>
+      <url>https://jellyparks.com/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</url>
+      <link>https://jellyparks.com/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</link>
+    </image>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Tue, 10 May 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://jellyparks.com/categories/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>containers</title>
+      <link>https://jellyparks.com/categories/containers/</link>
+      <pubDate>Tue, 10 May 2022 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/categories/containers/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>aws</title>
+      <link>https://jellyparks.com/categories/aws/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/categories/aws/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>cloudgoat</title>
+      <link>https://jellyparks.com/categories/cloudgoat/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/categories/cloudgoat/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>saml</title>
+      <link>https://jellyparks.com/categories/saml/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/categories/saml/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>web</title>
+      <link>https://jellyparks.com/categories/web/</link>
+      <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/categories/web/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

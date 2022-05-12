@@ -1,7 +1,6 @@
 ---
 title: 'what_is_cloudgoat'
 date: 2018-11-28
-# weight: 1
 tags: ["aws", "cloud", "cloudgoat", "walkthrough", "ctf"]
 categories: ["cloudgoat"]
 aliases: ["/what-is-cloudgoat"]

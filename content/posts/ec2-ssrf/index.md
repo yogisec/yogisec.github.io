@@ -1,7 +1,6 @@
 ---
 title: 'ec2_ssrf'
 date: 2018-11-28
-weight: 2
 tags: ["aws", "cloud", "cloudgoat", "walkthrough", "ctf"]
 categories: ["cloudgoat"]
 aliases: ["/ec2-ssrf"]

@@ -126,13 +126,13 @@ First lets grab the eqivilant of a disk image of the running container this. We'
 
 Lets determine the container id where this process lives. We can do this by looking at the `-id` parameter associated with the containerd-shim process from the pstree command. 
 
-```
+```bash
   └─containerd-shim,11971 -namespace moby -id 60795d68fdeeda1241083ffb35c96e3df8c295380ec4da7bc2b277db4d428216 -address /run/containerd/containerd.sock
 ```
 
 If multiple containers exist we would need to trace the tree up to the relevant container-shim process. Additionally in our scenario Falco provided the container id in the alert for us. 
 
-```
+```bash
 "container.id": "60795d68fdee",
 ```
 
@@ -359,7 +359,7 @@ Container analysis with volatility3 is a little bit different than it is with vo
 
 One example is the additional argument added to the suite of ps commands: `nsinfo`. This argument will display information about the namespace associated with a particular pid. 
 
-```
+```bash
 python3 /home/ubuntu/git/volatility3/vol.py -f /home/ubuntu/webserver.lime linux.pstree.PsTree --nsinfo
 ```
 

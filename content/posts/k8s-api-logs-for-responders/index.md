@@ -24,7 +24,7 @@ There are several log sources in a Kubernetes environment which can be useful wh
 
 https://www.microsoft.com/security/blog/2020/04/02/attack-matrix-kubernetes/
 - anonymous user access
-- secrets
+- vulnerable service exposure
 
 ---
 ### K8s Api Audit logs

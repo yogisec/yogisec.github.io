@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>kubernetes on JellyParks</title>
+    <link>https://jellyparks.com/tags/kubernetes/</link>
+    <description>Recent content in kubernetes on JellyParks</description>
+    <image>
+      <url>https://jellyparks.com/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</url>
+      <link>https://jellyparks.com/%3Clink%20or%20path%20of%20image%20for%20opengraph,%20twitter-cards%3E</link>
+    </image>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Sat, 11 Jun 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://jellyparks.com/tags/kubernetes/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>kubernetes_logs_for_responders</title>
+      <link>https://jellyparks.com/posts/k8s-api-logs-for-responders/</link>
+      <pubDate>Sat, 11 Jun 2022 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/posts/k8s-api-logs-for-responders/</guid>
+      <description>An overview of the Kubernetes api logs. What fields are useful, and some places where log visibility might be missing in most environments.</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -16,7 +16,7 @@ An overview of the Kubernetes api logs. What fields are useful, and some places 
 ---
 ### K8s Api Audit logs
 
-There are several log sources in a Kubernetes environment. One of the best sources to use during an incident to determine what has occured on a cluster are the api audit logs. These logs contain *all* of the requests made to query or modify objects in the cluster. On the surface the api audit logs can be a bit overwhelming. Much like any log source, the more you look at it and the more you work with it the easier it becomes to quickly digest the event data. As a responder there are a few fields we will want to pay attention to. requestURI, sourceIPs, verb, user.username, userAgent.
+There are several log sources in a Kubernetes environment. One of the best sources to use during an incident to determine what has occurred on a cluster are the api audit logs. These logs contain *all* of the requests made to query or modify objects in the cluster. On the surface the api audit logs can be a bit overwhelming. Much like any log source, the more you look at it and the more you work with it the easier it becomes to quickly digest the event data. As a responder there are a few fields we will want to pay attention to: requestURI, sourceIPs, verb, user.username, userAgent.
 
 |field|purpose|
 |---|---|
@@ -74,11 +74,11 @@ Digging into the event a bit we know the verb is `list` which tells us that this
 
 The responseStatus.code value is a `200`, just like any other web response code a 200 means success. The two fields under annotations `authorization.k8s.io/decision`, `authorization.k8s.io/reason` tell us that the request was authorized from a RBAC pov. The reason goes into further detail of why it was allowed informing us that the ClusterRole `cluster-admin` is associated with the `system:anonymous` user via the ClusterRoleBinding `cluster-system-anonymous`
 
-We can see the sourceIP is `172.20.39.107` which happens to be our load balancer in this scenario. If the request was internal to the cluster it would have had an internal ip of the node the request originated from. This is important to note because in the event of malicious activity originating within a cluster using the `anonymous` account, sourcing k8s api requests back to the node is typically as close as you can get to answering "where" a request came from using the api audit logs. However if a service account is being used the event will show the exact pod the request originated from.
+We can see the sourceIP is `172.20.39.107` which happens to be our load balancer in this scenario. If the request was internal to the cluster, it would have had an internal ip of the node the request originated from. This is important to note because in the event of malicious activity originating within a cluster which is also using the using the `anonymous` account, sourcing the k8s api requests back to the node is typically as close as you can get to answering "where" a request came from using the api audit logs. However, if a service account is being used the event will show the exact pod the request originated from as long as are current version of Kubernetes is being utilized. Older versions may not show this level of detail in the log output.
 
-The userAgent value is `curl/7.68.0`. This field can easily be spoofed which makes it hard to trust that curl was actually used. However, it can often be used to link events together to understand activity originating from the same actor. 
+The userAgent value is `curl/7.68.0`. This field can easily be spoofed which makes it hard to trust that curl was used. However, it can often be used to link events together to understand activity originating from the same actor. 
 
-By using this information we can infer the request more than likly originated from outside the cluster and the command used to make the request was something similar to this: 
+By using this information, we can infer the request more than likely originated from outside the cluster and the command used to make the request was something similar to this: 
 
 ```bash
 curl -k https://<KUBERNETES-API-LOAD-BALANCER-SERVER>/api/v1/secrets
@@ -150,11 +150,11 @@ Let's take a look at one more log output:
 }
 ```
 
-As we look through the event details we can see that `kubectl` was used to query a list of pods within the dev namespace `requestURI=/api/v1/namespaces/dev/pods?limit=500`. The response was 403 because the service account (found in the user.username field) `system:serviceaccount:dev:default` does not have permissions to query for a list of pods within the `dev` namespace. There are some new fields in this event which help us to quickly identify which pod this took place in. Under the user section we see the following snip:
+As we look through the event details, we can see that `kubectl` was used to query a list of pods within the dev namespace `requestURI=/api/v1/namespaces/dev/pods?limit=500`. The response was 403 because the service account (found in the user.username field) `system:serviceaccount:dev:default` does not have permissions to query for a list of pods within the `dev` namespace. There are some new fields in this event which help us to quickly identify which pod this took place in. Under the user section we see the following snip:
 
 ![extras.png](images/extras.png "extras")
 
-The information in the extras section tells us the exact pod that was used. Since we know the pod name as well as the pod-uid it provides us the opportunity to check the Kubernetes server to determine if the pod is still running. If it is, we have the ability to snapshot the underlying containers in the pod for further analysis.
+The information in the extras section tells us the exact pod that was used. Since we know the pod name as well as the pod-uid it provides us the opportunity to check the Kubernetes server to determine if the pod is still running. If it is, could snapshot the underlying containers in the pod for further analysis.
 
 Based on the information in the audit log it would appear the command used to create the event was similar to:
 
@@ -182,7 +182,7 @@ And if we are lucky enough to have a 3rd part tool such as Falco or some other t
 ---
 ### Kubelet logs
 
-The kubelet is the control point for all of the comings and goings on the node. Each node in the cluster will have a unique set of kubelet logs. Kubelet logs may be helpful when attempting to confirm when a particular container was started or removed. Depending on how it is confirgured the logs may have a lot of additional information avaialble as well.
+The kubelet is the control point for all the comings and goings on the node. Each node in the cluster will have a unique set of kubelet logs. Kubelet logs may be helpful when attempting to confirm when a particular container was started or removed. Depending on how it is configured the logs may have a lot of additional information available as well.
 
 [This](https://docs.openshift.com/container-platform/4.6/rest_api/editing-kubelet-log-level-verbosity.html) page from RedHat has a handy reference chart for the different log levels available for the kubelet 
 
@@ -197,7 +197,7 @@ The kubelet is the control point for all of the comings and goings on the node. 
 |--v=7|Display HTTP request headers.|
 |--v=8|Display HTTP request contents.|
 
-At the time of writing kops deploys the kubelet with a default log level of 2 `/usr/local/bin/kubelet ... --v=2` unless otherwise specified. Below are some sample events that show the a container being removed, the `nettools` pod being removed, and then a few seconds later the `nettools` pod being created.
+At the time of writing kops deploys the kubelet with a default log level of 2 `/usr/local/bin/kubelet ... --v=2` unless otherwise specified. Below are some sample events that show a container being removed, the `nettools` pod being removed, and then a few seconds later the `nettools` pod being created.
 
 ```
 Jun 18 19:42:16 ip-172-20-59-66 kubelet[5656]: {"ts":1655581336241.7104,"caller":"topologymanager/scope.go:110","msg":"RemoveContainer","v":0,"containerID":"9beafc9454c36cf07dec1793128629f2a80bb43ac65aac400458f44d398032a8"}
@@ -207,13 +207,13 @@ Jun 18 19:42:16 ip-172-20-59-66 kubelet[5656]: {"ts":1655581336244.2942,"caller"
 Jun 18 19:42:34 ip-172-20-59-66 kubelet[5656]: {"ts":1655581354264.5642,"caller":"kubelet/kubelet.go:2092","msg":"SyncLoop ADD","v":2,"source":"api","pods":[{"name":"nettools","namespace":"dev"}]}
 ```
 
-From a responders point of view, these logs are more than likely not the most helpful but may be a good reference point. 
+From a responder's point of view, these logs are more than likely not the most helpful but may be a good reference point. 
 
 ---
 ### host logs / security tools
 
-Most hosts within a Kubernetes cluster are going to be Linux. This means that most if not all of the log sources can be used to help paint a picture of what has occurred on a compromised cluster. The same applies to 3rd party security tools. We briefly talked about Falco earlier, but other tools such has ossec, sysmon, osquery, <$$ VENDOR> can all be used to gain more insights into the malicious activity. Please make sure to understand the limits of the tools though, especially when it comes to paid vendor solutions. A lot of the big players are much stronger in Windows and have gaps in visibility when it comes to *nix systems.
+Most hosts within a Kubernetes cluster are going to be Linux. This means that most if not all of the log sources traditionally used to analyze a Linux host can be used to help paint a picture of what has occurred on a compromised cluster. The same applies to 3rd party security tools. We briefly talked about Falco earlier, but other tools such has ossec, sysmon, osquery, and <$$ VENDOR> can all be used to gain more insights into the malicious activity. Please make sure to understand the limits of the tools though, especially when it comes to paid vendor solutions. A lot of the big players are much stronger in Windows and have gaps in visibility when it comes to *nix systems.
 
 ---
 ### Other places for logs
-Depending on how the cluster is configured, and what support applications are being utilized there could be several additional places with valuable log informaiton. Does the cluster use a service mesh, are there proxy containers deployed into every pod for the most part, do those proxies log
+Depending on how the cluster is configured, and what support applications are being utilized there could be several additional places with valuable log information. Does the cluster use a service mesh, are there proxy containers deployed into every pod for the most part? If so, the proxy containers are great source of logs potentially. If it appears to be a pod or application compromise, do not forget to review the application logs and the logs for the application pod if it is still around.

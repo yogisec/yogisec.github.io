@@ -92,6 +92,13 @@ At this point the malicious actor has new credentials to access the cluster. Wit
 
 Thankfully since this is a low traffic environment it was easy to view the logs and desern the next steps taken. If this were a real world attack analysis not having this information may prove challenging if you were attempting to run the analysis from the earliest events through to the latest. Working the opposite direction would make the investigation much easier.
 
+In my Splunk instance I pivoted the search to follow activity of the new service account:
+
+```
+index=k8s sourcetype=kube:apiserver-audit user.username=system:serviceaccount:kube-system:default |table _time, user.username, userAgent, verb, requestURI, responseStatus.code
+|sort -_time
+```
+
 After getting credentials the attacker pivots from (what we're presuming is) curl to using `kubectl`. We see a series of 32 requests all within a second of each other all with a `timeout=32s` at the end. These are all the result of running the command: `kubectl api-resources`. This command lists all of the api-resources available on a cluster. 
 
 After those events we see a series of `delete` requests starting at `2022-10-23 12:37:53.339`. Looking at the requestURI field we can see there is a request to delete a deployment in the `default` namespace called `worker-deployment`, another request to delete a deployment called `api-proxy` in the `kube-system` namespace, and finally a request to delete a pod running in the `default` namespace called `kube-secure-fhgxtsjh`

@@ -5,31 +5,31 @@ tags: ["containers", "linux", "dfir", "kubernetes"]
 categories: ["kubernetes"]
 aliases: ["/k8s-honeypot"]
 author: "Travis"
-summary: "Analysis of real world attack captured in a Kubernetes honeypot."
+summary: "Analysis of a real-world attack captured in a Kubernetes honeypot."
 
 ---
 
 ---
 
-Analysis of real world attack captured in a Kubernetes honeypot.
+Analysis of a real-world attack captured in a Kubernetes honeypot.
 
 ---
 
 ### Environment High Level
-For this environment we are analyzing activity which occurred in a Kubernetes (k8s) cluster which was exposed to the Internet. The k8s api server was configured to allow for anonymous access. The anonymous user was granted administrator capabilities within the cluster. This was done to mirror one of the (unfortunately) commonly occuring misconfigurations which lead to clusters being compromised.
+For this environment we are analyzing activity which occurred in a Kubernetes (k8s) cluster which was exposed to the Internet. The k8s api server was configured to allow for anonymous access. The anonymous user was granted administrator capabilities within the cluster. This was done to mirror one of the (unfortunately) commonly occurring  misconfigurations which lead to clusters being compromised.
 
-Logs from the cluster are streamed into a splunk instanace for easy parsing.
+Logs from the cluster are streamed into a Splunk instance for easy parsing.
 
 ---
 
 ### Observed Behavior
 
-Each time the honeypot is created and exposed in this manner there are some common behaviors. As expected exposing a common webport (tcp/443) to the entire Internet a lot of bots scan looking for common security issues, or known webshells. One thing I did not expect was the behavior of a 3rd party attack service management solution (censys). When they detect the server is actually a Kubernetes api server they query the cluster for additional information. They list services, roles, nodes, and all of the pods running in the cluster. Eventually though, something malicious and Kubernetes aware will discover the cluster. 
+Each time the honeypot is created and exposed in this manner there are some common behaviors. As expected, exposing a common webport (tcp/443) to the entire Internet a lot of bots scan looking for common security issues, or known webshells. One thing I did not expect was the behavior of a 3rd party attack service management solution (censys). When they detect the server is a Kubernetes api server they query the cluster for additional information. They list services, roles, nodes, and all the pods running in the cluster. Eventually though, something malicious and Kubernetes aware will discover the cluster. 
 
 ---
 
 ### Initial Access
-This honeypot is configured with one expected path in by a malicious actor. In order to monitor for malicious behavior I start with a simple query looking at any api calls made by the `system:anonymous` user. It is nothing fancy, but does well as an initial "alarm" to show when something has occurred. In Splunk this is the query:
+This honeypot is configured with one expected path in by a malicious actor. In order to monitor for malicious behavior I start with a simple query looking at any api calls made by the `system:anonymous` user. It is nothing fancy but does well as an initial "alarm" to show when something has occurred. In Splunk this is the query:
 
 ```spl
 index=k8s sourcetype=kube:apiserver-audit  "user.username"="system:anonymous" |table _time, userAgent, verb, requestURI, sourceIPs{}, responseStatus.code
@@ -62,7 +62,7 @@ If we trust the UserAgent field and this request was generated with curl it woul
 curl -k -X Post https://k8s-api-server/api/rbac.authorization.k8s.io/v1/clusterrolebindings -d data.yml
 ```
 
-> Due to a limitation of the  logginging configuration I was unable to capture the yaml for the clusterrolebinding when the request came in which would show the role and service account which were tied together. The next iteration will hopefully remediate this issue. It is worth noting that the logginging configuration mirrors something similar to what a real world production cluster probably has enabled. Ultimately for this attack it does not really matter, for reasons which we will see later in the post. 
+> Due to a limitation of the  logging configuration I was unable to capture the yaml for the clusterrolebinding when the request came in which would show the role and service account which were tied together. The next iteration will hopefully remediate this issue. It is worth noting that the logginging configuration mirrors something similar to what a real-world production cluster probably has enabled. Ultimately for this attack it does not really matter, for reasons which we will see later in the post. 
 
 Attempting to view the clusterrolebinding also fails because it had been deleted by the time analysis occurred:
 
@@ -99,7 +99,7 @@ index=k8s sourcetype=kube:apiserver-audit user.username=system:serviceaccount:ku
 |sort -_time
 ```
 
-After getting credentials the attacker pivots from (what we're presuming is) curl to using `kubectl`. We see a series of 32 requests all within a second of each other all with a `timeout=32s` at the end. These are all the result of running the command: `kubectl api-resources`. This command lists all of the api-resources available on a cluster. 
+After getting credentials the attacker pivots from (what we're presuming is) curl to using `kubectl`. We see a series of 32 requests all within a second of each other all with a `timeout=32s` at the end. These are all the results of running the command: `kubectl api-resources`. This command lists all the api-resources available on a cluster. 
 
 After those events we see a series of `delete` requests starting at `2022-10-23 12:37:53.339`. Looking at the requestURI field we can see there is a request to delete a deployment in the `default` namespace called `worker-deployment`, another request to delete a deployment called `api-proxy` in the `kube-system` namespace, and finally a request to delete a pod running in the `default` namespace called `kube-secure-fhgxtsjh`
 
@@ -107,7 +107,7 @@ After those events we see a series of `delete` requests starting at `2022-10-23 
 
 These all returned 404 response codes because they are resources which did not exist in the cluster. I expect this is an attempt to remove competition who may also exist on the cluster already. It could also be an attempt to clean up a possible existing foothold created via some other means that were not relevant to this attack.
 
-Assuming `kubectl` was used to generate these events the following command were issued:
+Assuming `kubectl` was used to generate these events the following commands were issued:
 
 ```
 kubectl delete deployment worker-deployment -n default
@@ -134,13 +134,13 @@ Now that the cluster has been cleaned up of any unwanted deployments or pods. Th
 
 ![money.png](images/money.png "money")
 
-A few seconds later a follow up request is made to check on the status of the newly created object. In the picture below we can see the full response from the api server for the create request.
+A few seconds later a follow-up request is made to check on the status of the newly created object. In the picture below we can see the full response from the api server for the create request.
 
 ![daemonsetrequest.png](images/daemonsetrequest.png "daemonset")
 
 Under the `objectRef` section we can see the name of the daemonset is `kube-controller`, and confirm the namespace is `kube-system`. The resposne code of 201 indicates the request was successful. Once again the username is `system:serviceaccount:kube-system:default`. By looking at the authorization.k8s.io.reason we can tell that the service account is associated with a clusterrolbinding granting access to the `cluster-admin` role.
 
-At the time of analysis the daemonset still existed. We can see in the output below the kube-controller daemonset was created 5 days and 21 hours ago, and currently has 2 pods ready and available.
+At the time of analysis, the daemonset still existed. We can see in the output below the kube-controller daemonset was created 5 days and 21 hours ago, and currently has 2 pods ready and available.
 
 ```bash
 k get ds -n kube-system
@@ -211,13 +211,13 @@ status:
   updatedNumberScheduled: 2
   ```
 
-This definition file is extremely helpful. There are no volumes, or extra permissions granted to the pod which means no container escapes were attempted (more than likely). We can also see the image that is used `kubrnetesio/kube-controller:1.0.1`. At first glance it may look like a legitimate image, but kubrnetesio is a typo squat on kubernetes. We will dive deeper into this image later, for now lets continue to build out the timeline of events using the k8s api audit logs a bit more.
+This definition file is extremely helpful. There are no volumes, or extra permissions granted to the pod which means no container escapes were attempted (more than likely). We can also see the image that is used `kubrnetesio/kube-controller:1.0.1`. At first glance it may look like a legitimate image, but kubrnetesio is a typo squat on kubernetes. We will dive deeper into this image later, for now let's continue to build out the timeline of events using the k8s api audit logs a bit more.
 
 ---
 
 ### Cleaning Up
 
-10 seconds after validating the daemonset was up the attacker begins to cleanup and harden the cluster from further attack. At `2022-10-23 12:39:40.748` a request was made to delete the clusterrolebinding for `cluster-system-anonymous`. This effectivly prevents anyone else from connecting to the cluster without authentication. 
+10 seconds after validating the daemonset was up the attacker begins to cleanup and harden the cluster from further attack. At `2022-10-23 12:39:40.748` a request was made to delete the clusterrolebinding for `cluster-system-anonymous`. This effectively prevents anyone else from connecting to the cluster without authentication. 
 
 ![anondelete.png](images/anondelete.png "anondelete")
 
@@ -227,11 +227,11 @@ Using kubectl the command would look something similar to:
 kubectl delete clusterrolebinding cluster-system-anonymous
 ```
 
-Next two more commands come in a few seconds later. The first to delete a daemonset `api-proxy` in the kube-system namespace and another to delete the clusterrolebinding `kube-controller-manager` created for this attack.
+Next two more commands come in a few seconds later. The first is to delete a daemonset `api-proxy` in the kube-system namespace and another to delete the clusterrolebinding `kube-controller-manager` created for this attack.
 
 ![kubecontrollerdelete.png](images/kubecontrollerdelete.png "kubecontrollerdelete.png")
 
-The attacker makes a issues a few more commands but they all fail because they have deleted the clusterrolebinding and have effectivly locked themselves out of the cluster as well. The only exception is the daemonset they created which we will dig into next.
+The attacker issues a few more commands but they all fail because they have deleted the clusterrolebinding and have effectivly locked themselves out of the cluster as well. The only exception is the daemonset they created which we will dig into next.
 
 For a complete timeline of the attack check out the 'Complete Timeline of the Attack' section at the bottom of the page.
 
@@ -261,21 +261,21 @@ On the host itself if we run pstree and search for the container id we get the r
 
 With this information we are able to copy the running `kube-controller` binary out of the proc folder with `cp /proc/6554/exe /tmp/6554` and begin to analyze it.
 
-During initial analysis attempting to determine if the binary was packed the binary showed signs of being an unpacked coinminer.
+During initial analysis attempting to determine if the binary was packed the binary showed signs of being an unpacked coin miner.
 
 ![upx.png](images/upx.png "upx.png")
 
-To further confirm the binary is a coinminer (or at least some part of it is) we can run a quick and dirty strings on the binary searching for `xmrig`.
+To further confirm the binary is a coin miner (or at least some part of it is) we can run a quick and dirty strings on the binary searching for `xmrig`.
 
 ![xmrigbinary.png](images/xmrigbinary.png "xmrigbinary.png")
 
 The results output shows
-[VirusTotal](https://www.virustotal.com/gui/file/3928c5874249cc71b2d88e5c0c00989ac394238747bb7638897fc210531b4aab) also gets hits on this being a coinminer.
+[VirusTotal](https://www.virustotal.com/gui/file/3928c5874249cc71b2d88e5c0c00989ac394238747bb7638897fc210531b4aab) also gets hits on this being a coin miner.
 
 ---
 ### Image Analysis
 
-Carving out the image and viewing it layer by layer helps to confirm what we learned when conducting anlysis of the process. There are three layers, the first is the base image used by the attacker to add malicious components to.
+Carving out the image and viewing it layer by layer helps to confirm what we learned when conducting analysis of the process. There are three layers, the first is the base image used by the attacker to add malicious components to.
 
 ![dive1.png](images/dive1.png "dive1.png")
 
@@ -302,7 +302,7 @@ On docker hub this image has been pulled over 10,000 times.
 - Only allow signed trusted images to run on the cluster
 - Build alerts for successful anonymous access
 - Build alerts for cluster-admin binds
-- Make sure your cluster is up to date. Initially I ran this honeypot on the current release of Kubernetes but the attacks would stop after creating the clusterrolebinding and attempting to query for the service account token. As of Kubernetes 1.24 service account tokens are not longer automatically generated, and they must be manually generated. This groups of malciious actors have yet to take this into consideration so there attacks fail despite the anonymous user having full admin permissions on the cluster.
+- Make sure your cluster is up to date. Initially I ran this honeypot on the current release of Kubernetes, but the attacks would stop after creating the clusterrolebinding and attempting to query for the service account token. As of Kubernetes 1.24 service account tokens are no longer automatically generated, and they must be manually generated. This group of malicious actors have yet to take this into consideration so their attacks fail despite the anonymous user having full admin permissions on the cluster.
 
 ---
 ### Complete Timeline of the Attack

@@ -229,7 +229,7 @@ kubectl delete clusterrolebinding cluster-system-anonymous
 
 Next two more commands come in a few seconds later. The first to delete a daemonset `api-proxy` in the kube-system namespace and another to delete the clusterrolebinding `kube-controller-manager` created for this attack.
 
-![kubecontrollerdelete.png.png](images/kubecontrollerdelete.png "kubecontrollerdelete.png")
+![kubecontrollerdelete.png](images/kubecontrollerdelete.png "kubecontrollerdelete.png")
 
 The attacker makes a issues a few more commands but they all fail because they have deleted the clusterrolebinding and have effectivly locked themselves out of the cluster as well. The only exception is the daemonset they created which we will dig into next.
 
@@ -239,9 +239,21 @@ For a complete timeline of the attack check out the 'Complete Timeline of the At
 ---
 ### Process Analysis
 
+
+![pstree3.png](images/pstree3.png "pstree3.png")
+
+![upx.png](images/upx.png "upx.png")
+
+![xmrigbinary.png](images/xmrigbinary.png "xmrigbinary.png")
 ---
 ### Image Analysis
 
+![dive1.png](images/dive1.png "dive1.png")
+![dive2.png](images/dive2.png "dive2.png")
+![dive3.png](images/dive3.png "dive3.png")
+
+
+![xmriguser.png](images/xmriguser.png "xmriguser.png")
 ---
 ### Prevention
 - Don't allow anonymous access

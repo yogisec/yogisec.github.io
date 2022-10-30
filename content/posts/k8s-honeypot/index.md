@@ -302,6 +302,7 @@ On docker hub this image has been pulled over 10,000 times.
 - Only allow signed trusted images to run on the cluster
 - Build alerts for successful anonymous access
 - Build alerts for cluster-admin binds
+- Make sure your cluster is up to date. Initially I ran this honeypot on the current release of Kubernetes but the attacks would stop after creating the clusterrolebinding and attempting to query for the service account token. As of Kubernetes 1.24 service account tokens are not longer automatically generated, and they must be manually generated. This groups of malciious actors have yet to take this into consideration so there attacks fail despite the anonymous user having full admin permissions on the cluster.
 
 ---
 ### Complete Timeline of the Attack

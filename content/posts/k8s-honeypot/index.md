@@ -1,0 +1,321 @@
+---
+title: 'kubernetes_honey_adventures'
+date: 2022-06-11
+tags: ["containers", "linux", "dfir", "kubernetes"]
+categories: ["kubernetes"]
+aliases: ["/k8s-honeypot"]
+author: "Travis"
+summary: "Analysis of real world attack captured in a Kubernetes honeypot."
+
+---
+
+---
+
+Analysis of real world attack captured in a Kubernetes honeypot.
+
+---
+
+### Environment High Level
+For this environment we are analyzing activity which occurred in a Kubernetes (k8s) cluster which was exposed to the Internet. The k8s api server was configured to allow for anonymous access. The anonymous user was granted administrator capabilities within the cluster. This was done to mirror one of the (unfortunately) commonly occuring misconfigurations which lead to clusters being compromised.
+
+Logs from the cluster are streamed into a splunk instanace for easy parsing.
+
+---
+
+### Observed Behavior
+
+Each time the honeypot is created and exposed in this manner there are some common behaviors. As expected exposing a common webport (tcp/443) to the entire Internet a lot of bots scan looking for common security issues, or known webshells. One thing I did not expect was the behavior of a 3rd party attack service management solution (censys). When they detect the server is actually a Kubernetes api server they query the cluster for additional information. They list services, roles, nodes, and all of the pods running in the cluster. Eventually though, something malicious and Kubernetes aware will discover the cluster. 
+
+---
+
+### Initial Access
+This honeypot is configured with one expected path in by a malicious actor. In order to monitor for malicious behavior I start with a simple query looking at any api calls made by the `system:anonymous` user. It is nothing fancy, but does well as an initial "alarm" to show when something has occurred. In Splunk this is the query:
+
+```spl
+index=k8s sourcetype=kube:apiserver-audit  "user.username"="system:anonymous" |table _time, userAgent, verb, requestURI, sourceIPs{}, responseStatus.code
+|sort -_time
+```
+
+The attack begins with a malicious request to list all of the secrets in the Kubernetes cluster. 
+
+> For those new the Kubernetes, secrets are base64 encoded blobs of data. These blobs are used by the applications running within k8s to store sensitive information (think api keys used to access 3rd parter apis, db creds, etc.). Secrets also house service account tokens used to access resources within the cluster via the k8s api server. 
+
+The userAgent for this request is `python-requests/2.27.1`. If this is truly python using the request library the code for this request would look something similar to:
+
+```python
+requests.get('https://k8s-api-server/api/v1/secrets')
+```
+
+Next about seven minutes later we see a call to create a clusterrolebinding with the userAgent of `curl/7.64.0`. 
+
+> A clusterrolebinding is the k8s object which ties a role (object which defines permission boundaries), and a service account together. 
+
+The request to create the clusterrolebinding is below:
+
+![clusterrolbinding.png](images/clusterrolebinding.png "clusterrolbinding")
+
+Looking at the request under the `objectRef` section we can see the rolebinding which was created was named `kube-controller-manager`. We know the request was successful because under the `responseStatus` section we can see the `code: 201`. The `verb` for this request is `create` which tells us that the malicious actor is creating a new resource.
+
+If we trust the UserAgent field and this request was generated with curl it would look something similar to:
+
+```bash
+curl -k -X Post https://k8s-api-server/api/rbac.authorization.k8s.io/v1/clusterrolebindings -d data.yml
+```
+
+> Due to a limitation of the  logginging configuration I was unable to capture the yaml for the clusterrolebinding when the request came in which would show the role and service account which were tied together. The next iteration will hopefully remediate this issue. It is worth noting that the logginging configuration mirrors something similar to what a real world production cluster probably has enabled. Ultimately for this attack it does not really matter, for reasons which we will see later in the post. 
+
+Attempting to view the clusterrolebinding also fails because it had been deleted by the time analysis occurred:
+
+```bash
+k get clusterrolebinding kube-controller-manager
+
+Error from server (NotFound): clusterrolebindings.rbac.authorization.k8s.io "kube-controller-manager" not found
+```
+
+> !!!!-FALCO RULES TO CAPTURE THIS-!!!!
+
+Ten seconds later another request comes in listing secrets in the kube-system namespace. 
+
+This request was made to get authentication details stored in secrets in the kube-system namespace. Using curl the attacker would have utilized something similar to:
+```
+curl -k https://k8s-api-server/api/v1/namespaces/kube-system/secrets
+```
+
+![anonlistsecrets2.png](images/anonlistsecrets2.png "listsecrets")
+
+
+At this point the malicious actor has new credentials to access the cluster. With them they move on to the next phase of the attack.
+
+---
+
+### Removing the Competition
+
+Thankfully since this is a low traffic environment it was easy to view the logs and desern the next steps taken. If this were a real world attack analysis not having this information may prove challenging if you were attempting to run the analysis from the earliest events through to the latest. Working the opposite direction would make the investigation much easier.
+
+In my Splunk instance I pivoted the search to follow activity of the new service account:
+
+```
+index=k8s sourcetype=kube:apiserver-audit user.username=system:serviceaccount:kube-system:default |table _time, user.username, userAgent, verb, requestURI, responseStatus.code
+|sort -_time
+```
+
+After getting credentials the attacker pivots from (what we're presuming is) curl to using `kubectl`. We see a series of 32 requests all within a second of each other all with a `timeout=32s` at the end. These are all the result of running the command: `kubectl api-resources`. This command lists all of the api-resources available on a cluster. 
+
+After those events we see a series of `delete` requests starting at `2022-10-23 12:37:53.339`. Looking at the requestURI field we can see there is a request to delete a deployment in the `default` namespace called `worker-deployment`, another request to delete a deployment called `api-proxy` in the `kube-system` namespace, and finally a request to delete a pod running in the `default` namespace called `kube-secure-fhgxtsjh`
+
+![delete1.png](images/delete1.png "delete")
+
+These all returned 404 response codes because they are resources which did not exist in the cluster. I expect this is an attempt to remove competition who may also exist on the cluster already. It could also be an attempt to clean up a possible existing foothold created via some other means that were not relevant to this attack.
+
+Assuming `kubectl` was used to generate these events the following command were issued:
+
+```
+kubectl delete deployment worker-deployment -n default
+kubectl delete deployment api-proxy -n kube-system
+kubectl delete pod kube-secure-fhgxtsjh - default
+```
+
+The last delete command is interesting, because it is a single one off pod that the attacker is looking for, but it is named in a way to blend in as if it were a part of a deployment/daemonset. Perhaps future honeypots will reveal what these resources are.
+
+Directly after attempting to delete the resources above we see a request at `2022-10-23 12:38:10.451` to check for a daemonset called `kube-controller` in the `kube-system` namespace. 
+
+![validate.png](images/validate.png "validation")
+
+> Daemonsets are objects in k8s that instruct k8s to deploy a copy of the pod to every single node in the cluster. A lot of monitoring and security tools will be deployed via daemonsets to ensure complete cluster visibility. 
+
+A 404 response is returned indicating that the daemonset `kube-controller` does not exist. Two seconds later at `2022-10-23 12:38:12.762` another call is issued to check for the `kube-system` namespace. This seemed odd since earlier the attacker was already interacting with the namespace. Perhaps they wanted to re-validate it existed, or they wanted something out of the raw response. At `2022-10-23 12:38:19.830` the same two requests come through again.
+
+After these requests the malicious actor moves on to the next phase of the attack.
+
+---
+### Bring on the $$$
+
+Now that the cluster has been cleaned up of any unwanted deployments or pods. The attacker moves on to deploying a daemonset. At `2022-10-23 12:38:21.132` there is a `create` request to create a daemonset in the kube-system namespace. 
+
+![money.png](images/money.png "money")
+
+A few seconds later a follow up request is made to check on the status of the newly created object. In the picture below we can see the full response from the api server for the create request.
+
+![daemonsetrequest.png](images/daemonsetrequest.png "daemonset")
+
+Under the `objectRef` section we can see the name of the daemonset is `kube-controller`, and confirm the namespace is `kube-system`. The resposne code of 201 indicates the request was successful. Once again the username is `system:serviceaccount:kube-system:default`. By looking at the authorization.k8s.io.reason we can tell that the service account is associated with a clusterrolbinding granting access to the `cluster-admin` role.
+
+At the time of analysis the daemonset still existed. We can see in the output below the kube-controller daemonset was created 5 days and 21 hours ago, and currently has 2 pods ready and available.
+
+```bash
+k get ds -n kube-system
+
+NAME              DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
+ebs-csi-node      2         2         2       2            2           kubernetes.io/os=linux   7d2h
+kops-controller   1         1         1       1            1           <none>                   7d2h
+kube-controller   2         2         2       2            2           <none>                   5d21h
+```
+
+By requesting the details of the daemonset we can get the yaml definition file below:
+
+```yml
+kubectl get ds kube-controller -n kube-system -o yaml
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    deprecated.daemonset.template.generation: "1"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"DaemonSet","metadata":{"annotations":{},"labels":{"app":"kube-controller"},"name":"kube-controller","namespace":"kube-system"},"spec":{"selector":{"matchLabels":{"app":"kube-controller"}},"template":{"metadata":{"labels":{"app":"kube-controller"}},"spec":{"containers":[{"image":"kubrnetesio/kube-controller:1.0.1","imagePullPolicy":"IfNotPresent","name":"kube-controller"}],"tolerations":[{"operator":"Exists"}]}}}}
+  creationTimestamp: "2022-10-23T17:38:21Z"
+  generation: 1
+  labels:
+    app: kube-controller
+  name: kube-controller
+  namespace: kube-system
+  resourceVersion: "593374"
+  uid: c0a58c6e-be4b-46d9-83fc-d997ba99d55d
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: kube-controller
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: kube-controller
+    spec:
+      containers:
+      - image: kubrnetesio/kube-controller:1.0.1
+        imagePullPolicy: IfNotPresent
+        name: kube-controller
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - operator: Exists
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+status:
+  currentNumberScheduled: 2
+  desiredNumberScheduled: 2
+  numberAvailable: 2
+  numberMisscheduled: 0
+  numberReady: 2
+  observedGeneration: 1
+  updatedNumberScheduled: 2
+  ```
+
+This definition file is extremely helpful. There are no volumes, or extra permissions granted to the pod which means no container escapes were attempted (more than likely). We can also see the image that is used `kubrnetesio/kube-controller:1.0.1`. At first glance it may look like a legitimate image, but kubrnetesio is a typo squat on kubernetes. We will dive deeper into this image later, for now lets continue to build out the timeline of events using the k8s api audit logs a bit more.
+
+---
+
+### Cleaning Up
+
+10 seconds after validating the daemonset was up the attacker begins to cleanup and harden the cluster from further attack. At `2022-10-23 12:39:40.748` a request was made to delete the clusterrolebinding for `cluster-system-anonymous`. This effectivly prevents anyone else from connecting to the cluster without authentication. 
+
+![anondelete.png](images/anondelete.png "anondelete")
+
+Using kubectl the command would look something similar to:
+
+```
+kubectl delete clusterrolebinding cluster-system-anonymous
+```
+
+Next two more commands come in a few seconds later. The first to delete a daemonset `api-proxy` in the kube-system namespace and another to delete the clusterrolebinding `kube-controller-manager` created for this attack.
+
+![kubecontrollerdelete.png.png](images/kubecontrollerdelete.png "kubecontrollerdelete.png")
+
+The attacker makes a issues a few more commands but they all fail because they have deleted the clusterrolebinding and have effectivly locked themselves out of the cluster as well. The only exception is the daemonset they created which we will dig into next.
+
+For a complete timeline of the attack check out the 'Complete Timeline of the Attack' section at the bottom of the page.
+
+---
+### Image Analysis
+
+---
+### Memory Analysis
+
+---
+### Prevention
+- Don't allow anonymous access
+- Don't expose the api server to the entire Internet
+- Only allow signed trusted images to run on the cluster
+- Build alerts for successful anonymous access
+- Build alerts for cluster-admin binds
+
+---
+### Complete Timeline of the Attack
+
+| Event Time|	username| userAgent|	verb|	requestURI|Response Code|
+|---|---|---|---|---|---|
+|2022-10-23 12:30:24.602|system:anonymous	|python-requests/2.27.1|	list|	/api/v1/secrets/|200|
+|2022-10-23 12:37:31.733|system:anonymous	|curl/7.64.0|	create|	/apis/rbac.authorization.k8s.io/v1/clusterrolebindings|201|
+|2022-10-23 12:37:41.482|system:anonymous	|curl/7.64.0|	list|	/api/v1/namespaces/kube-system/secrets|200|
+|2022-10-23 12:37:48.033|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/api?timeout=32s	|200|
+|2022-10-23 12:37:49.447|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis?timeout=32s	|200|
+|2022-10-23 12:37:51.119|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/autoscaling/v1?timeout=32s	|200|
+|2022-10-23 12:37:51.281|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/events.k8s.io/v1?timeout=32s	|200|
+|2022-10-23 12:37:51.281|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/authentication.k8s.io/v1?timeout=32s	|200|
+|2022-10-23 12:37:51.281|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/apiregistration.k8s.io/v1?timeout=32s	|200|
+|2022-10-23 12:37:51.281|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/apps/v1?timeout=32s	|200|
+|2022-10-23 12:37:51.281|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/storage.k8s.io/v1?timeout=32s	|200|
+|2022-10-23 12:37:51.281|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/certificates.k8s.io/v1?timeout=32s	|200|
+|2022-10-23 12:37:51.281|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/flowcontrol.apiserver.k8s.io/v1beta1?timeout=32s	|200|
+|2022-10-23 12:37:51.848|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/api/v1?timeout=32s	|200|
+|2022-10-23 12:37:51.859|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/events.k8s.io/v1beta1?timeout=32s	|200|
+|2022-10-23 12:37:51.969|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/autoscaling/v2?timeout=32s	|200|
+|2022-10-23 12:37:51.969|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/batch/v1beta1?timeout=32s	|200|
+|2022-10-23 12:37:51.969|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/policy/v1?timeout=32s	|200|
+|2022-10-23 12:37:51.969|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/node.k8s.io/v1beta1?timeout=32s	|200|
+|2022-10-23 12:37:51.969|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/authorization.k8s.io/v1?timeout=32s	|200|
+|2022-10-23 12:37:51.969|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/storage.k8s.io/v1beta1?timeout=32s	|200|
+|2022-10-23 12:37:51.969|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/apiextensions.k8s.io/v1?timeout=32s	|200|
+|2022-10-23 12:37:51.969|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/rbac.authorization.k8s.io/v1?timeout=32s	|200|
+|2022-10-23 12:37:51.969|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/node.k8s.io/v1?timeout=32s	|200|
+|2022-10-23 12:37:51.969|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/networking.k8s.io/v1?timeout=32s	|200|
+|2022-10-23 12:37:51.969|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/policy/v1beta1?timeout=32s	|200|
+|2022-10-23 12:37:51.969|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/discovery.k8s.io/v1?timeout=32s	|200|
+|2022-10-23 12:37:51.969|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/autoscaling/v2beta1?timeout=32s	|200|
+|2022-10-23 12:37:52.062|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/admissionregistration.k8s.io/v1?timeout=32s	|200|
+|2022-10-23 12:37:52.062|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/scheduling.k8s.io/v1?timeout=32s	|200|
+|2022-10-23 12:37:52.062|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/autoscaling/v2beta2?timeout=32s	|200|
+|2022-10-23 12:37:52.154|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/discovery.k8s.io/v1beta1?timeout=32s	|200|
+|2022-10-23 12:37:52.155|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/flowcontrol.apiserver.k8s.io/v1beta2?timeout=32s	|200|
+|2022-10-23 12:37:52.155|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/batch/v1?timeout=32s	|200|
+|2022-10-23 12:37:52.155|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/coordination.k8s.io/v1?timeout=32s	|200|
+|2022-10-23 12:37:53.339|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	delete|	/apis/apps/v1/namespaces/default/deployments/worker-deployment|404|
+|2022-10-23 12:37:57.898|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	delete|	/apis/apps/v1/namespaces/kube-system/deployments/api-proxy|404|
+|2022-10-23 12:38:01.766|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	delete|	/api/v1/namespaces/default/pods/kube-secure-fhgxtsjh|404|
+|2022-10-23 12:38:06.067|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	delete|	/api/v1/namespaces/default/pods/kube-secure-fhgxt|404|
+|2022-10-23 12:38:10.451|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/apps/v1/namespaces/kube-system/daemonsets/kube-controller	|404|
+|2022-10-23 12:38:12.762|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/api/v1/namespaces/kube-system	|200|
+|2022-10-23 12:38:16.765|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/openapi/v2?timeout=32s	|200|
+|2022-10-23 12:38:19.830|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/apps/v1/namespaces/kube-system/daemonsets/kube-controller	|404|
+|2022-10-23 12:38:20.495|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/api/v1/namespaces/kube-system	|200|
+|2022-10-23 12:38:21.132|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	create|	/apis/apps/v1/namespaces/kube-system/daemonsets?fieldManager=kubectl-client-side-apply&fieldValidation=Strict|201|
+|2022-10-23 12:38:30.085|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	get|	/apis/apps/v1/namespaces/kube-system/daemonsets/kube-controller	|200|
+|2022-10-23 12:39:15.761|	system:anonymous| curl/7.64.0|	list|	/api/v1/namespaces/kube-system/secrets|200|
+|2022-10-23 12:39:40.748|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	delete|	/apis/rbac.authorization.k8s.io/v1/clusterrolebindings/cluster-system-anonymous?timeout=10s|200|
+|2022-10-23 12:39:42.343|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	delete|	/apis/apps/v1/namespaces/kube-sytem/daemonsets/api-proxy?timeout=10s|404|
+|2022-10-23 12:39:46.760|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	delete|	/apis/rbac.authorization.k8s.io/v1/clusterrolebindings/kube-controller-manager?timeout=10s|200|
+|2022-10-23 12:39:49.713|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	list|	/apis/rbac.authorization.k8s.io/v1/clusterrolebindings?fieldSelector=metadata.name%3Dkube-controller-manager&timeout=10s|	403|
+|2022-10-23 12:40:01.102|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	delete|	/api/v1/namespaces/default/pods/kube-secure-fhgxtsjh?timeout=10s|403|
+|2022-10-23 12:40:08.544|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	delete|	/api/v1/namespaces/default/pods/kube-secure-fhgxt?timeout=10s|403|
+|2022-10-23 12:40:12.611|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	delete|	/apis/rbac.authorization.k8s.io/v1/clusterrolebindings/eks-admin?timeout=10s|403|
+|2022-10-23 12:40:18.294|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	list|	/api/v1/secrets?limit=500&timeout=10s|	403|
+|2022-10-23 12:40:24.705|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	list|	/api/v1/pods?limit=500&timeout=10s|	403|
+|2022-10-23 12:40:33.352|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	list|	/api/v1/configmaps?limit=500&timeout=10s|	403|
+|2022-10-23 12:40:42.762|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	list|	/apis/networking.k8s.io/v1/ingresses?limit=500&timeout=10s|	403|
+|2022-10-23 12:40:51.379|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	list|	/apis/rbac.authorization.k8s.io/v1/clusterroles?limit=500&timeout=10s|	403|
+|2022-10-23 12:40:55.609|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	list|	/apis/rbac.authorization.k8s.io/v1/clusterrolebindings?limit=500&timeout=10s|	403|
+|2022-10-23 12:41:03.747|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	list|	/apis/rbac.authorization.k8s.io/v1/roles?limit=500&timeout=10s|	403|
+|2022-10-23 12:41:07.045|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	list|	/apis/rbac.authorization.k8s.io/v1/rolebindings?limit=500&timeout=10s|	403|
+|2022-10-23 12:41:11.267|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	list|	/api/v1/services?limit=500&timeout=10s|	403|
+|2022-10-23 12:41:15.285|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	list|	/api/v1/serviceaccounts?limit=500&timeout=10s|	403|
+|2022-10-23 12:41:19.253|	system:serviceaccount:kube-system:default|	kubectl/v1.24.4 (linux/amd64) kubernetes/95ee5ab|	list|	/api/v1/nodes?limit=500&timeout=10s|	403|

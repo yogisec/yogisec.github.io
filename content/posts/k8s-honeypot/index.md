@@ -236,11 +236,20 @@ The attacker makes a issues a few more commands but they all fail because they h
 For a complete timeline of the attack check out the 'Complete Timeline of the Attack' section at the bottom of the page.
 
 ---
----
 ### Process Analysis
 
+kubectl get pods -n kube-system -o wide
+kubectl get pod kube-controller-cq8f8 -o yaml
 
+Containerid: 643747d8420547509c2a80f791ef139647fbce9df53478530f9d1e217f1eb982
+
+
+
+pstree -s -p -a |grep -n10 643747d
 ![pstree3.png](images/pstree3.png "pstree3.png")
+
+cp /proc/6554/exe /tmp/6554
+
 
 ![upx.png](images/upx.png "upx.png")
 
@@ -248,11 +257,19 @@ For a complete timeline of the attack check out the 'Complete Timeline of the At
 ---
 ### Image Analysis
 
+Carving out the image and viewing it layer by layer helps to confirm what we learned when conducting anlysis of the process. There are three layers, the first is the base image used by the attacker to add malicious components to.
+
 ![dive1.png](images/dive1.png "dive1.png")
+
+The second layer is the result of the COPY command moving the kube-controller binary into the image.
+
 ![dive2.png](images/dive2.png "dive2.png")
+
+The third image shows a file `.xmrig.json` being copied into the image in roots home folder.
+
 ![dive3.png](images/dive3.png "dive3.png")
 
-
+After extracting the layers we can access the json file and get the wallet id as well as other information.
 ![xmriguser.png](images/xmriguser.png "xmriguser.png")
 ---
 ### Prevention

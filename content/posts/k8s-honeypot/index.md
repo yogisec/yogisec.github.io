@@ -238,22 +238,39 @@ For a complete timeline of the attack check out the 'Complete Timeline of the At
 ---
 ### Process Analysis
 
+To determine the process(s) associated with the malicious pods we first need to determine a container id on the host. The kubectl command below shows us the pod name as well as the host where the container is currently running.
+
+```
 kubectl get pods -n kube-system -o wide
+
+NAME                     READY   STATUS       RESTARTS    AGE     IP              NODE
+kube-controller-cq8f8    1/1     Running      0           4d5h    100.96.2.4      ip-172-20-45-237.ec2.internal
+```
+
+Pushing deeper we can query the details of the pod and determine a containerid associated with the pod:
+
+```
 kubectl get pod kube-controller-cq8f8 -o yaml
 
 Containerid: 643747d8420547509c2a80f791ef139647fbce9df53478530f9d1e217f1eb982
+```
 
+On the host itself if we run pstree and search for the container id we get the results below showing the process of the container is `6340`, the only process running in the container is pid `6554`, and everything under it is a thread of the process.
 
-
-pstree -s -p -a |grep -n10 643747d
 ![pstree3.png](images/pstree3.png "pstree3.png")
 
-cp /proc/6554/exe /tmp/6554
+With this information we are able to copy the running `kube-controller` binary out of the proc folder with `cp /proc/6554/exe /tmp/6554` and begin to analyze it.
 
+During initial analysis attempting to determine if the binary was packed the binary showed signs of being an unpacked coinminer.
 
 ![upx.png](images/upx.png "upx.png")
 
+To further confirm the binary is a coinminer (or at least some part of it is) we can run a quick and dirty strings on the binary searching for `xmrig`.
+
 ![xmrigbinary.png](images/xmrigbinary.png "xmrigbinary.png")
+
+The results output shows
+[VirusTotal](https://www.virustotal.com/gui/file/3928c5874249cc71b2d88e5c0c00989ac394238747bb7638897fc210531b4aab) also gets hits on this being a coinminer.
 ---
 ### Image Analysis
 
@@ -270,6 +287,7 @@ The third image shows a file `.xmrig.json` being copied into the image in roots 
 ![dive3.png](images/dive3.png "dive3.png")
 
 After extracting the layers we can access the json file and get the wallet id as well as other information.
+
 ![xmriguser.png](images/xmriguser.png "xmriguser.png")
 ---
 ### Prevention

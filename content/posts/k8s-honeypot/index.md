@@ -236,10 +236,11 @@ The attacker makes a issues a few more commands but they all fail because they h
 For a complete timeline of the attack check out the 'Complete Timeline of the Attack' section at the bottom of the page.
 
 ---
-### Image Analysis
+---
+### Process Analysis
 
 ---
-### Memory Analysis
+### Image Analysis
 
 ---
 ### Prevention

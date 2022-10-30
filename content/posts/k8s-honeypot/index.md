@@ -271,6 +271,7 @@ To further confirm the binary is a coinminer (or at least some part of it is) we
 
 The results output shows
 [VirusTotal](https://www.virustotal.com/gui/file/3928c5874249cc71b2d88e5c0c00989ac394238747bb7638897fc210531b4aab) also gets hits on this being a coinminer.
+
 ---
 ### Image Analysis
 
@@ -286,9 +287,14 @@ The third image shows a file `.xmrig.json` being copied into the image in roots 
 
 ![dive3.png](images/dive3.png "dive3.png")
 
-After extracting the layers we can access the json file and get the wallet id as well as other information.
+After extracting the layers we can access the json config file for xmrig and get the wallet id as well as other information.
 
 ![xmriguser.png](images/xmriguser.png "xmriguser.png")
+
+On docker hub this image has been pulled over 10,000 times.
+
+![dockerhub.png](images/dockerhub.png "dockerhub.png")
+
 ---
 ### Prevention
 - Don't allow anonymous access

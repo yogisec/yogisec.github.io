@@ -16,20 +16,20 @@ Analysis of a real-world attack captured in a Kubernetes honeypot.
 ---
 
 ### Environment High Level
-For this environment we are analyzing activity which occurred in a Kubernetes (k8s) cluster which was exposed to the Internet. The k8s api server was configured to allow for anonymous access. The anonymous user was granted administrator capabilities within the cluster. This was done to mirror one of the (unfortunately) commonly occurring  misconfigurations which lead to clusters being compromised.
+For this environment we are analyzing activity which occurred in a Kubernetes (k8s) cluster exposed to the Internet. The k8s api server was configured to allow anonymous access. The anonymous user was granted administrator capabilities within the cluster. This was done to mirror one of the (unfortunately) commonly occurring misconfigurations which lead to clusters being compromised.
 
-Logs from the cluster are streamed into a Splunk instance for easy parsing.
+Logs from the cluster were streamed into a Splunk instance for easy parsing.
 
 ---
 
 ### Observed Behavior
 
-Each time the honeypot is created and exposed in this manner there are some common behaviors. As expected, exposing a common webport (tcp/443) to the entire Internet a lot of bots scan looking for common security issues, or known webshells. One thing I did not expect was the behavior of a 3rd party attack service management solution (censys). When they detect the server is a Kubernetes api server they query the cluster for additional information. They list services, roles, nodes, and all the pods running in the cluster. Eventually though, something malicious and Kubernetes aware will discover the cluster. 
+Each time the honeypot is created and exposed in this manner there are some common behaviors. As expected, when exposing a webport (tcp/443) to the entire Internet a lot of bots scan looking for common security issues, or known webshells. One thing I did not expect was the behavior of a 3rd party attack service management solution (censys). When they detect the server is a Kubernetes api server they query the cluster for additional information. They list services, roles, nodes, and all the pods running in the cluster. No other scanning is performed by censys. Eventually though, something malicious and Kubernetes aware will discover the cluster. 
 
 ---
 
 ### Initial Access
-This honeypot is configured with one expected path in by a malicious actor. In order to monitor for malicious behavior I start with a simple query looking at any api calls made by the `system:anonymous` user. It is nothing fancy but does well as an initial "alarm" to show when something has occurred. In Splunk this is the query:
+This honeypot was configured with one expected path in by a malicious actor. In order to monitor for malicious behavior I start with a simple query looking at any api calls made by the `system:anonymous` user. It is nothing fancy but does well as an initial "alarm" to show when something has occurred. In Splunk this is the query:
 
 ```spl
 index=k8s sourcetype=kube:apiserver-audit  "user.username"="system:anonymous" |table _time, userAgent, verb, requestURI, sourceIPs{}, responseStatus.code

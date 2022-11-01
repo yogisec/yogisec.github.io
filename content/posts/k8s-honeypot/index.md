@@ -62,7 +62,7 @@ If we trust the UserAgent field and this request was generated with curl it woul
 curl -k -X Post https://k8s-api-server/api/rbac.authorization.k8s.io/v1/clusterrolebindings -d data.yml
 ```
 
-> Due to a limitation of the  logging configuration I was unable to capture the yaml for the clusterrolebinding when the request came in which would show the role and service account which were tied together. The next iteration will hopefully remediate this issue. It is worth noting that the logginging configuration mirrors something similar to what a real-world production cluster probably has enabled. Ultimately for this attack it does not really matter, for reasons which we will see later in the post. 
+> Due to a limitation of the  logging configuration I was unable to capture the yaml for the clusterrolebinding when the request came in which would show the role and service account which were tied together. The next iteration will remediate this issue as I increase the logging aroudn clusterrolbinding objects. It is worth noting that the logginging configuration mirrors something similar to what a real-world production cluster probably has enabled. If you wish to have this level of visibility into your own clusters make sure to review the logging configuration. Ultimately for this attack it does not really matter, for reasons which we will see later in the post. 
 
 Attempting to view the clusterrolebinding also fails because it had been deleted by the time analysis occurred:
 
@@ -72,7 +72,30 @@ k get clusterrolebinding kube-controller-manager
 Error from server (NotFound): clusterrolebindings.rbac.authorization.k8s.io "kube-controller-manager" not found
 ```
 
-> !!!!-FALCO RULES TO CAPTURE THIS-!!!!
+Throughout the log files the authorization.k8s.io/reason field shows that the `default` user in the kube-system namespace has the ability to utilize the `cluster-admin` role via the `kube-controller-manager` rolebinding. Based on these messages we can infer the missing request looked something similar to:
+
+```json
+"kind": "ClusterRoleBinding",
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "metadata": {
+      "name": "kube-controller-manager",
+    },
+    "subjects": [
+      {
+        "kind": "ServiceAccount",
+        "name": "default",
+        "namespace": "kube-system"
+      }
+    ],
+    "roleRef": {
+      "apiGroup": "rbac.authorization.k8s.io",
+      "kind": "ClusterRole",
+      "name": "kube-admin"
+    }
+  }, 
+```
+
+It is possible other subjectsion could have been listed, however there was no evidence of this behavior.
 
 Ten seconds later another request comes in listing secrets in the kube-system namespace. 
 
@@ -82,7 +105,6 @@ curl -k https://k8s-api-server/api/v1/namespaces/kube-system/secrets
 ```
 
 ![anonlistsecrets2.png](images/anonlistsecrets2.png "listsecrets")
-
 
 At this point the malicious actor has new credentials to access the cluster. With them they move on to the next phase of the attack.
 
@@ -300,8 +322,8 @@ On docker hub this image has been pulled over 10,000 times.
 - Don't allow anonymous access
 - Don't expose the api server to the entire Internet
 - Only allow signed trusted images to run on the cluster
-- Build alerts for successful anonymous access
-- Build alerts for cluster-admin binds
+- Build alerts for successful anonymous access. These can be written in a SIEM or via an runtime agent running in the cluster such as Falco.
+- Build alerts for cluster-admin binds. Just like the previous entry the SIEM or something such as Falco can be utilized here.
 - Make sure your cluster is up to date. Initially I ran this honeypot on the current release of Kubernetes, but the attacks would stop after creating the clusterrolebinding and attempting to query for the service account token. As of Kubernetes 1.24 service account tokens are no longer automatically generated, and they must be manually generated. This group of malicious actors have yet to take this into consideration so their attacks fail despite the anonymous user having full admin permissions on the cluster.
 
 ---

@@ -13,7 +13,7 @@
     <item>
       <title>kubernetes_honeypot_adventures</title>
       <link>https://jellyparks.com/posts/k8s-honeypot/</link>
-      <pubDate>Sat, 11 Jun 2022 00:00:00 +0000</pubDate>
+      <pubDate>Thu, 03 Nov 2022 00:00:00 +0000</pubDate>
       
       <guid>https://jellyparks.com/posts/k8s-honeypot/</guid>
       <description>Analysis of a real-world attack captured in a Kubernetes honeypot.</description>

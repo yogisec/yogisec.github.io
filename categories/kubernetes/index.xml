@@ -11,6 +11,15 @@
     <generator>Hugo -- gohugo.io</generator>
     <lastBuildDate>Sat, 11 Jun 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://jellyparks.com/categories/kubernetes/index.xml" rel="self" type="application/rss+xml" />
     <item>
+      <title>kubernetes_honeypot_adventures</title>
+      <link>https://jellyparks.com/posts/k8s-honeypot/</link>
+      <pubDate>Sat, 11 Jun 2022 00:00:00 +0000</pubDate>
+      
+      <guid>https://jellyparks.com/posts/k8s-honeypot/</guid>
+      <description>Analysis of a real-world attack captured in a Kubernetes honeypot.</description>
+    </item>
+    
+    <item>
       <title>kubernetes_logs_for_responders</title>
       <link>https://jellyparks.com/posts/k8s-api-logs-for-responders/</link>
       <pubDate>Sat, 11 Jun 2022 00:00:00 +0000</pubDate>

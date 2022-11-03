@@ -265,7 +265,7 @@ On the host itself running `pstree` and searching for the container id the resul
 
 ![pstree3.png](images/pstree3.png "pstree3.png")
 
-Knowing this the running `kube-controller` binary was copied out of the proc folder with `cp /proc/6554/exe /tmp/6554` and begin to analyze it.
+Knowing this, the running `kube-controller` binary was copied out of the proc folder with `cp /proc/6554/exe /tmp/6554` and analysis of the binary began.
 
 During initial analysis attempting to determine if the binary was packed (it's not) the binary showed signs of being an unpacked coin miner.
 

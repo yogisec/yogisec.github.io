@@ -275,7 +275,7 @@ To further confirm the binary was a coin miner (or at least some part of it was)
 
 ![xmrigbinary.png](images/xmrigbinary.png "xmrigbinary.png")
 
-The results output confirmed this was a coin miner. For further coorobaration [VirusTotal](https://www.virustotal.com/gui/file/3928c5874249cc71b2d88e5c0c00989ac394238747bb7638897fc210531b4aab) also returned results on this binary being a coin miner.
+The results output confirmed this was a coin miner. For further corroboration [VirusTotal](https://www.virustotal.com/gui/file/3928c5874249cc71b2d88e5c0c00989ac394238747bb7638897fc210531b4aab) also returned results on this binary being a coin miner.
 
 Network connections for the process were also inspected but did not point to anything interesting. Periodically the outbound established ip address would rotate. All observed outbound connections were made to addresses hosted in aws. The network traffic was all encrypted. At this point diving deeper into the network traffic did not seem necessary.
 

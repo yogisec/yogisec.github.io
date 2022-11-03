@@ -31,11 +31,11 @@ index=k8s sourcetype=kube:apiserver-audit  "user.username"="system:anonymous" |t
 
 The attack began at `2022-10-23 12:30:24.602` with a malicious request to list all the secrets in the Kubernetes cluster. The userAgent for this request was `python-requests/2.27.1`. 
 
-> For those new the Kubernetes, secrets are base64 encoded blobs of data. These blobs are used by the applications running within k8s to store sensitive information (think api keys used to access 3rd party apis, db creds, etc.). Service account tokens are also stored as secrets and used to access resources within the cluster via the k8s api server. 
+> For those new to Kubernetes, secrets are base64 encoded blobs of data. These blobs are used by the applications running within k8s to store sensitive information (think api keys used to access 3rd party apis, db creds, etc.). Service account tokens are also stored as secrets and used to access resources within the cluster via the k8s api server. 
 
 Approximately seven minutes later (`2022-10-23 12:37:31.733`) a call to create a clusterrolebinding with the userAgent of `curl/7.64.0` was made. 
 
-> A clusterrolebinding is the k8s object which ties a role (object which defines permission boundaries), and a service account together. 
+> A clusterrolebinding is a k8s object which ties a role (object which defines permission boundaries) and a service account together. 
 
 The request to create the clusterrolebinding is below:
 
@@ -106,7 +106,7 @@ index=k8s sourcetype=kube:apiserver-audit user.username=system:serviceaccount:ku
 |sort -_time
 ```
 
-After getting credentials the attacker pivots from (what we're presuming is) curl to using `kubectl`. We see a series of 32 requests all within a second of each other all with a `timeout=32s` at the end. These are all the results of running the command: `kubectl api-resources`. This command lists all the api-resources available on a cluster. More research needs to be done here, but I believe `kubectl` makes this call behind the scenes periodically.
+After getting credentials the attacker pivots from (what we're presuming is) curl to using `kubectl`. At `2022-10-23 12:37:51.281` we see a series of 32 requests all within a second of each other. Each request had a `timeout=32s` at the end. These are all the results of running the command: `kubectl api-resources`. This command lists all the api-resources available on a cluster. More research needs to be done here, but I believe `kubectl` makes this call behind the scenes periodically.
 
 After those events a series of `delete` requests were sent starting at `2022-10-23 12:37:53.339`. Looking at the requestURI field we can see there is a request to delete a deployment in the `default` namespace called `worker-deployment`, another request to delete a deployment called `api-proxy` in the `kube-system` namespace, and finally a request to delete a pod running in the `default` namespace called `kube-secure-fhgxtsjh`.
 
@@ -216,7 +216,7 @@ status:
   updatedNumberScheduled: 2
   ```
 
-This definition file is extremely helpful. There are no volumes, or extra permissions granted to the pod which means no container escapes were attempted (more than likely, kernel exploits are still a possibility). We can also see the image that is used `kubrnetesio/kube-controller:1.0.1`. At first glance it may look like a legitimate image, but `kubrnetesio` is a typo squat on kubernetes. We will dive deeper into this image later, for now we will continue to build out the timeline of events using the k8s api audit logs a bit more.
+This definition file is extremely helpful. There are no volumes or extra permissions granted to the pod which means no container escapes were attempted (more than likely kernel exploits are still a possibility). We can also see the image that is used `kubrnetesio/kube-controller:1.0.1`. At first glance it may look like a legitimate image, but `kubrnetesio` is a typo squat on kubernetes. We will dive deeper into this image later, for now we will continue to build out the timeline of events using the k8s api audit logs a bit more.
 
 ---
 
@@ -232,7 +232,7 @@ Using kubectl the command would look something similar to:
 kubectl delete clusterrolebinding cluster-system-anonymous
 ```
 
-Next two more commands came in a few seconds later. The first was to delete a daemonset `api-proxy` in the kube-system namespace and another to delete the clusterrolebinding `kube-controller-manager` created for this attack.
+Next, two more commands came in a few seconds later. The first was to delete a daemonset `api-proxy` in the kube-system namespace and another to delete the clusterrolebinding `kube-controller-manager` created for this attack.
 
 ![kubecontrollerdelete.png](images/kubecontrollerdelete.png "kubecontrollerdelete.png")
 

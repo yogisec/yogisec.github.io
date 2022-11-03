@@ -1,6 +1,6 @@
 ---
 title: 'kubernetes_honeypot_adventures'
-date: 2022-06-11
+date: 2022-11-03
 tags: ["containers", "linux", "dfir", "kubernetes"]
 categories: ["kubernetes"]
 aliases: ["/k8s-honeypot"]

@@ -55,7 +55,7 @@ Directly above the MessageBoxA call is the start of an "if" statement. Since I h
 
 ![decompiled1.png](images/decompiled1.png "decompiled1")
 
-If the number of turns is not 10 we enter into the else block. The first line in the else is an incrementor which further confirms that `DAT_00413298` is the variable tracking how many attempts have been made. Continuing to move through the code, the next statement is another comparison. This time two variables are checked. This seemed like this might be the block where the x and y values for the clicked pixel are compared. I continued to work through this block of code renaming things as I could.
+If the number of turns is not 10 we enter into the else block. The first line in the else is an incrementor which further confirms `DAT_00413298` is the variable tracking how many attempts have been made. Continuing to move through the code, the next statement is another comparison. This time two variables are checked. This seemed like this might be the block where the x and y values for the clicked pixel are compared. I continued to work through this block of code renaming things as I could.
 
 ![decompiled2.png](images/decompiled2.png "decompiled2")
 
@@ -93,7 +93,7 @@ Since the values matched, the zf was 0 and the jump was not taken. I let the app
 
 ## Bonus NOPs
 
-Earlier in the article I mentioned that my first approach was to replace instructions with NOPs to simply skip over them. It would have worked, had I not been focused on trying to capture the flag in memory, but instead focused on getting the application to generate a "win" scenario. Now that I had seen the application run through to completion, I ran it again with the same breakpoints set.
+Earlier in the article I mentioned my first approach was to replace instructions with NOPs to simply skip over them. It would have worked, had I not been focused on trying to capture the flag in memory, but instead focused on getting the application to generate a "win" scenario. Now that I had seen the application run through to completion, I ran it again with the same breakpoints set.
 
 This time I replaced the two jump instructions with NOPs. Below is a screen shot of how the debugger looked after replacing both jmps with nops.
 

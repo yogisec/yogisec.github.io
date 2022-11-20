@@ -30,7 +30,7 @@ Your goal is simple: find the correct pixel and click it
 Good Luck!`
 ```
 
-When the game loads the a screen like the one below appears:
+When the game loads a screen like the one below appears:
 
 ![start.png](images/start.png "start")
 
@@ -55,7 +55,7 @@ Directly above the MessageBoxA call is the start of an "if" statement. Since I h
 
 ![decompiled1.png](images/decompiled1.png "decompiled1")
 
-If the number of turns is not 10 we enter into the else block. The first line in the else is an incrementor which further confirms that `DAT_00413298` is the variable tracking how many attempts have been made. Continuing to move through the code the next statement is another comparison. This time two variables are checked. This seemed like this might be the block where the x and y values for the clicked pixel are compared. I continued to work through this block of code renaming things as I could.
+If the number of turns is not 10 we enter into the else block. The first line in the else is an incrementor which further confirms that `DAT_00413298` is the variable tracking how many attempts have been made. Continuing to move through the code, the next statement is another comparison. This time two variables are checked. This seemed like this might be the block where the x and y values for the clicked pixel are compared. I continued to work through this block of code renaming things as I could.
 
 ![decompiled2.png](images/decompiled2.png "decompiled2")
 
@@ -77,7 +77,7 @@ Looking in the registry at the first breakpoint the values of EDX and EDI are di
 
 ![registry1.png](images/registry1.png "registry1")
 
-Using the debugger, I changed the values so they were equal. When I resumed the program, the jump was not taken and the application hit the second breakpoint at `0040149b`
+Using the debugger, I changed the values so they were equal. When I resumed the program, the jump was not taken, and the application hit the second breakpoint at `0040149b`
 
 ![breakpoint2.png](images/breakpoint2.png "breakpoint2")
 
@@ -107,4 +107,4 @@ As expected, after replacing those two instructions and letting the application 
 
 The official write up solves this challenge in a completely different way and is worth a read too. The link to the write up is here: https://www.mandiant.com/sites/default/files/2022-11/02-pixelpoker.pdf.
 
-For writes ups to all of the solutions or overall stats on this years flareon challenge mandiant made this post: https://www.mandiant.com/resources/blog/flareon9-challenge-solutions
+For writes ups to all the solutions or overall stats on this years flareon challenge mandiant made this post: https://www.mandiant.com/resources/blog/flareon9-challenge-solutions

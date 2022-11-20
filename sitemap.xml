@@ -3,7 +3,25 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://jellyparks.com/categories/</loc>
-    <lastmod>2022-11-03T00:00:00+00:00</lastmod>
+    <lastmod>2022-11-20T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://jellyparks.com/tags/ctf/</loc>
+    <lastmod>2022-11-20T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://jellyparks.com/posts/flare-on9-chal02/</loc>
+    <lastmod>2022-11-20T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://jellyparks.com/posts/</loc>
+    <lastmod>2022-11-20T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://jellyparks.com/tags/re/</loc>
+    <lastmod>2022-11-20T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://jellyparks.com/categories/reversing/</loc>
+    <lastmod>2022-11-20T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>https://jellyparks.com/tags/</loc>
+    <lastmod>2022-11-20T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://jellyparks.com/tags/containers/</loc>
     <lastmod>2022-11-03T00:00:00+00:00</lastmod>
@@ -23,12 +41,6 @@
     <loc>https://jellyparks.com/tags/linux/</loc>
     <lastmod>2022-11-03T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>https://jellyparks.com/posts/</loc>
-    <lastmod>2022-11-03T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://jellyparks.com/tags/</loc>
-    <lastmod>2022-11-03T00:00:00+00:00</lastmod>
-  </url><url>
     <loc>https://jellyparks.com/posts/k8s-api-logs-for-responders/</loc>
     <lastmod>2022-06-11T00:00:00+00:00</lastmod>
   </url><url>
@@ -37,9 +49,6 @@
   </url><url>
     <loc>https://jellyparks.com/categories/containers/</loc>
     <lastmod>2022-05-10T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>https://jellyparks.com/tags/ctf/</loc>
-    <lastmod>2019-11-28T00:00:00+00:00</lastmod>
   </url><url>
     <loc>https://jellyparks.com/tags/identity/</loc>
     <lastmod>2019-11-28T00:00:00+00:00</lastmod>

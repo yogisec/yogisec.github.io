@@ -18,7 +18,7 @@ This includes a fully functional IDP and a Service Provider. The Service Provide
 ![environment](images/vuln-saml-environment.png "img-fluid")
 
 
-Not sure what SAML is or looking for a refesher? Check out the [saml_overview](https://jellyparks.com/web-things/saml-overview.html) page.
+Not sure what SAML is or looking for a refesher? Check out the [saml_overview](https://jellyparks.com/posts/saml-overview/) page.
 
 ---
 

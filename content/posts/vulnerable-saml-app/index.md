@@ -204,19 +204,19 @@ Before we get to far into this scenario, I wanted to take a moment and say that 
 
 Once we authenticate to our IDP we can make any changes to the SAML response that we want. The message will not be checked, the SP will simply process it as valid. The screenshot below shows the original assertion before tamper:
 
-nothing_orig_assertion
+![nothing_orig_assertion](images/nothing_orig_assertion.png "img-fluid")
 
 Now, if we change our user group to the administrators group as pictured below we will successfully escalate our privileges from a regular user account to a full admin within the SP.
 
-nothing_tamper_assertion
+![nothing_tamper_assertion](images/nothing_tamper_assertion.png "img-fluid")
 
 Once we pass the SAML response payload along to the SP we are now an administrator within the SP and as we can see below when we click on the complaints tab we now have the ability to delete all of the complaints.
 
-nothing_delete
+![nothing_delete](images/nothing_delete_options.png "img-fluid")
 
 We can even take it a step further if we'd like and replace all of the fields within the response with fake information similar to the picture below. As the SP logs our 'malicious' doings it will log all of our fake information. The only true way to determine who we were before changing our use settings would be to sync up the logs from the IDP and the SP to determine who authenticated to the IDP before the malicious activity began.
 
-nothing_fake
+![nothing_fake](images/nothing_fake.png "img-fluid")
 
 Above I mentioned that this configuration is the most common issue that I find when testing SAML implementations. The reason for this is because when most applications are initially configured to leverage saml the check box to make sure messages are secure is left unchecked. This allows the owners to validate that all of the backend configuration that occurs between the SP and the IDP is correctly configured without dealing with certificates. The unfortunate part is most of the time this is where things get left. The messages are left fully vulnerable to anyone who can authenticate to the IDP.
 
@@ -224,57 +224,57 @@ Above I mentioned that this configuration is the most common issue that I find w
 
 For this scenario we'll use the security configuration pictured below. This scenario plays out the exact same way if validMessage is also checked, or if it is checked and validAssertion is not.
 
-valid_assertion_config
+![valid_assertion_config](images/valid_assertion_config.png "img-fluid")
 
 On the surface this seems like the ideal configuration. The Service Provider is checking for valid assertions, any tampering with the assertion attributes results in the message being rejected. In the picture below we have authenticated as the Yogi user account, and our assertion payload includes attributes about our account including our group membership 'users'.
 
-valid_assertion_group
+![valid_assertion_group](images/valid_assertion_group.png "img-fluid")
 
 We can attempt change the group membership to another group such as the 'administrators' group in the photo below.
 
-valid_assertion_group_edited
+![valid_assertion_group_edited](images/valid_assertion_group_edited.png "img-fluid")
 
 Unfortunatly as we can see below the message is rejected because its not valid when compared to the signature for the message.
 
-valid_assertion
+![valid_assertion](images/valid_assertion.png "img-fluid")
 
 There is a big security flaw with this configuration. The SP is only checking that the assertion is valid IF its signed. The application does not have signed messages as a requirement. If we remove the entire signature block from our SAML payload the message can be changed.
 
 In the Burp intercept for the web traffic within the SAML raider tab we can click the 'Remove Signatures' button to remove the entire signature area of the XML SAML Response.
 
-signed_signature_removed
+![signed_signature_removed](images/signed_signature_removed.png "img-fluid")
 
 When we attempt to tamper with the SAML response without a signature the SP accepts our resposne and we are now authenticated to the application as a member of the administrators group!
 
-signed_success
+![signed_success](images/signed_success.png "img-fluid")
 
 #### Want Assertions / Messages Signed
 Things are slightly improving with this deployment. With this configuration the Assertion and/or Message must be signed. Since the application requires a signature we cannot just remove the signature block like we did in the previous scenario. To prove all of this out we will use the configuration below:
 
-signed_config
+![signed_config](images/signed_config.png "img-fluid")
 
 The first thing we can try is to simply remove the signature elements. We wont tamper with anything, just a quick test to see if we can remove the signatures and have the SAML response still be accepted by the SP.
 
-signed_signature_removed
+![signed_signature_removed](images/signed_signature_removed.png "img-fluid")
 
 As expected with our current configuration settings the SP rejects the response payload because it is invalid.
 
-signed_error
+![signed_error](images/signed_error.png "img-fluid")
 
 Perhaps we can leave the signature elements in the response message but change the assertion attributes? Below we can see the memberOf attribute value has been changed from the users group to the administrators group.
 
-signed_group_change
+![signed_group_change](images/signed_changed_group.png "img-fluid")
 
 Sending the response payload along and we are greated with a successful login as well as our new permissions as a member of the administrators group!
 
-signed_success
+![signed_success](images/signed_success.png "img-fluid")
 
 Why did that work? The application is checking for signatures isn't it? Well it is and it isn't. The application in its current configuration is checking to make sure there are signature attributes within the SAML response and that it is signed with the trusted certificate. It's not actually checking if they are valid or not. If the signature elements are in the message the application assumes its legitimate and trust worthy.
 
 #### Signed and Valid
 In this scenario we'll use the following configuration:
 
-signed_valid_config
+![signed_valid_config](images/signed_valid_config.png "img-fluid")
 
 This configuration is what is expected when deploying an application leveraging SAMl authentication. In this setup the SP requires that the messages are signed and that the signatures match the data in the overall message and the assertion. This means as an attacker we cannot tamper with the areas of the message which are used to calculate the signatures. This includes the attribute values within the assertion. Let's try out a couple things and see the outcomes.
 
@@ -282,19 +282,19 @@ There is a known bug with this deployment where when the application requires si
 
 Lets try to remove the signature of the SAML response:
 
-signed_signature_removed
+![signed_signature_removed](images/signed_signature_removed.png "img-fluid")
 
 This results in the error below, because the application is checking to see if the message is signed.
 
-signed_valid_errors
+![signed_valid_errors](images/signed_valid_errors.png "img-fluid")
 
 Lets leave the signature but change the attribute values within the assertion.
 
-signed_group_change
+![signed_group_change](images/signed_changed_group.png "img-fluid")
 
 This results in another error. This is because the application is configured to make sure the messages are valid if they are signed.
 
-signed_valid_errors
+![signed_valid_errors](images/signed_valid_errors.png "img-fluid")
 
 The next scenario is able to bypass this situation and it does so in a very intersting way.
 
@@ -304,7 +304,7 @@ In February of 2018 DUO labs release details about vulnerabilities in 6 librarie
 
 At a high level, you can add a comment in the middle of the XML assertion to change the attributes/values of the SAML response. The really damaging part of this is that depending on the library being used the comment may be ignored during the signature calculation of the message. So to the SP the message is still valid. For this application we'll need to lower our security settings in order to become vulnerable to this attack. The configuration is below:
 
-cve_config
+![cve_config](images/cve_config.png "img-fluid")
 
 For this scenario we'll pivot away from the 'Yogi' user account and use the Barney Rubble (brubble) user account. Imagine that Barney is an employee who has 'power user' permissions within the Service Provider. He doesn't have full admin rights so deleting comments isn't avaialble to him. One of the things that he is allowed to do is create groups! He created a group called 'administratorsbutnot' and added his user account to the group. Lets see how the scenario plays out.
 
@@ -312,23 +312,23 @@ First we'll log in and confirm the group membership is correct, and that as Barn
 
 Login success and correct group membership:
 
-cve_group
+![cve_group](images/cve_group.png "img-fluid")
 
 On complaints page we do not have access to delete:
 
-cve_complaints
+![cve_complaints](images/cve_complaints.png "img-fluid")
 
 Now we will sign out and back in again, this time changing the SAML response to comment out the 'butnot' portion of the group membership like this: `administrators<!--butnot-->`
 
-cve_comment
+![cve_comment](images/cve_comment.png "img-fluid")
 
 Success! We've logged into the application and it looks like we are now a memeber of the administrators group.
 
-cve_group_admins
+![cve_group_admins](images/cve_group_admins.png "img-fluid")
 
 Checking the complaints page we now have the ability to delete comments!
 
-cve_delete
+![cve_delete](images/cve_delete.png "img-fluid")
 
 ---
 
